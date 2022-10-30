@@ -1,0 +1,35 @@
+if (is_android) {
+  import("//build/config/android/rules.gni")
+  dep_base = rebase_path("./", "//")
+}
+
+dep_base = rebase_path("../..", "//")
+
+config("internal_config") {
+  include_dirs = [ ".." ]
+}
+
+source_set("ad-block") {
+  configs += [ ":internal_config" ]
+  sources = [
+    "../ad_block_client.cc",
+    "../ad_block_client.h",
+    "../context_domain.cc",
+    "../context_domain.h",
+    "../cosmetic_filter.cc",
+    "../cosmetic_filter.h",
+    "../filter.cc",
+    "../filter.h",
+    "../filter_list.cc",
+    "../filter_list.h",
+    "../no_fingerprint_domain.cc",
+    "../no_fingerprint_domain.h",
+    "../protocol.cc",
+    "../protocol.h",
+  ]
+
+  deps = [
+    rebase_path("hashset-cpp/brave:hashset-cpp", dep_base),
+    rebase_path("bloom-filter-cpp/brave:bloom-filter-cpp", dep_base),
+  ]
+}
