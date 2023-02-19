@@ -134,6 +134,7 @@ ApplicationWindow {
     property var lastVersionCheckDate
     property string donateUrl
     property string donateUrlETag
+    property string customScript
 
     Settings {
         id: settings
@@ -148,6 +149,7 @@ ApplicationWindow {
         property alias lastVersionCheckDate: root.lastVersionCheckDate
         property alias donateUrl: root.donateUrl
         property alias donateUrlETag: root.donateUrlETag
+        property alias customScript: root.customScript
         property var splitView
 
         Component.onCompleted: {
@@ -1117,6 +1119,11 @@ ApplicationWindow {
                         name: "QWebChannel"
                         worldId: WebEngineScript.MainWorld
                         sourceUrl: "qrc:/qtwebchannel/qwebchannel.js"
+                    },
+                    WebEngineScript {
+                        injectionPoint: WebEngineScript.Deferred
+                        worldId: WebEngineScript.MainWorld
+                        sourceCode: root.customScript
                     }
                 ]
 
@@ -1616,6 +1623,31 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "Clear easylist path"
                 }
+                Button {
+                    id: buttonOpenJSDialog
+                    flat: true
+                    display: Button.TextOnly
+                    text: "Custom Script"
+                    Layout.alignment: Qt.AlignVCenter
+                    onClicked: customScriptDialog.open()
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Edit the custom script that is run after loading a video page"
+                }
+                Item {
+
+                }
+                Item {
+
+                }
+                Item {
+
+                }
+                Item {
+
+                }
             } // GridLayout
 
             RowLayout {
@@ -2114,7 +2146,84 @@ ApplicationWindow {
                 Layout.fillWidth: true
             }
         } // ColumnLayout
-    } // helpContainer
+    } // helpContainer Dialog
+
+    Dialog {
+        id: customScriptDialog
+        x: (parent.width - width) * 0.5
+        y: (parent.height - height) * 0.5
+        width: 800
+        visible: false
+        modal: true
+
+        header: Item {
+            width: customScriptDialog.width
+            height: properties.fsH3 * 1.5
+            Row {
+                anchors.centerIn: parent
+                topPadding: 8
+                Label {
+                    text: "Custom JS script"
+                    font.pixelSize: properties.fsH2
+                    font.bold: true
+                }
+            }
+        }
+
+        ColumnLayout {
+            width: parent.width
+            Item {
+                width: parent.width
+                height: 350
+                ScrollView {
+                    id: jseditScroll
+                    anchors.fill: parent
+                    clip: true
+
+                    TextArea {
+                        id: jsedit
+                        wrapMode: TextEdit.NoWrap
+                        selectByMouse: true
+                        text: root.customScript
+                    }
+                }
+            }
+            Item {
+                height: 16
+                Layout.fillWidth: true
+            }
+        } // ColumnLayout
+
+        footer: RowLayout {
+            Button {
+                Layout.alignment: Qt.AlignLeft
+                Layout.leftMargin: 8
+                text: qsTr("Set")
+                onClicked: {
+                    root.customScript = jsedit.text
+                    customScriptDialog.accept()
+                }
+                hoverEnabled: true
+                ToolTip.visible: hovered
+                ToolTip.delay: 100
+                ToolTip.text: "Set a custom JavaScript to be run on every video page"
+            }
+            Button {
+                Layout.alignment: Qt.AlignRight
+                Layout.rightMargin: 8
+                text: qsTr("Cancel")
+                onClicked: {
+                    jsedit.text = root.customScript
+                    customScriptDialog.close()
+                    customScriptDialog.reject()
+                }
+                hoverEnabled: true
+                ToolTip.visible: hovered
+                ToolTip.delay: 100
+                ToolTip.text: "Abort"
+            }
+        } // RowLayout
+    } // customScriptDialog
 
     Dialog {
         id: disclaimerContainer
