@@ -1,5 +1,10 @@
 # YAYC : Yet Another YouTube Client
 
+
+[![CC-BY-NC-ND License](https://img.shields.io/badge/license-CC--BY--NC--ND--4.0-green)](https://github.com/yayc-stream/yayc/blob/master/LICENSE)
+[![Releases](https://img.shields.io/github/release/yayc-stream/yayc.svg)](https://github.com/yayc-stream/yayc/releases)
+[![Github all releases](https://img.shields.io/github/downloads/yayc-stream/yayc/total.svg)](https://GitHub.com/yayc-stream/yayc/releases/)
+
 A YouTube client built with Qt5/QML.
 It sports bookmarks support, progress tracking, and more.
 It is intended to help managing video queues and playlists, sparing the user from having
