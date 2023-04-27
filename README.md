@@ -1,7 +1,7 @@
 # YAYC : Yet Another YouTube Client
 
 
-[![CC-BY-NC-ND License](https://img.shields.io/badge/license-CC--BY--NC--ND--4.0-green)](https://github.com/yayc-stream/yayc/blob/master/LICENSE)
+[![CC BY-NC-SA License](https://img.shields.io/badge/license-CC%20BY--NC--SA--4.0-green)](https://github.com/yayc-stream/yayc/blob/master/LICENSE)
 [![Releases](https://img.shields.io/github/release/yayc-stream/yayc.svg)](https://github.com/yayc-stream/yayc/releases)
 [![Github all releases](https://img.shields.io/github/downloads/yayc-stream/yayc/total.svg)](https://GitHub.com/yayc-stream/yayc/releases/)
 
