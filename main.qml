@@ -1505,7 +1505,7 @@ ApplicationWindow {
                     Layout.preferredWidth: width
                     Layout.preferredHeight: height
                     Layout.alignment: Qt.AlignVCenter
-                    source: "qrc:/images/google-128.png"
+                    source: "qrc:/images/google-chrome-is.svg"
                 }
                 Label {
                     text: "Profile:"
@@ -1527,7 +1527,7 @@ ApplicationWindow {
 
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
-                    ToolTip.text: "Google profile path:\n" + root.profilePath
+                    ToolTip.text: "Chromium cookies path:\n" + root.profilePath
                 }
 
                 Image {
