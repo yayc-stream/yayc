@@ -1032,6 +1032,9 @@ public:
         }
 
         setIconProvider(&m_emptyIconProvider);
+        if (newPath.isEmpty()) { // clearing the model
+            return {};
+        }
         // validate newPath
         m_root = QDir(newPath);
         if (!m_root.exists()) {

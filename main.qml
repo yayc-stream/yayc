@@ -1425,7 +1425,7 @@ ApplicationWindow {
 
             GridLayout {
                 width: parent.width
-                columns: 4
+                columns: 5
                 rowSpacing: 16
                 columnSpacing: 16
 
@@ -1457,6 +1457,20 @@ ApplicationWindow {
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
                     ToolTip.text: "Bookmarks data path:\n" + root.youtubePath
+                }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.youtubePath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear bookmark data path"
                 }
 
                 Item {
@@ -1498,6 +1512,20 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "YouTube history path:\n" + root.historyPath
                 }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.historyPath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear YouTube history path"
+                }
 
                 Image {
                     width: 32
@@ -1529,6 +1557,20 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "Chromium cookies path:\n" + root.profilePath
                 }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.profilePath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear Chromium cookies path"
+                }
 
                 Image {
                     width: 32
@@ -1559,6 +1601,20 @@ ApplicationWindow {
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
                     ToolTip.text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
+                }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.easyListPath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear easylist path"
                 }
             } // GridLayout
 
