@@ -126,6 +126,7 @@ ApplicationWindow {
     property string profilePath // if empty, the webengineview profile will turn itself "off the record"
     property string youtubePath
     property string historyPath
+    property string easyListPath
     property bool firstRun: true
     property bool limitationOfLiabilityAccepted: false
 
@@ -141,6 +142,7 @@ ApplicationWindow {
         property alias profilePath: root.profilePath
         property alias youtubePath: root.youtubePath
         property alias historyPath: root.historyPath
+        property alias easyListPath: root.easyListPath
         property alias lastUrl: webEngineView.url
         property alias lastestRemoteVersion: root.lastestRemoteVersion
         property alias lastVersionCheckDate: root.lastVersionCheckDate
@@ -192,13 +194,15 @@ ApplicationWindow {
             fileSystemModel.setRoot(youtubePath)
         if (historyPath !== "")
             historyModel.setRoot(historyPath)
+        if (easyListPath !== "")
+            requestInterceptor.setEasyListPath(easyListPath)
         splitView.restoreState(settings.splitView)
     }
     Component.onDestruction: {
         settings.splitView = splitView.saveState()
     }
 
-    onYoutubePathChanged: {
+    onYoutubePathChanged: { // this might be triggering double setRoot. move it into fileDialog?
         settings.sync()
         if (youtubePath !== "") {
             fileSystemModel.setRoot(youtubePath)
@@ -306,11 +310,7 @@ ApplicationWindow {
     }
 
     function deUrlizePath(path) {
-        if (Qt.platform.os === "windows") {
-            return path.slice(7) // strip file://
-        } else {
-            return path.slice(8) // strip file:///
-        }
+        return path.slice(7) // strip file://
     }
 
     function isCurrentVideoAdded(key, trigger) {
@@ -1425,7 +1425,7 @@ ApplicationWindow {
 
             GridLayout {
                 width: parent.width
-                columns: 4
+                columns: 5
                 rowSpacing: 16
                 columnSpacing: 16
 
@@ -1457,6 +1457,20 @@ ApplicationWindow {
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
                     ToolTip.text: "Bookmarks data path:\n" + root.youtubePath
+                }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.youtubePath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear bookmark data path"
                 }
 
                 Item {
@@ -1498,6 +1512,20 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "YouTube history path:\n" + root.historyPath
                 }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.historyPath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear YouTube history path"
+                }
 
                 Image {
                     width: 32
@@ -1505,7 +1533,7 @@ ApplicationWindow {
                     Layout.preferredWidth: width
                     Layout.preferredHeight: height
                     Layout.alignment: Qt.AlignVCenter
-                    source: "qrc:/images/google-128.png"
+                    source: "qrc:/images/google-chrome-is.svg"
                 }
                 Label {
                     text: "Profile:"
@@ -1527,9 +1555,68 @@ ApplicationWindow {
 
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
-                    ToolTip.text: "Google profile path:\n" + root.profilePath
+                    ToolTip.text: "Chromium cookies path:\n" + root.profilePath
                 }
-            }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.profilePath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear Chromium cookies path"
+                }
+
+                Image {
+                    width: 32
+                    height: 32
+                    Layout.preferredWidth: width
+                    Layout.preferredHeight: height
+                    Layout.alignment: Qt.AlignVCenter
+                    source: "qrc:/images/ad-blocker-fi-128.png"
+                }
+                Label {
+                    text: "Easylist:"
+                    Layout.alignment: Qt.AlignVCenter
+                }
+                Label {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignLeft
+                    text: (root.easyListPath === "") ? "<undefined>" : root.easyListPath
+                }
+                Button {
+                    id: buttonOpenEasylist
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/folder_open.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    onClicked: fileDialogEasylist.open()
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
+                }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.easyListPath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear easylist path"
+                }
+            } // GridLayout
 
             RowLayout {
                 Item {
@@ -2283,6 +2370,23 @@ ApplicationWindow {
             fileDialogHistory.close()
             var path = String(fileDialogHistory.fileUrl)
             root.historyPath = root.deUrlizePath(path)
+        }
+        onRejected: {
+        }
+    }
+
+    QQD.FileDialog {
+        id: fileDialogEasylist
+        nameFilters: []
+        title: "Please choose easylist.txt"
+        selectExisting: true
+        selectFolder: false
+
+        onAccepted: {
+            fileDialogEasylist.close()
+            var path = String(fileDialogEasylist.fileUrl)
+            root.easyListPath = root.deUrlizePath(path)
+            requestInterceptor.setEasyListPath(root.easyListPath)
         }
         onRejected: {
         }

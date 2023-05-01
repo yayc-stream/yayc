@@ -40,6 +40,8 @@ All use of this work outside of the above terms must be explicitly agreed upon i
 #include <QQuickStyle>
 #include <QDesktopServices>
 #include <QDebug>
+#include <QRunnable>
+#include <QThreadPool>
 #include <QProcess>
 #include <QSortFilterProxyModel>
 #include <QQuickImageProvider>
@@ -52,9 +54,12 @@ All use of this work outside of the above terms must be explicitly agreed upon i
 #include <QMutex>
 #include <QRecursiveMutex>
 #include <QMutexLocker>
+#include <QAtomicInteger>
 #include <QMetaEnum>
 #include <QMetaObject>
 #include <QtGlobal>
+
+#include "third_party/ad-block/ad_block_client.h"
 
 namespace  {
 const QString videoExtension{"yayc"};
@@ -615,6 +620,21 @@ QHash<QString, ChannelMetadata> cacheChannels(QDir d) {
 }
 } // namespace
 
+class RequestInterceptor;
+class EasylistLoader : public QRunnable
+{
+public:
+    EasylistLoader(const QString &path, RequestInterceptor *interceptor)
+        :   m_path(path),
+            m_interceptor(interceptor) { }
+
+    void run();
+
+private:
+    QString m_path;
+    RequestInterceptor *m_interceptor;
+};
+
 class RequestInterceptor : public QWebEngineUrlRequestInterceptor
 {
     Q_OBJECT
@@ -625,8 +645,34 @@ public:
         connect(tcpSocket, &QAbstractSocket::errorOccurred, this, &RequestInterceptor::onSocketError);
     }
 
-    void interceptRequest(QWebEngineUrlRequestInfo &/*info*/)
+    Q_INVOKABLE void setEasyListPath(QString newPath) {
+        if (!m_easyListPath.isEmpty() || m_loading)
+            return; // require restart for changes to existing paths to take effect
+
+        if (newPath.startsWith("file://")) {
+            newPath = newPath.mid(7);
+#if defined(Q_OS_WINDOWS)
+            newPath = newPath.mid(1); // Strip one more /
+#endif
+        }
+
+        EasylistLoader *loader = new EasylistLoader(newPath, this);
+        loader->setAutoDelete(true);
+        m_loading.storeRelease(1);
+        QThreadPool::globalInstance()->start(loader);
+    }
+
+    void interceptRequest(QWebEngineUrlRequestInfo &info)
     {
+        if (m_loading.loadAcquire() == 1)
+            return;
+
+        if (client.matches(info.requestUrl().toString().toStdString().c_str(),
+            FONoFilterOption, info.requestUrl().host().toStdString().c_str())) {
+//                qWarning() << "Blocked: " << info.requestUrl();
+                info.block(true);
+//                qWarning() << "Blocked: " << ++blocked;
+        }
     }
 
     Q_INVOKABLE bool isYoutubeVideoUrl(QUrl url) {
@@ -784,9 +830,33 @@ signals:
     void donateUrl(const QString &);
 
 protected:
+    QAtomicInt m_loading{0};
+    QString m_easyListPath;
+    AdBlockClient client;
+    unsigned int blocked{0};
     QTcpSocket *tcpSocket;
     QNetworkAccessManager m_nam;
+
+friend class EasylistLoader;
 };
+
+void EasylistLoader::run()
+{
+    QFile file(m_path);
+    QString easyListTxt;
+
+    if(!file.exists()) {
+        qWarning() << "No easylist.txt file found at " << m_path;
+    } else {
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text)){
+            easyListTxt = file.readAll();
+        }
+        file.close();
+        m_interceptor->client.parse(easyListTxt.toStdString().c_str());
+    }
+    m_interceptor->m_loading.storeRelease(0);
+}
+
 
 class NoDirSortProxyModel : public QSortFilterProxyModel {
 public:
@@ -962,6 +1032,9 @@ public:
         }
 
         setIconProvider(&m_emptyIconProvider);
+        if (newPath.isEmpty()) { // clearing the model
+            return {};
+        }
         // validate newPath
         m_root = QDir(newPath);
         if (!m_root.exists()) {

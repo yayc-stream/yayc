@@ -1,0 +1,12 @@
+config("external_config") {
+  include_dirs = [ "." ]
+}
+
+source_set("hashset-cpp") {
+  public_configs = [ ":external_config" ]
+
+  sources = [
+    "hash_set.cc",
+    "hash_set.h",
+  ]
+}

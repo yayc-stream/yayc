@@ -1,0 +1,33 @@
+{
+  "name": "hashset-cpp",
+  "main": "./build/Release/hashset-cpp",
+  "private": true,
+  "version": "2.2.0",
+  "description": "",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "build": "make",
+    "install": "node-gyp rebuild",
+    "test": "make test",
+    "sample": "make sample",
+    "lint": "./scripts/cpplint.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bbondy/hashset-cpp.git"
+  },
+  "author": "Brian R. Bondy <netzen@gmail.com> (http://www.brianbondy.com)",
+  "license": "MPL-2.0",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/bbondy/hashset-cpp/issues"
+  },
+  "homepage": "https://github.com/bbondy/hashset-cpp#readme",
+  "pre-commit": [
+    "lint"
+  ]
+}
