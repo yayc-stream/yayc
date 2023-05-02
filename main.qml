@@ -135,6 +135,7 @@ ApplicationWindow {
     property string donateUrl
     property string donateUrlETag
     property string customScript
+    property bool darkMode: true
 
     Settings {
         id: settings
@@ -150,6 +151,7 @@ ApplicationWindow {
         property alias donateUrl: root.donateUrl
         property alias donateUrlETag: root.donateUrlETag
         property alias customScript: root.customScript
+        property alias darkMode: root.darkMode
         property var splitView
 
         Component.onCompleted: {
@@ -1627,8 +1629,9 @@ ApplicationWindow {
                     id: buttonOpenJSDialog
                     flat: true
                     display: Button.TextOnly
-                    text: "Custom Script"
+                    text: "Custom\nScript"
                     Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -12
                     onClicked: customScriptDialog.open()
                     hoverEnabled: true
 
@@ -1636,11 +1639,17 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "Edit the custom script that is run after loading a video page"
                 }
-                Item {
-
-                }
-                Item {
-
+                Row {
+                    Layout.columnSpan: 2
+                    Layout.alignment: Qt.AlignVCenter
+                    CheckBox {
+                        id: darkModeCheck
+                        checked: root.darkMode
+                        text: qsTr("Dark mode (requires restart)")
+                        onCheckedChanged: {
+                            root.darkMode = checked
+                        }
+                    }
                 }
                 Item {
 
