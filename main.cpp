@@ -15,6 +15,7 @@ All use of this work outside of the above terms must be explicitly agreed upon i
 
 #include <QGuiApplication>
 #include <QApplication>
+#include <QSettings>
 #include <QLoggingCategory>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -1619,16 +1620,24 @@ private:
 
 int main(int argc, char *argv[])
 {
-//    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkModeEnabled=true"); // QTBUG-84484
-//    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkMode=4,darkModeImagePolicy=2");
-// https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-            QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
+    QCoreApplication::setOrganizationName("YAYC");
+    QCoreApplication::setApplicationName("yayc");
+
+    QSettings settings;
 #if defined(Q_OS_LINUX)
     qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
 #endif
     qputenv("QT_QUICK_CONTROLS_STYLE", QByteArrayLiteral("Material"));
-    qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", QByteArrayLiteral("Dark")); // ToDo: fix text color
+
+
+    if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
+//        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkModeEnabled=true"); // QTBUG-84484
+//        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkMode=4,darkModeImagePolicy=2");
+//     https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+                QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
+        qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", QByteArrayLiteral("Dark")); // ToDo: fix text color
+    }
     qputenv("QT_QUICK_CONTROLS_MATERIAL_PRIMARY", QByteArrayLiteral("#3d3d3d"));
     qputenv("QT_QUICK_CONTROLS_MATERIAL_ACCENT", QByteArrayLiteral("Red"));
 
@@ -1643,8 +1652,7 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
 
-    QCoreApplication::setOrganizationName("YAYC");
-    QCoreApplication::setApplicationName("yayc");
+
 
     QQmlApplicationEngine engine;
     ThumbnailImageProvider *imageProvider = new ThumbnailImageProvider();
