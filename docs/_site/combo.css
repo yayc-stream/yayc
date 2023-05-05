@@ -508,6 +508,14 @@ html { box-sizing: border-box; }
   
   
   
+  nav .p-pro { border-color: cornflowerblue; }
+  #pro { background-color: cornflowerblue !important; color: #f8f8f8; }
+  #pro a { color: #f8f8f8; }
+  #pro .sectiondivider { color: cornflowerblue; }
+
+  
+  
+  
   nav .p-usage { border-color: darkred; }
   #usage { background-color: darkred !important; color: #f8f8f8; }
   #usage a { color: #f8f8f8; }
