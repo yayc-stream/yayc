@@ -78,9 +78,11 @@ ApplicationWindow {
         }
     }
     Shortcut {
-        sequence: "Ctrl+H"
+        sequence: "Ctrl+P"
         onActivated: {
-            root.minimizeToTray()
+            if (root.debugMode) {
+                fileSystemModel.printSettingsPath()
+            }
         }
     }
 
@@ -136,6 +138,7 @@ ApplicationWindow {
     property string donateUrlETag
     property string customScript
     property bool darkMode: true
+    property bool debugMode: false
 
     Settings {
         id: settings
@@ -152,6 +155,7 @@ ApplicationWindow {
         property alias donateUrlETag: root.donateUrlETag
         property alias customScript: root.customScript
         property alias darkMode: root.darkMode
+        property alias debugMode: root.debugMode
         property var splitView
 
         Component.onCompleted: {
@@ -1434,7 +1438,7 @@ ApplicationWindow {
 
             GridLayout {
                 width: parent.width
-                columns: 5
+                columns: 8
                 rowSpacing: 16
                 columnSpacing: 16
 
@@ -1451,6 +1455,7 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Label {
+                    Layout.columnSpan: 4
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignLeft
                     text: (root.youtubePath === "") ? "<undefined>" : root.youtubePath
@@ -1505,6 +1510,7 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Label {
+                    Layout.columnSpan: 4
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignLeft
                     text:  (root.historyPath === "") ? "<undefined>" : root.historyPath
@@ -1549,6 +1555,7 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Label {
+                    Layout.columnSpan: 4
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignLeft
                     text: (root.profilePath === "") ? "<undefined>" : root.profilePath
@@ -1594,6 +1601,7 @@ ApplicationWindow {
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Label {
+                    Layout.columnSpan: 4
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignLeft
                     text: (root.easyListPath === "") ? "<undefined>" : root.easyListPath
@@ -1651,8 +1659,36 @@ ApplicationWindow {
                         }
                     }
                 }
-                Item {
+                Row {
+                    Layout.columnSpan: 1
+                    Layout.alignment: Qt.AlignVCenter
 
+                    CheckBox {
+                        id: debugModeCHeck
+                        checked: root.debugMode
+                        text: qsTr("Developer mode")
+                        onCheckedChanged: {
+                            root.debugMode = checked
+                        }
+                    }
+                }
+                Button {
+                    id: buttonResetSettings
+                    flat: true
+                    visible: root.debugMode
+                    enabled: visible
+                    display: Button.IconOnly
+                    icon.source: "/icons/restart.svg"
+                    text: "Custom\nScript"
+                    Layout.columnSpan: 1
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -12
+                    onClicked: fileSystemModel.clearSettings()
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear all settings (restarts YAYC)"
                 }
                 Item {
 
