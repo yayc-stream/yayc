@@ -1643,7 +1643,7 @@ int main(int argc, char *argv[])
 
     qInfo("Starting YAYC v%s ...", appVersion().data());
 #ifdef QT_NO_DEBUG_OUTPUT
-    QLoggingCategory::setFilterRules(QStringLiteral("*.fatal=true\n*=false"));
+//    QLoggingCategory::setFilterRules(QStringLiteral("*.fatal=true\n*=false"));
 #endif
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
