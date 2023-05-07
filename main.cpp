@@ -63,6 +63,8 @@ In addition to the above,
 #include "third_party/ad-block/ad_block_client.h"
 
 namespace  {
+constexpr const int EXIT_CODE_REBOOT = -123456789;
+constexpr const int EXIT_CODE_ERASE_SETTINGS = -123456788;
 const QString videoExtension{"yayc"};
 const QString channelExtension{"yaycc"};
 const QString shortsVideoPattern{"https://youtube.com/shorts/"};
@@ -1083,6 +1085,27 @@ public:
         return QModelIndex();
     }
 
+    // ToDo: refactor these into separate utility class
+    Q_INVOKABLE void printSettingsPath() {
+        QLoggingCategory category("qmldebug");
+        QSettings settings;
+        qCInfo(category) << "Settings path: "<< settings.fileName();
+    }
+
+    Q_INVOKABLE void restartApp(int code = EXIT_CODE_REBOOT) {
+        QTimer::singleShot(0, this,
+            [code]() {
+                auto app = QCoreApplication::instance();
+                if (!app)
+                    qFatal("QCoreAPplication::instance returned NULL");
+                app->exit(code);
+        });
+    }
+
+    Q_INVOKABLE void clearSettings() {
+        restartApp(EXIT_CODE_ERASE_SETTINGS);
+    }
+
     Q_INVOKABLE QString key(const QModelIndex &item) const {
         if (!m_ready)
             return QLatin1String("");
@@ -1616,80 +1639,101 @@ private:
                          this, &FileSystemModel::onThumbnailRequestFinished);
         reply->setProperty("key", key);
     }
-};
+}; // FileSysyemModel
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setOrganizationName("YAYC");
-    QCoreApplication::setApplicationName("yayc");
+    int currentExitCode = 0;
+    QStringList args;
+    {
+        QCoreApplication::setOrganizationName("YAYC");
+        QCoreApplication::setApplicationName("yayc");
 
-    QSettings settings;
-#if defined(Q_OS_LINUX)
-    qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
-#endif
-    qputenv("QT_QUICK_CONTROLS_STYLE", QByteArrayLiteral("Material"));
+        QSettings settings;
+    #if defined(Q_OS_LINUX)
+        qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
+    #endif
+        qputenv("QT_QUICK_CONTROLS_STYLE", QByteArrayLiteral("Material"));
 
 
-    if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
-//        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkModeEnabled=true"); // QTBUG-84484
-//        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkMode=4,darkModeImagePolicy=2");
-//     https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-                QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
-        qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", QByteArrayLiteral("Dark")); // ToDo: fix text color
+        if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
+            //        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkModeEnabled=true"); // QTBUG-84484
+            //        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkMode=4,darkModeImagePolicy=2");
+            //     https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+                    QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
+            qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", QByteArrayLiteral("Dark")); // ToDo: fix text color
+        }
+        qputenv("QT_QUICK_CONTROLS_MATERIAL_PRIMARY", QByteArrayLiteral("#3d3d3d"));
+        qputenv("QT_QUICK_CONTROLS_MATERIAL_ACCENT", QByteArrayLiteral("Red"));
+
+        qInfo("Starting YAYC v%s ...", appVersion().data());
+    #ifdef QT_NO_DEBUG_OUTPUT
+        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
+                                                        "qmldebug=true\n"
+                                                        "*.fatal=true\n"
+                                                        ));
+    #endif
+
+        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+        QtWebEngine::initialize();
+
+        QGuiApplication app(argc, argv);
+        app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
+        args = app.arguments();
+
+
+        QQmlApplicationEngine engine;
+        ThumbnailImageProvider *imageProvider = new ThumbnailImageProvider();
+        engine.addImageProvider(QLatin1String("videothumbnail"), imageProvider);
+        const QUrl url(QStringLiteral("qrc:/main.qml"));
+        QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
+                         &app, [url](QObject *obj, const QUrl &objUrl) {
+            if (!obj && url == objUrl)
+                QCoreApplication::exit(-1);
+        }, Qt::QueuedConnection);
+
+
+        FileSystemModel *fsmodel = new FileSystemModel("fileSystemModel", true, &engine);
+        FileSystemModel *historyModel = new FileSystemModel("historyModel", false, &engine);
+
+        engine.rootContext()->setContextProperty("fileSystemModel", fsmodel);
+        engine.rootContext()->setContextProperty("historyModel", historyModel);
+
+        // for the roles enums
+        qmlRegisterUncreatableType<FileSystemModel>("yayc", 1, 0,
+                                                    "FileSystemModel", "Cannot create a FileSystemModel instance.");
+
+        RequestInterceptor *interceptor = new RequestInterceptor(&engine);
+        engine.rootContext()->setContextProperty("requestInterceptor", interceptor);
+        engine.rootContext()->setContextProperty("appVersion", QString(appVersion()) );
+        engine.rootContext()->setContextProperty("repositoryURL", repositoryURL );
+
+        engine.load(url);
+
+        QTimer::singleShot(1000,[&engine, interceptor](){
+            QObject *view = engine.rootObjects().first()->findChild<QObject *>("webEngineView");
+            QQuickWebEngineProfile *profile = qvariant_cast<QQuickWebEngineProfile *>(view->property("profile"));
+
+            profile->setUrlRequestInterceptor(interceptor);
+        });
+
+        currentExitCode = app.exec();
     }
-    qputenv("QT_QUICK_CONTROLS_MATERIAL_PRIMARY", QByteArrayLiteral("#3d3d3d"));
-    qputenv("QT_QUICK_CONTROLS_MATERIAL_ACCENT", QByteArrayLiteral("Red"));
+    if ( currentExitCode <=  EXIT_CODE_ERASE_SETTINGS) {
+        if (currentExitCode == EXIT_CODE_ERASE_SETTINGS) {
+            QLoggingCategory category("qmldebug");
+            qCInfo(category) << "Erasing settings...";
 
-    qInfo("Starting YAYC v%s ...", appVersion().data());
-#ifdef QT_NO_DEBUG_OUTPUT
-    QLoggingCategory::setFilterRules(QStringLiteral("*.fatal=true\n*=false"));
-#endif
+            QSettings settings;
+            settings.clear();
+            settings.sync();
+        }
 
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QtWebEngine::initialize();
-
-    QGuiApplication app(argc, argv);
-    app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
-
-
-
-    QQmlApplicationEngine engine;
-    ThumbnailImageProvider *imageProvider = new ThumbnailImageProvider();
-    engine.addImageProvider(QLatin1String("videothumbnail"), imageProvider);
-    const QUrl url(QStringLiteral("qrc:/main.qml"));
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &app, [url](QObject *obj, const QUrl &objUrl) {
-        if (!obj && url == objUrl)
-            QCoreApplication::exit(-1);
-    }, Qt::QueuedConnection);
-
-
-    FileSystemModel *fsmodel = new FileSystemModel("fileSystemModel", true, &engine);
-    FileSystemModel *historyModel = new FileSystemModel("historyModel", false, &engine);
-
-    engine.rootContext()->setContextProperty("fileSystemModel", fsmodel);
-    engine.rootContext()->setContextProperty("historyModel", historyModel);
-
-    // for the roles enums
-    qmlRegisterUncreatableType<FileSystemModel>("yayc", 1, 0,
-                                                "FileSystemModel", "Cannot create a FileSystemModel instance.");
-
-    RequestInterceptor *interceptor = new RequestInterceptor(&engine);
-    engine.rootContext()->setContextProperty("requestInterceptor", interceptor);
-    engine.rootContext()->setContextProperty("appVersion", QString(appVersion()) );
-    engine.rootContext()->setContextProperty("repositoryURL", repositoryURL );
-
-    engine.load(url);
-
-    QTimer::singleShot(1000,[&engine, interceptor](){
-        QObject *view = engine.rootObjects().first()->findChild<QObject *>("webEngineView");
-        QQuickWebEngineProfile *profile = qvariant_cast<QQuickWebEngineProfile *>(view->property("profile"));
-
-        profile->setUrlRequestInterceptor(interceptor);
-    });
-
-    return app.exec();
+        QProcess::startDetached(args[0], args); //application restart
+        return 0;
+    }
+    return currentExitCode;
 }
 
 #include "main.moc"
