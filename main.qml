@@ -2402,17 +2402,18 @@ ApplicationWindow {
         function addVideo(u) {
             if (!requestInterceptor.isYoutubeVideoUrl(u)) {
                 // Q_UNREACHABLE
+                console.log("Wrong URL fed!")
                 return;
             }
             if (requestInterceptor.isYoutubeShortsUrl(u)) {
-                fileSystemModel.addEntry(webEngineView.key,
+                fileSystemModel.addEntry(requestInterceptor.getVideoID(u),
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url
                                          ""  // channel name
                                          )
             } else {
-                fileSystemModel.addEntry(webEngineView.key,
+                fileSystemModel.addEntry(requestInterceptor.getVideoID(u),
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url
@@ -2425,7 +2426,7 @@ ApplicationWindow {
         onAccepted: {
             var videoUrl = newVideoInput.text;
             newVideoInput.clear()
-            addVideo(videoUrl)
+            addVideoDialog.addVideo(videoUrl)
             close()
         }
         onRejected: {
