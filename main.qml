@@ -86,6 +86,13 @@ ApplicationWindow {
         }
     }
 
+    Shortcut {
+        sequence: "Ctrl+H"
+        onActivated: {
+            root.minimizeToTray()
+        }
+    }
+
     onClosing: {
         close.accepted = false
         root.minimizeToTray()
