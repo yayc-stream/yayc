@@ -1666,6 +1666,7 @@ int main(int argc, char *argv[])
         }
         qputenv("QT_QUICK_CONTROLS_MATERIAL_PRIMARY", QByteArrayLiteral("#3d3d3d"));
         qputenv("QT_QUICK_CONTROLS_MATERIAL_ACCENT", QByteArrayLiteral("Red"));
+        qputenv("QT_QUICK_CONTROLS_MATERIAL_VARIANT", QByteArrayLiteral("Dense")); // ToDo: add setting
 
         qInfo("Starting YAYC v%s ...", appVersion().data());
     #ifdef QT_NO_DEBUG_OUTPUT
