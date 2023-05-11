@@ -1,4 +1,4 @@
-QT += quick core network widgets quickcontrols2
+QT += quick core gui network widgets quickcontrols2
 QT += webchannel qml webengine
 
 CONFIG += c++11

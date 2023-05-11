@@ -63,6 +63,7 @@ In addition to the above,
 #include "third_party/ad-block/ad_block_client.h"
 
 namespace  {
+bool isPlasma{false};
 constexpr const int EXIT_CODE_REBOOT = -123456789;
 constexpr const int EXIT_CODE_ERASE_SETTINGS = -123456788;
 const QString videoExtension{"yayc"};
@@ -463,7 +464,7 @@ struct VideoMetadata
         return parent.absoluteFilePath(key + "." + videoExtension);
     }
 
-    QUrl url() const {
+    QUrl url(bool startingTime = true) const {
         if (vendor == Platform::UNK) {
             return {}; // FixMe!
         }
@@ -473,7 +474,7 @@ struct VideoMetadata
             if (type.startsWith('s')) {
                 return shortsVideoPattern + id; // ToDo: position not supported for shorts yet
             } else if (type.startsWith('v')) {
-                return standardVideoPattern + id + ((position > 0.)
+                return standardVideoPattern + id + ((position > 0. && startingTime)
                                                     ? "&t=" + QString::number(int(position)) +"s"
                                                     : "" );
             } else return {};
@@ -482,7 +483,24 @@ struct VideoMetadata
 };
 
 namespace  {
-bool findExec(const QString &name) {
+bool isPlasmaSession() {
+#ifdef Q_OS_LINUX
+    QProcess plasmaRunning;
+    QStringList arguments;
+    arguments << "ksmserver";
+    plasmaRunning.start("/usr/bin/pidof", arguments);
+    plasmaRunning.setStandardOutputFile(QProcess::nullDevice());
+    plasmaRunning.setStandardErrorFile(QProcess::nullDevice());
+
+    if(!plasmaRunning.waitForFinished())
+        return false; // Not found or pidof does not work
+
+    return !plasmaRunning.exitCode();
+#else
+    return false;
+#endif
+}
+bool findExecLinux(const QString &name) {
     QProcess findProcess;
     QStringList arguments;
     arguments << name;
@@ -502,6 +520,12 @@ bool findExec(const QString &name) {
         return true; // Found!
     else
         return false; // Not found!
+}
+bool isExec(const QString &fileName) {
+    QFileInfo check_file(fileName);
+    if (check_file.exists() && check_file.isFile() && check_file.isExecutable())
+        return true; // Found!
+    return false;
 }
 QUrl removeWww(QUrl url) {
     QString host = url.host();
@@ -1224,6 +1248,75 @@ public slots:
         return data(item, UrlStringRole);
     }
 
+    // ToDo: Document that, for linux/kde, a workaround is needed:
+    // adding x-scheme-handler/file=org.kde.dolphin.desktop;
+    // to .config/mimeapp.list tags
+    void openInBrowser(QModelIndex item, const QString &extWorkingDirRoot) {
+        if (!m_ready)
+            return ;
+        const QString &key = keyFromViewItem(item);
+        if (!key.size() || !m_cache.contains(key))
+            return ;
+
+        QDir d(extWorkingDirRoot);
+
+        const bool exists = d.exists() && d.exists(key);
+        if (exists) {
+            if (isPlasma) {
+                // Fix for https://bugs.kde.org/show_bug.cgi?id=442721
+                // Note, xdg-open also fails.
+                QProcess::startDetached(
+                            QLatin1String("/usr/bin/dolphin"),
+                            QStringList() << QUrl::fromLocalFile(d.filePath(key)).toString(),
+                            extWorkingDirRoot);
+            } else {
+                QDesktopServices::openUrl( QUrl::fromLocalFile(d.filePath(key)) );
+            }
+        }
+    }
+
+    void openInExternalApp(QModelIndex item
+                           , const QString &extCommand
+                           , const QString &extWorkingDirRoot) { // ToDo: refactor this, use qfuture, track ongoing processes
+        if (!m_ready)
+            return ;
+        const QString &key = keyFromViewItem(item);
+        if (!key.size() || !m_cache.contains(key))
+            return ;
+
+        QDir d(extWorkingDirRoot);
+
+        if (!d.exists()) {
+            QLoggingCategory category("qmldebug");
+            qCInfo(category) << "openInExternalApp: not existing working dir "<<extWorkingDirRoot;
+            return;
+        }
+
+        if (!d.exists(key)) {
+            if (!d.mkdir(key)) {
+                QLoggingCategory category("qmldebug");
+                qCInfo(category) << "openInExternalApp: failed creating "<<d.filePath(key);
+                return;
+            }
+        }
+
+        QString url = m_cache.value(key).url(false).toString();
+        QProcess process;
+        process.setProgram(extCommand);
+        process.setArguments(QStringList() << url);
+        process.setWorkingDirectory(d.filePath(key));
+        process.setStandardOutputFile(QProcess::nullDevice());
+        process.setStandardErrorFile(QProcess::nullDevice());
+        qint64 pid;
+        if (!process.startDetached(&pid)) {
+            QLoggingCategory category("qmldebug");
+            qCInfo(category) << "openInExternalApp: failed QProcess::startDetached";
+        } else {
+            auto idx = index(m_cache.value(key).filePath());
+            emit dataChanged(idx, idx);
+        }
+    }
+
     bool popen(QModelIndex item) {
         if (!m_ready)
             return false;
@@ -1335,6 +1428,9 @@ public slots:
         auto idx = index(m_cache[key].filePath());
         emit dataChanged(idx, idx);
     }
+    bool executableExists(const QString &exe) const {
+        return isExec(exe);
+    }
     bool isStarred(const QModelIndex &item) const {
         if (!m_ready)
             return false;
@@ -1342,6 +1438,19 @@ public slots:
         if (!key.size() || !m_cache.contains(key))
             return false;
         return m_cache.value(key).starred;
+    }
+    // ToDo: check if directory is empty?
+    bool hasWorkingDir(const QModelIndex &item, const QString &extWorkingDirRoot) const {
+        if (!m_ready)
+            return false;
+        const QString &key = keyFromViewItem(item);
+        if (!key.size() || !m_cache.contains(key))
+            return false;
+
+        QDir d(extWorkingDirRoot);
+
+        const bool exists = d.exists() && d.exists(key);
+        return exists;
     }
     void starEntry(const QModelIndex &item, bool starred) {
         if (!m_ready)
@@ -1650,16 +1759,16 @@ int main(int argc, char *argv[])
         QCoreApplication::setApplicationName("yayc");
 
         QSettings settings;
-    #if defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX)
         qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
-    #endif
+#endif
         qputenv("QT_QUICK_CONTROLS_STYLE", QByteArrayLiteral("Material"));
 
 
         if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
-            //        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkModeEnabled=true"); // QTBUG-84484
-            //        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkMode=4,darkModeImagePolicy=2");
-            //     https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
+//          qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkModeEnabled=true"); // QTBUG-84484
+//          qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkMode=4,darkModeImagePolicy=2");
+            // https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
             qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
                     QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
             qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", QByteArrayLiteral("Dark")); // ToDo: fix text color
@@ -1669,12 +1778,12 @@ int main(int argc, char *argv[])
         qputenv("QT_QUICK_CONTROLS_MATERIAL_VARIANT", QByteArrayLiteral("Dense")); // ToDo: add setting
 
         qInfo("Starting YAYC v%s ...", appVersion().data());
-    #ifdef QT_NO_DEBUG_OUTPUT
+#ifdef QT_NO_DEBUG_OUTPUT
         QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
                                                         "qmldebug=true\n"
                                                         "*.fatal=true\n"
                                                         ));
-    #endif
+#endif
 
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
         QtWebEngine::initialize();
@@ -1709,6 +1818,8 @@ int main(int argc, char *argv[])
         engine.rootContext()->setContextProperty("requestInterceptor", interceptor);
         engine.rootContext()->setContextProperty("appVersion", QString(appVersion()) );
         engine.rootContext()->setContextProperty("repositoryURL", repositoryURL );
+
+        isPlasma = isPlasmaSession();
 
         engine.load(url);
 

@@ -136,6 +136,13 @@ ApplicationWindow {
     property string youtubePath
     property string historyPath
     property string easyListPath
+    property string extWorkingDirPath
+    property bool extWorkingDirExists: root.extWorkingDirPath !== ""
+    property string extCommand
+    property bool extCommandEnabled: (root.extWorkingDirExists
+                                      && root.extCommand !== "")
+    property string extCommandName
+
     property bool firstRun: true
     property bool limitationOfLiabilityAccepted: false
 
@@ -155,6 +162,9 @@ ApplicationWindow {
         property alias youtubePath: root.youtubePath
         property alias historyPath: root.historyPath
         property alias easyListPath: root.easyListPath
+        property alias extWorkingDirPath: root.extWorkingDirPath
+        property alias extCommand: root.extCommand
+        property alias extCommandName: root.extCommandName
         property alias lastUrl: webEngineView.url
         property alias lastestRemoteVersion: root.lastestRemoteVersion
         property alias lastVersionCheckDate: root.lastVersionCheckDate
@@ -646,6 +656,35 @@ ApplicationWindow {
 //                        icon.source: "/icons/download_for_offline.svg"
 //                        display: MenuItem.TextBesideIcon
 //                    }
+                    MenuItem { // ToDo: replace with submenu
+                        text: "Open URL with external app"
+                        enabled: treeViewContainer.contextMenu.deleteVideoItem
+                                 && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
+                        visible: true
+                        height: enabled ? implicitHeight : 0
+                        onClicked: {
+                            fileSystemModel.openInExternalApp(treeViewContainer.contextMenu.videoIndex,
+                                                              root.extCommand,
+                                                              root.extWorkingDirPath)
+                        }
+                        icon.source: "/icons/extension.svg"
+                        display: MenuItem.TextBesideIcon
+                    }
+                    MenuItem {
+                        text: "Open containing folder"
+                        enabled: treeViewContainer.contextMenu.deleteVideoItem
+                                 && root.extWorkingDirExists
+                                 && fileSystemModel.hasWorkingDir(treeViewContainer.contextMenu.videoIndex,
+                                                                  root.extWorkingDirPath)
+                        visible: true
+                        height: enabled ? implicitHeight : 0
+                        onClicked: {
+                            fileSystemModel.openInBrowser(treeViewContainer.contextMenu.videoIndex,
+                                                          root.extWorkingDirPath)
+                        }
+                        icon.source: "/icons/open_in_browser.svg"
+                        display: MenuItem.TextBesideIcon
+                    }
                     MenuItem {
                         TextEdit{
                             id: copyLinkClipboardProxy
@@ -813,6 +852,9 @@ ApplicationWindow {
                             property bool starred: (!styleData.hasChildren)
                                                    ? fileSystemModel.isStarred(qmodelindex)
                                                    : false
+                            property bool hasWorkingDir: (!styleData.hasChildren && root.extWorkingDirExists)
+                                                   ? fileSystemModel.hasWorkingDir(qmodelindex, root.extWorkingDirPath)
+                                                   : false
                             property bool shorts: (!styleData.hasChildren)
                                                   ? requestInterceptor.isYoutubeShortsUrl(videoUrl)
                                                   : false
@@ -875,6 +917,11 @@ ApplicationWindow {
                                     visible: treeViewDelegate.starred
                                     anchors.fill: parent
                                     source: "qrc:/images/starred.png"
+                                }
+                                Image {
+                                    visible: treeViewDelegate.hasWorkingDir
+                                    anchors.fill: parent
+                                    source: "qrc:/images/workingdirpresent.png"
                                 }
                             }
                             Image {
@@ -1595,6 +1642,7 @@ ApplicationWindow {
                     ToolTip.text: "Clear Chromium cookies path"
                 }
 
+                // easylist
                 Image {
                     width: 32
                     height: 32
@@ -1640,6 +1688,153 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "Clear easylist path"
                 }
+                // easylist end
+
+                // external workdir
+                Item {
+                    width: 32
+                    height: 32
+                    Layout.preferredWidth: width
+                    Layout.preferredHeight: height
+                    Layout.alignment: Qt.AlignVCenter
+                    Image {
+                        id: extworkdirimg
+                        source: "/icons/exit_to_app.svg"
+                        visible: false
+                        anchors.fill: parent
+                    }
+                    ColorOverlay {
+                        source: extworkdirimg
+                        anchors.fill: extworkdirimg
+                        color: "white"
+                    }
+                }
+                Label {
+                    text: "Ext Working Dir:"
+                    Layout.alignment: Qt.AlignVCenter
+                }
+                Label {
+                    Layout.columnSpan: 4
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignLeft
+                    text: (!root.extWorkingDirExists) ? "<undefined>" : root.extWorkingDirPath
+                }
+                Button {
+                    id: buttonOpenExternalWorkingDir
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/folder_open.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    onClicked: fileDialogExtWorkingDir.open()
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Working directory for external executable:\n" + root.extWorkingDirPath
+                }
+                Button {
+                    flat: true
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: root.extWorkingDirPath = ""
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear external executable working directory path"
+                }
+                // external workdir end
+
+
+                // external app
+                Item {
+                    visible: root.extWorkingDirExists
+                    width: 32
+                    height: 32
+                    Layout.preferredWidth: width
+                    Layout.preferredHeight: height
+                    Layout.alignment: Qt.AlignVCenter
+                    Image {
+                        id: extcmdimg
+                        source: "/icons/extension.svg"
+                        visible: false
+                        anchors.fill: parent
+                    }
+                    ColorOverlay {
+                        source: extcmdimg
+                        anchors.fill: extcmdimg
+                        color: "white"
+                    }
+                }
+                Label {
+                    visible: root.extWorkingDirExists
+                    text: "External cmd:"
+                    Layout.alignment: Qt.AlignVCenter
+                }
+                TextField {
+                    id: extCmdName
+                    focus: true
+                    selectByMouse: true
+                    font.pixelSize: properties.fsP1
+                    cursorVisible: true
+                    color: properties.textColor
+                    Layout.columnSpan: 2
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignLeft
+                    text: root.extCommandName
+                    onTextChanged: root.extCommandName = text
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Name of the external command on the menu:\n" + extCmdName.text
+
+                }
+                TextField {
+                    id: extCmdCmd
+                    focus: true
+                    selectByMouse: true
+                    font.pixelSize: properties.fsP1
+                    cursorVisible: true
+                    color: properties.textColor
+                    Layout.columnSpan: 3
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignLeft
+
+                    text: root.extCommand
+                    onTextChanged: {
+                        if (fileSystemModel.executableExists(text)) {
+                            root.extCommand = text;
+                        }
+                    }
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "External command to trigger through context menu:\n" + extCmdCmd.text
+
+                }
+                Button {
+                    flat: true
+                    visible: root.extWorkingDirExists
+                    display: Button.IconOnly
+                    icon.source: "/icons/delete_forever.svg"
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: -16
+                    Layout.rightMargin: 0
+                    onClicked: {
+                        root.extCommandName = ""
+                        root.extCommand = ""
+                    }
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Clear external command"
+                }
+                // external app end
+
                 Button {
                     id: buttonOpenJSDialog
                     flat: true
@@ -2549,6 +2744,21 @@ ApplicationWindow {
             var path = String(fileDialogEasylist.fileUrl)
             root.easyListPath = root.deUrlizePath(path)
             requestInterceptor.setEasyListPath(root.easyListPath)
+        }
+        onRejected: {
+        }
+    }
+
+    QQD.FileDialog {
+        id: fileDialogExtWorkingDir
+        nameFilters: []
+        title: "Please choose a working directory to run the external application"
+        selectExisting: true
+        selectFolder: true
+        onAccepted: {
+            fileDialogExtWorkingDir.close()
+            var path = String(fileDialogExtWorkingDir.fileUrl)
+            root.extWorkingDirPath = root.deUrlizePath(path)
         }
         onRejected: {
         }
