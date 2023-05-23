@@ -76,8 +76,6 @@ SOURCES +=  third_party/ad-block/ad_block_client.cc \
 
 HEADERS = third_party/ad-block/ad_block_client.h
 
-RESOURCES += easylist
-
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
 
