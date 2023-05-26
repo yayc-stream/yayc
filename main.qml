@@ -62,7 +62,7 @@ ApplicationWindow {
     property bool filesystemModelReady: false
 
     function quit() {
-        settings.sync()
+        syncAll()
         Qt.quit()
     }
 
@@ -153,6 +153,7 @@ ApplicationWindow {
     property string customScript
     property bool darkMode: true
     property bool debugMode: false
+    property real wevZoomFactor: 1.0
 
     Settings {
         id: settings
@@ -173,6 +174,7 @@ ApplicationWindow {
         property alias customScript: root.customScript
         property alias darkMode: root.darkMode
         property alias debugMode: root.debugMode
+        property alias wevZoomFactor: root.wevZoomFactor
         property var splitView
 
         Component.onCompleted: {
@@ -329,6 +331,7 @@ ApplicationWindow {
     }
 
     function syncAll() {
+        root.wevZoomFactor = webEngineView.zoomFactor
         fileSystemModel.sync()
         historyModel.sync();
         settings.sync()
@@ -1121,6 +1124,8 @@ ApplicationWindow {
                 id: webEngineView
                 url: root.url
                 property string key
+
+                zoomFactor: root.wevZoomFactor
 
                 enabled: true
                 visible: enabled

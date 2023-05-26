@@ -1814,6 +1814,7 @@ int main(int argc, char *argv[])
         qmlRegisterUncreatableType<FileSystemModel>("yayc", 1, 0,
                                                     "FileSystemModel", "Cannot create a FileSystemModel instance.");
 
+
         RequestInterceptor *interceptor = new RequestInterceptor(&engine);
         engine.rootContext()->setContextProperty("requestInterceptor", interceptor);
         engine.rootContext()->setContextProperty("appVersion", QString(appVersion()) );
