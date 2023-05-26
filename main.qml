@@ -1122,6 +1122,29 @@ ApplicationWindow {
                 url: root.url
                 property string key
 
+                enabled: true
+                visible: enabled
+                SplitView.minimumWidth: 200
+                SplitView.fillWidth: true
+                anchors {
+                    top: parent.top
+                    bottom: parent.bottom
+                }
+
+                objectName: "webEngineView"
+
+                webChannel: web_channel
+
+                profile: (typeof(root.profilePath) !== "undefined" && root.profilePath !== "")
+                         ? userProfile
+                         : inkognitoProfile
+
+                settings {
+                    autoLoadImages: true
+                    dnsPrefetchEnabled: true
+                }
+
+
                 onUrlChanged: {
                     root.addVideoEnabled = false
                     if (requestInterceptor.isYoutubeVideoUrl(url)) {
@@ -1137,6 +1160,20 @@ ApplicationWindow {
                         key = ""
                     }
                 }
+
+                userScripts: [
+                    WebEngineScript {
+                        injectionPoint: WebEngineScript.Deferred
+                        name: "QWebChannel"
+                        worldId: WebEngineScript.MainWorld
+                        sourceUrl: "qrc:/qtwebchannel/qwebchannel.js"
+                    },
+                    WebEngineScript {
+                        injectionPoint: WebEngineScript.Deferred
+                        worldId: WebEngineScript.MainWorld
+                        sourceCode: root.customScript
+                    }
+                ]
 
                 Timer {
                     id: dataPuller
@@ -1159,44 +1196,6 @@ ApplicationWindow {
                         pullTime()
                     }
                 }
-
-                enabled: true
-                visible: enabled
-                SplitView.minimumWidth: 200
-                SplitView.fillWidth: true
-                anchors {
-                    top: parent.top
-                    bottom: parent.bottom
-                }
-
-
-                objectName: "webEngineView"
-
-                webChannel: web_channel
-                userScripts: [
-                    WebEngineScript {
-                        injectionPoint: WebEngineScript.Deferred
-                        name: "QWebChannel"
-                        worldId: WebEngineScript.MainWorld
-                        sourceUrl: "qrc:/qtwebchannel/qwebchannel.js"
-                    },
-                    WebEngineScript {
-                        injectionPoint: WebEngineScript.Deferred
-                        worldId: WebEngineScript.MainWorld
-                        sourceCode: root.customScript
-                    }
-                ]
-
-                profile: (typeof(root.profilePath) !== "undefined" && root.profilePath !== "")
-                         ? userProfile
-                         : inkognitoProfile
-
-                settings {
-                    autoLoadImages: true
-                    dnsPrefetchEnabled: true
-                }
-
-
 
                 property Menu contextMenu: Menu {
                     MenuItem {
