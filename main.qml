@@ -81,7 +81,7 @@ ApplicationWindow {
         sequence: "Ctrl+P"
         onActivated: {
             if (root.debugMode) {
-                fileSystemModel.printSettingsPath()
+                utilities.printSettingsPath()
             }
         }
     }
@@ -211,10 +211,10 @@ ApplicationWindow {
     }
 
     Component.onCompleted:  {
-        requestInterceptor.networkFound.connect(onNetworkFound)
-        requestInterceptor.latestVersion.connect(onLatestVersionFound)
-        requestInterceptor.donateETag.connect(onDonateETag)
-        requestInterceptor.donateUrl.connect(onDonateUrl)
+        utilities.networkFound.connect(onNetworkFound)
+        utilities.latestVersion.connect(onLatestVersionFound)
+        utilities.donateETag.connect(onDonateETag)
+        utilities.donateUrl.connect(onDonateUrl)
         fileSystemModel.directoryLoaded.connect(onFSmodelDirectoryLoaded)
         fileSystemModel.filesAdded.connect(onFSModelFilesAdded)
         if (youtubePath !== "")
@@ -263,7 +263,7 @@ ApplicationWindow {
         running: true
         interval: 1000 * 60 * 10 // 10 min
         onTriggered: {
-            requestInterceptor.checkConnectivity()
+            utilities.checkConnectivity()
         }
     }
 
@@ -278,8 +278,8 @@ ApplicationWindow {
             }
         }
         // Kick version checker
-        requestInterceptor.getLatestVersion()
-        requestInterceptor.getDonateEtag()
+        utilities.getLatestVersion()
+        utilities.getDonateEtag()
     }
 
     function compareAppVersion(version1,version2) { // true if 1 < 2
@@ -320,7 +320,7 @@ ApplicationWindow {
         if (latestETag === root.donateUrlETag)
             return;
         root.donateUrlETag = latestETag
-        requestInterceptor.getDonateURL()
+        utilities.getDonateURL()
     }
 
     function onDonateUrl(latestDonateUrl) {
@@ -342,7 +342,7 @@ ApplicationWindow {
     }
 
     function isCurrentVideoAdded(key, trigger) {
-        if (!requestInterceptor.isYoutubeVideoUrl(webEngineView.url))
+        if (!utilities.isYoutubeVideoUrl(webEngineView.url))
             return false;
         return fileSystemModel.isVideoBookmarked(key)
     }
@@ -482,7 +482,7 @@ ApplicationWindow {
                 return
             }
             root.addVideoEnabled = true
-            if (!requestInterceptor.isYoutubeShortsUrl(webEngineView.url)) {
+            if (!utilities.isYoutubeShortsUrl(webEngineView.url)) {
                 // silently ignore
                 return;
             }
@@ -536,7 +536,7 @@ ApplicationWindow {
             }
         }
         function addCurrentVideo() {
-            if (!requestInterceptor.isYoutubeVideoUrl(webEngineView.url)) {
+            if (!utilities.isYoutubeVideoUrl(webEngineView.url)) {
                 // Q_UNREACHABLE
                 return;
             }
@@ -545,7 +545,7 @@ ApplicationWindow {
                 return
             }
 
-            if (requestInterceptor.isYoutubeShortsUrl(webEngineView.url)) {
+            if (utilities.isYoutubeShortsUrl(webEngineView.url)) {
                 fileSystemModel.addEntry(webEngineView.key,
                                          videoTitle,
                                          channelURL,
@@ -859,7 +859,7 @@ ApplicationWindow {
                                                    ? fileSystemModel.hasWorkingDir(qmodelindex, root.extWorkingDirPath)
                                                    : false
                             property bool shorts: (!styleData.hasChildren)
-                                                  ? requestInterceptor.isYoutubeShortsUrl(videoUrl)
+                                                  ? utilities.isYoutubeShortsUrl(videoUrl)
                                                   : false
 
                             onStarredChanged: {
@@ -1152,9 +1152,10 @@ ApplicationWindow {
 
                 onUrlChanged: {
                     root.addVideoEnabled = false
-                    if (requestInterceptor.isYoutubeVideoUrl(url)) {
-                        key = requestInterceptor.getVideoID(url)
-                        if (requestInterceptor.isYoutubeShortsUrl(url)) {
+                    if (utilities.isYoutubeVideoUrl(url)) {
+                        key = utilities.getVideoID(url)
+                        if (utilities.isYoutubeShortsUrl(url)) {
+                            fileSystemModel.viewEntry(key, true);
                             dataPuller.interval = 5000;
                         } else {
                             dataPuller.interval = 5000;
@@ -1190,7 +1191,7 @@ ApplicationWindow {
                         // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
                         timePuller.keyBefore = webEngineView.key
 
-                        if (requestInterceptor.isYoutubeShortsUrl(webEngineView.url)) {
+                        if (utilities.isYoutubeShortsUrl(webEngineView.url)) {
                             webEngineView.runJavaScript(internals.script_videoTitleShorts)
                         } else {
                             webEngineView.runJavaScript(internals.script_videoTime)
@@ -1207,7 +1208,7 @@ ApplicationWindow {
                         text: "Add"
                         enabled: typeof(root.lastHoveredLink) !== "undefined" && root.lastHoveredLink !== ""
                         onClicked: {
-                            var key = requestInterceptor.getVideoID(root.lastHoveredLink)
+                            var key = utilities.getVideoID(root.lastHoveredLink)
                             if (key !== "")
                                 fileSystemModel.addEntry(
                                             key,
@@ -1260,7 +1261,7 @@ ApplicationWindow {
 
                 onLinkHovered:  {
                     if (hoveredUrl.toString().length > 0
-                            && requestInterceptor.isYoutubeVideoUrl(hoveredUrl)) {
+                            && utilities.isYoutubeVideoUrl(hoveredUrl)) {
                         root.lastHoveredLink = hoveredUrl
                     }
                 }
@@ -1809,7 +1810,7 @@ ApplicationWindow {
 
                     text: root.extCommand
                     onTextChanged: {
-                        if (fileSystemModel.executableExists(text)) {
+                        if (utilities.executableExists(text)) {
                             root.extCommand = text;
                         }
                     }
@@ -1889,7 +1890,7 @@ ApplicationWindow {
                     Layout.columnSpan: 1
                     Layout.alignment: Qt.AlignVCenter
                     Layout.leftMargin: -12
-                    onClicked: fileSystemModel.clearSettings()
+                    onClicked: utilities.clearSettings()
                     hoverEnabled: true
 
                     ToolTip.visible: hovered
@@ -2226,7 +2227,7 @@ ApplicationWindow {
                                 textFormat: Text.MarkdownText
                                 readOnly: true
                                 background: null // Material style bug
-                                text: requestInterceptor.getChangelog()
+                                text: utilities.getChangelog()
                             }
                         }
                     }
@@ -2550,7 +2551,7 @@ ApplicationWindow {
                                 textFormat: Text.MarkdownText
                                 readOnly: true
                                 background: null // Material style bug
-                                text: requestInterceptor.getDisclaimer()
+                                text: utilities.getDisclaimer()
                             }
                         }
                     }
@@ -2642,20 +2643,20 @@ ApplicationWindow {
         anchors.centerIn: parent
 
         function addVideo(u) {
-            if (!requestInterceptor.isYoutubeVideoUrl(u)) {
+            if (!utilities.isYoutubeVideoUrl(u)) {
                 // Q_UNREACHABLE
                 console.log("Wrong URL fed!")
                 return;
             }
-            if (requestInterceptor.isYoutubeShortsUrl(u)) {
-                fileSystemModel.addEntry(requestInterceptor.getVideoID(u),
+            if (requestInterceputilitiestor.isYoutubeShortsUrl(u)) {
+                fileSystemModel.addEntry(utilities.getVideoID(u),
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url
                                          ""  // channel name
                                          )
             } else {
-                fileSystemModel.addEntry(requestInterceptor.getVideoID(u),
+                fileSystemModel.addEntry(utilities.getVideoID(u),
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url

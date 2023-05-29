@@ -90,6 +90,23 @@ QString videoID(const QString &key) {
 QString channelID(const QString &key) {
     return key.mid(4);
 }
+QUrl removeWww(QUrl url) {
+    QString host = url.host();
+    if (host.startsWith(QLatin1String("www."))) {
+        host = host.mid(4); // remove first 4 chars
+        url.setHost(host);
+    }
+    return url;
+}
+bool isExec(const QString &fileName) {
+    QFileInfo check_file(fileName);
+    if (check_file.exists() && check_file.isFile() && check_file.isExecutable())
+        return true; // Found!
+    return false;
+}
+QString avatarUrl(QString originalAvatarUrl) {
+    return originalAvatarUrl.replace(QLatin1String("=s48-"), QLatin1String("=s128-"));
+}
 }
 
 class Platform : public QObject {
@@ -132,6 +149,228 @@ public:
             return Platform::UNK;
         return LUT.value(host);
     }
+};
+
+class YaycUtilities : public QObject {
+    Q_OBJECT
+public:
+    YaycUtilities(QObject *parent) : QObject(parent), tcpSocket(new QTcpSocket(this)) {
+        connect(tcpSocket, &QAbstractSocket::connected, this, &YaycUtilities::onSocketConnected);
+        connect(tcpSocket, &QAbstractSocket::errorOccurred, this, &YaycUtilities::onSocketError);
+    }
+    ~YaycUtilities() override {}
+
+
+    Q_INVOKABLE bool isYoutubeVideoUrl(QUrl url) {
+        url = removeWww(url);
+        const QString surl = url.toString();
+        return (isYoutubeStandardUrl(surl) || isYoutubeShortsUrl(surl));
+    }
+
+    Q_INVOKABLE bool isYoutubeStandardUrl(QUrl url) {
+        url = removeWww(url);
+        const QString surl = url.toString();
+        return isYoutubeStandardUrl(surl);
+    }
+
+    bool isYoutubeStandardUrl(const QString &url) {
+        return url.startsWith(standardVideoPattern);
+    }
+
+    Q_INVOKABLE bool isYoutubeShortsUrl(QUrl url) {
+        url = removeWww(url);
+        const QString surl = url.toString();
+        return isYoutubeShortsUrl(surl);
+    }
+
+    bool isYoutubeShortsUrl(const QString &url) {
+        return url.startsWith(shortsVideoPattern);
+    }
+
+    Q_INVOKABLE QString getVideoID(QUrl url) {
+        url = removeWww(url);
+        const QString surl = url.toString();
+        Platform::Vendor vendor = Platform::urlToVendor(url);
+        if (vendor == Platform::UNK) {
+            Q_UNREACHABLE();
+            qWarning("Unknown Video platform");
+            return {};
+        }
+        if (vendor == Platform::YTB) {
+            if (isYoutubeStandardUrl(surl)) {
+                const QStringRef stripped = surl.midRef(standardVideoPattern.size());
+                const int idx = stripped.indexOf("&");
+                return "YTBv_" + stripped.mid(0, idx).toString();
+            } else if (isYoutubeShortsUrl(surl)) {
+                const QStringRef stripped = surl.midRef(shortsVideoPattern.size());
+                const int idx = stripped.indexOf("?");
+                return "YTBs_" + stripped.mid(0, idx).toString();
+            } else {
+                return {};
+            }
+        }
+        Q_UNREACHABLE();
+        return {}; // Error
+    }
+
+    Q_INVOKABLE QString getChangelog() {
+        static QString changelog;
+        if (changelog.isEmpty()) {
+            QFile f(":/CHANGELOG.md");
+            if (f.open(QIODevice::ReadOnly | QIODevice::Text)){
+                changelog = f.readAll();
+                f.close();
+            } else {
+                changelog = QLatin1String("Error retrieving CHANGELOG");
+            }
+        }
+        return changelog;
+    }
+
+    Q_INVOKABLE QString getDisclaimer() {
+        static QString disclaimer;
+        if (disclaimer.isEmpty()) {
+            QFile f(":/DISCLAIMER.md");
+            if (f.open(QIODevice::ReadOnly | QIODevice::Text)){
+                disclaimer = f.readAll();
+                f.close();
+            }
+        }
+        return disclaimer;
+    }
+
+    Q_INVOKABLE void checkConnectivity() {
+        tcpSocket->connectToHost("github.com", 80);
+    }
+
+    Q_INVOKABLE void getLatestVersion() {
+        QNetworkRequest request(latestReleaseVersionURL);
+        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
+                           QNetworkRequest::AlwaysNetwork);
+        QNetworkReply *reply = m_nam.get(std::move(request));
+        connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onReplyFinished);
+        // Errors cause reply to finish in any case.
+    }
+
+    Q_INVOKABLE void getDonateEtag() {
+        QNetworkRequest request(donateURL);
+        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
+                           QNetworkRequest::AlwaysNetwork);
+        QNetworkReply *reply = m_nam.head(std::move(request));
+        connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onDonateEtagReplyFinished);
+    }
+
+    Q_INVOKABLE void getDonateURL() {
+        QNetworkRequest request(donateURL);
+        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
+                           QNetworkRequest::AlwaysNetwork);
+        QNetworkReply *reply = m_nam.get(std::move(request));
+        connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onDonateReplyFinished);
+    }
+
+    // ToDo: refactor these into separate utility class
+    Q_INVOKABLE void printSettingsPath() {
+        QLoggingCategory category("qmldebug");
+        QSettings settings;
+        qCInfo(category) << "Settings path: "<< settings.fileName();
+    }
+
+    Q_INVOKABLE void restartApp(int code = EXIT_CODE_REBOOT) {
+        QTimer::singleShot(0, this,
+            [code]() {
+                auto app = QCoreApplication::instance();
+                if (!app)
+                    qFatal("QCoreAPplication::instance returned NULL");
+                app->exit(code);
+        });
+    }
+
+    Q_INVOKABLE void clearSettings() {
+        restartApp(EXIT_CODE_ERASE_SETTINGS);
+    }
+
+    Q_INVOKABLE bool executableExists(const QString &exe) const {
+        return isExec(exe);
+    }
+
+    static bool isShortVideo(const QString &fkey) {
+        if (!fkey.size())
+            return false;
+        return videoType(fkey) == QLatin1String("s_"); // strip first 3 chars
+    }
+
+    static void openInBrowser(const QString &key, const QString &extWorkingDirRoot) {
+        if (!key.size())
+            return;
+
+        QDir d(extWorkingDirRoot);
+
+        const bool exists = d.exists() && d.exists(key);
+        if (exists) {
+            if (isPlasma) {
+                // Fix for https://bugs.kde.org/show_bug.cgi?id=442721
+                // Note, xdg-open also fails.
+                QProcess::startDetached(
+                            QLatin1String("/usr/bin/dolphin"),
+                            QStringList() << QUrl::fromLocalFile(d.filePath(key)).toString(),
+                            extWorkingDirRoot);
+            } else {
+                QDesktopServices::openUrl( QUrl::fromLocalFile(d.filePath(key)) );
+            }
+        }
+    }
+
+signals:
+    void youtubeUrlRequested(const QUrl &url);
+    void networkFound();
+    void latestVersion(const QString &);
+    void donateETag(const QString &);
+    void donateUrl(const QString &);
+
+public slots:
+    void onSocketConnected() {
+        tcpSocket->close();
+        emit networkFound();
+    }
+
+    void onSocketError() {
+        tcpSocket->abort();
+    }
+
+    void onReplyFinished() {
+        QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+        if (reply) {
+            reply->deleteLater();
+            if (reply->error() == QNetworkReply::NoError)
+                emit latestVersion(QString(reply->readAll()).trimmed());
+        }
+    }
+
+    void onDonateEtagReplyFinished() {
+        static const QByteArray headerName{"ETag"};
+        QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+        if (reply) {
+            reply->deleteLater();
+            if (reply->error() == QNetworkReply::NoError
+                && reply->hasRawHeader(headerName)) {
+                emit donateETag(reply->rawHeader(headerName));
+            }
+        }
+    }
+
+    void onDonateReplyFinished() {
+        QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+        if (reply) {
+            reply->deleteLater();
+            if (reply->error() == QNetworkReply::NoError) {
+                emit donateUrl(QString(reply->readAll()).trimmed());
+            }
+        }
+    }
+
+protected:
+    QTcpSocket *tcpSocket;
+    QNetworkAccessManager m_nam;
 };
 
 struct ChannelMetadata
@@ -521,20 +760,6 @@ bool findExecLinux(const QString &name) {
     else
         return false; // Not found!
 }
-bool isExec(const QString &fileName) {
-    QFileInfo check_file(fileName);
-    if (check_file.exists() && check_file.isFile() && check_file.isExecutable())
-        return true; // Found!
-    return false;
-}
-QUrl removeWww(QUrl url) {
-    QString host = url.host();
-    if (host.startsWith(QLatin1String("www."))) {
-        host = host.mid(4); // remove first 4 chars
-        url.setHost(host);
-    }
-    return url;
-}
 QString sizeString(const QFileInfo &fi)
 {
     if (!fi.isFile())
@@ -666,10 +891,8 @@ class RequestInterceptor : public QWebEngineUrlRequestInterceptor
 {
     Q_OBJECT
 public:
-    RequestInterceptor(QObject *parent = nullptr) : QWebEngineUrlRequestInterceptor(parent), tcpSocket(new QTcpSocket(this))
+    RequestInterceptor(QObject *parent = nullptr) : QWebEngineUrlRequestInterceptor(parent)
     {
-        connect(tcpSocket, &QAbstractSocket::connected, this, &RequestInterceptor::onSocketConnected);
-        connect(tcpSocket, &QAbstractSocket::errorOccurred, this, &RequestInterceptor::onSocketError);
     }
 
     Q_INVOKABLE void setEasyListPath(QString newPath) {
@@ -702,167 +925,11 @@ public:
         }
     }
 
-    Q_INVOKABLE bool isYoutubeVideoUrl(QUrl url) {
-        url = removeWww(url);
-        const QString surl = url.toString();
-        return (isYoutubeStandardUrl(surl) || isYoutubeShortsUrl(surl));
-    }
-
-    Q_INVOKABLE bool isYoutubeStandardUrl(QUrl url) {
-        url = removeWww(url);
-        const QString surl = url.toString();
-        return isYoutubeStandardUrl(surl);
-    }
-
-    bool isYoutubeStandardUrl(const QString &url) {
-        return url.startsWith(standardVideoPattern);
-    }
-
-    Q_INVOKABLE bool isYoutubeShortsUrl(QUrl url) {
-        url = removeWww(url);
-        const QString surl = url.toString();
-        return isYoutubeShortsUrl(surl);
-    }
-
-    bool isYoutubeShortsUrl(const QString &url) {
-        return url.startsWith(shortsVideoPattern);
-    }
-
-    Q_INVOKABLE QString getVideoID(QUrl url) {
-        url = removeWww(url);
-        const QString surl = url.toString();
-        Platform::Vendor vendor = Platform::urlToVendor(url);
-        if (vendor == Platform::UNK) {
-            Q_UNREACHABLE();
-            qWarning("Unknown Video platform");
-            return {};
-        }
-        if (vendor == Platform::YTB) {
-            if (isYoutubeStandardUrl(surl)) {
-                const QStringRef stripped = surl.midRef(standardVideoPattern.size());
-                const int idx = stripped.indexOf("&");
-                return "YTBv_" + stripped.mid(0, idx).toString();
-            } else if (isYoutubeShortsUrl(surl)) {
-                const QStringRef stripped = surl.midRef(shortsVideoPattern.size());
-                const int idx = stripped.indexOf("?");
-                return "YTBs_" + stripped.mid(0, idx).toString();
-            } else {
-                return {};
-            }
-        }
-    }
-
-    Q_INVOKABLE void checkConnectivity() {
-        tcpSocket->connectToHost("github.com", 80);
-    }
-
-    Q_INVOKABLE void getLatestVersion() {
-        QNetworkRequest request(latestReleaseVersionURL);
-        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
-                           QNetworkRequest::AlwaysNetwork);
-        QNetworkReply *reply = m_nam.get(std::move(request));
-        connect(reply, &QNetworkReply::finished, this, &RequestInterceptor::onReplyFinished);
-        // Errors cause reply to finish in any case.
-    }
-
-    Q_INVOKABLE void getDonateEtag() {
-        QNetworkRequest request(donateURL);
-        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
-                           QNetworkRequest::AlwaysNetwork);
-        QNetworkReply *reply = m_nam.head(std::move(request));
-        connect(reply, &QNetworkReply::finished, this, &RequestInterceptor::onDonateEtagReplyFinished);
-    }
-
-    Q_INVOKABLE void getDonateURL() {
-        QNetworkRequest request(donateURL);
-        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
-                           QNetworkRequest::AlwaysNetwork);
-        QNetworkReply *reply = m_nam.get(std::move(request));
-        connect(reply, &QNetworkReply::finished, this, &RequestInterceptor::onDonateReplyFinished);
-    }
-
-    // ToDo: move this and the above functions to a utility object
-    Q_INVOKABLE QString getChangelog() {
-        static QString changelog;
-        if (changelog.isEmpty()) {
-            QFile f(":/CHANGELOG.md");
-            if (f.open(QIODevice::ReadOnly | QIODevice::Text)){
-                changelog = f.readAll();
-                f.close();
-            } else {
-                changelog = QLatin1String("Error retrieving CHANGELOG");
-            }
-        }
-        return changelog;
-    }
-    // ToDO: same
-    Q_INVOKABLE QString getDisclaimer() {
-        static QString disclaimer;
-        if (disclaimer.isEmpty()) {
-            QFile f(":/DISCLAIMER.md");
-            if (f.open(QIODevice::ReadOnly | QIODevice::Text)){
-                disclaimer = f.readAll();
-                f.close();
-            }
-        }
-        return disclaimer;
-    }
-
-public slots:
-    void onSocketConnected() {
-        tcpSocket->close();
-        emit networkFound();
-    }
-
-    void onSocketError() {
-        tcpSocket->abort();
-    }
-
-    void onReplyFinished() {
-        QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-        if (reply) {
-            reply->deleteLater();
-            if (reply->error() == QNetworkReply::NoError)
-                emit latestVersion(QString(reply->readAll()).trimmed());
-        }
-    }
-
-    void onDonateEtagReplyFinished() {
-        static const QByteArray headerName{"ETag"};
-        QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-        if (reply) {
-            reply->deleteLater();
-            if (reply->error() == QNetworkReply::NoError
-                && reply->hasRawHeader(headerName)) {
-                emit donateETag(reply->rawHeader(headerName));
-            }
-        }
-    }
-
-    void onDonateReplyFinished() {
-        QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-        if (reply) {
-            reply->deleteLater();
-            if (reply->error() == QNetworkReply::NoError) {
-                emit donateUrl(QString(reply->readAll()).trimmed());
-            }
-        }
-    }
-
-signals:
-    void youtubeUrlRequested(const QUrl &url);
-    void networkFound();
-    void latestVersion(const QString &);
-    void donateETag(const QString &);
-    void donateUrl(const QString &);
-
 protected:
     QAtomicInt m_loading{0};
     QString m_easyListPath;
     AdBlockClient client;
-    unsigned int blocked{0};
-    QTcpSocket *tcpSocket;
-    QNetworkAccessManager m_nam;
+//    unsigned int blocked{0};
 
 friend class EasylistLoader;
 };
@@ -1022,7 +1089,7 @@ public:
         m_proxyModel.swap(pm);
     }
 
-    ~FileSystemModel()
+    ~FileSystemModel() override
     {
     }
 
@@ -1107,27 +1174,6 @@ public:
             qFatal("Critical failure in QFileSystemModel::setRootPath");
         }
         return QModelIndex();
-    }
-
-    // ToDo: refactor these into separate utility class
-    Q_INVOKABLE void printSettingsPath() {
-        QLoggingCategory category("qmldebug");
-        QSettings settings;
-        qCInfo(category) << "Settings path: "<< settings.fileName();
-    }
-
-    Q_INVOKABLE void restartApp(int code = EXIT_CODE_REBOOT) {
-        QTimer::singleShot(0, this,
-            [code]() {
-                auto app = QCoreApplication::instance();
-                if (!app)
-                    qFatal("QCoreAPplication::instance returned NULL");
-                app->exit(code);
-        });
-    }
-
-    Q_INVOKABLE void clearSettings() {
-        restartApp(EXIT_CODE_ERASE_SETTINGS);
     }
 
     Q_INVOKABLE QString key(const QModelIndex &item) const {
@@ -1215,11 +1261,6 @@ public:
          return result;
     }
 
-    static bool isShortVideo(const QString &fkey) {
-        if (!fkey.size())
-            return false;
-        return videoType(fkey) == QLatin1String("s_"); // strip first 3 chars
-    }
 public slots:
     QString keyFromViewItem(const QModelIndex &item) const {
         if (!m_ready)
@@ -1248,33 +1289,17 @@ public slots:
         return data(item, UrlStringRole);
     }
 
-    // ToDo: Document that, for linux/kde, a workaround is needed:
-    // adding x-scheme-handler/file=org.kde.dolphin.desktop;
-    // to .config/mimeapp.list tags
     void openInBrowser(QModelIndex item, const QString &extWorkingDirRoot) {
         if (!m_ready)
             return ;
         const QString &key = keyFromViewItem(item);
         if (!key.size() || !m_cache.contains(key))
-            return ;
+            return;
 
-        QDir d(extWorkingDirRoot);
-
-        const bool exists = d.exists() && d.exists(key);
-        if (exists) {
-            if (isPlasma) {
-                // Fix for https://bugs.kde.org/show_bug.cgi?id=442721
-                // Note, xdg-open also fails.
-                QProcess::startDetached(
-                            QLatin1String("/usr/bin/dolphin"),
-                            QStringList() << QUrl::fromLocalFile(d.filePath(key)).toString(),
-                            extWorkingDirRoot);
-            } else {
-                QDesktopServices::openUrl( QUrl::fromLocalFile(d.filePath(key)) );
-            }
-        }
+        return YaycUtilities::openInBrowser(key, extWorkingDirRoot);
     }
 
+    // ToDo: move to utilities
     void openInExternalApp(QModelIndex item
                            , const QString &extCommand
                            , const QString &extWorkingDirRoot) { // ToDo: refactor this, use qfuture, track ongoing processes
@@ -1315,15 +1340,6 @@ public slots:
             auto idx = index(m_cache.value(key).filePath());
             emit dataChanged(idx, idx);
         }
-    }
-
-    bool popen(QModelIndex item) {
-        if (!m_ready)
-            return false;
-        item = m_proxyModel->mapToSource(item);
-
-        return false;
-        // ToDo: finish me. Make sure the workdir is appropriate.
     }
 
     bool deleteEntry(QModelIndex item) {
@@ -1404,7 +1420,7 @@ public slots:
         if (!m_ready)
             return false;
         const QString &key = keyFromViewItem(item);
-        return isShortVideo(key);
+        return YaycUtilities::isShortVideo(key);
     }
     bool isViewed(const QModelIndex &item) const {
         if (!m_ready)
@@ -1421,6 +1437,12 @@ public slots:
         if (viewed == currentValue)
             return;
         const QString &key = keyFromViewItem(item);
+        viewEntry(key, viewed);
+    }
+    void viewEntry(const QString &key, bool viewed) {
+        if (!m_ready)
+            return;
+
         if (!key.size() || !m_cache.contains(key))
             return;
 
@@ -1428,9 +1450,7 @@ public slots:
         auto idx = index(m_cache[key].filePath());
         emit dataChanged(idx, idx);
     }
-    bool executableExists(const QString &exe) const {
-        return isExec(exe);
-    }
+
     bool isStarred(const QModelIndex &item) const {
         if (!m_ready)
             return false;
@@ -1565,10 +1585,6 @@ public slots:
         return d.mkdir(name);
     }
 
-    QString avatarUrl(QString originalAvatarUrl) {
-        return originalAvatarUrl.replace(QLatin1String("=s48-"), QLatin1String("=s128-"));
-    }
-
     bool updateEntry(const QString &key,
                      const QString &title,
                      const QString &channelURL,
@@ -1627,7 +1643,7 @@ public slots:
                        channelAvatarURL);
         }
 
-        if (isShortVideo(key) && !channelURL.isEmpty()) {
+        if (YaycUtilities::isShortVideo(key) && !channelURL.isEmpty()) {
             m_cache[key].viewed = true;
         }
 
@@ -1816,6 +1832,9 @@ int main(int argc, char *argv[])
 
 
         RequestInterceptor *interceptor = new RequestInterceptor(&engine);
+        YaycUtilities *utilities = new YaycUtilities(&engine);
+
+        engine.rootContext()->setContextProperty("utilities", utilities);
         engine.rootContext()->setContextProperty("requestInterceptor", interceptor);
         engine.rootContext()->setContextProperty("appVersion", QString(appVersion()) );
         engine.rootContext()->setContextProperty("repositoryURL", repositoryURL );
