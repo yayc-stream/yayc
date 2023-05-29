@@ -586,11 +586,16 @@ ApplicationWindow {
                 id: treeViewContainer
 
                 property Menu contextMenu: Menu {
+                    cascade: true
                     property bool deleteCategoryItem: false
                     property bool deleteVideoItem: false
                     property var categoryIndex
                     property var videoIndex
                     property string key: ""
+                    onOpened: {
+                        // workaround for the submenu occasionally showing opened
+                        extAppMenu.close()
+                    }
 
                     function setCategoryIndex(idx) {
                         categoryIndex = idx
@@ -659,35 +664,7 @@ ApplicationWindow {
 //                        icon.source: "/icons/download_for_offline.svg"
 //                        display: MenuItem.TextBesideIcon
 //                    }
-                    MenuItem { // ToDo: replace with submenu
-                        text: "Open URL with external app"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                                 && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            fileSystemModel.openInExternalApp(treeViewContainer.contextMenu.videoIndex,
-                                                              root.extCommand,
-                                                              root.extWorkingDirPath)
-                        }
-                        icon.source: "/icons/extension.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Open containing folder"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                                 && root.extWorkingDirExists
-                                 && fileSystemModel.hasWorkingDir(treeViewContainer.contextMenu.videoIndex,
-                                                                  root.extWorkingDirPath)
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            fileSystemModel.openInBrowser(treeViewContainer.contextMenu.videoIndex,
-                                                          root.extWorkingDirPath)
-                        }
-                        icon.source: "/icons/open_in_browser.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
+
                     MenuItem {
                         TextEdit{
                             id: copyLinkClipboardProxy
@@ -761,6 +738,47 @@ ApplicationWindow {
                         }
                         icon.source: "/icons/content_paste.svg"
                         display: MenuItem.TextBesideIcon
+                    }
+                    MenuItem {
+                        text: "Open containing folder"
+                        enabled: treeViewContainer.contextMenu.deleteVideoItem
+                                 && root.extWorkingDirExists
+                                 && fileSystemModel.hasWorkingDir(treeViewContainer.contextMenu.videoIndex,
+                                                                  root.extWorkingDirPath)
+                        visible: true
+                        height: enabled ? implicitHeight : 0
+                        onClicked: {
+                            fileSystemModel.openInBrowser(treeViewContainer.contextMenu.videoIndex,
+                                                          root.extWorkingDirPath)
+                        }
+                        icon.source: "/icons/open_in_browser.svg"
+                        display: MenuItem.TextBesideIcon
+                    }
+                    Menu {
+                        id: extAppMenu
+                        title: "Launch in external app"
+                        enabled: treeViewContainer.contextMenu.deleteVideoItem
+                                 && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
+                        visible: enabled
+                        height: enabled ? implicitHeight : 0
+
+                        Repeater {
+                            model: 1
+                            MenuItem {
+                                text: root.extCommandName
+                                enabled: treeViewContainer.contextMenu.deleteVideoItem
+                                         && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
+                                visible: true
+                                height: enabled ? implicitHeight : 0
+                                onClicked: {
+                                    fileSystemModel.openInExternalApp(treeViewContainer.contextMenu.videoIndex,
+                                                                      root.extCommand,
+                                                                      root.extWorkingDirPath)
+                                }
+                                icon.source: "/icons/extension.svg"
+                                display: MenuItem.TextBesideIcon
+                            }
+                        }
                     }
                 }
 
@@ -1501,6 +1519,7 @@ ApplicationWindow {
                 rowSpacing: 16
                 columnSpacing: 16
 
+                // bookmarks
                 Image {
                     width: 32
                     height: 32
@@ -1508,6 +1527,21 @@ ApplicationWindow {
                     Layout.preferredHeight: height
                     source: "qrc:/images/youtube-128.png"
                     Layout.alignment: Qt.AlignVCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        property bool hovered: false
+                        onEntered:  hovered = true
+                        onExited: hovered = false
+
+                        ToolTip {
+                            visible: parent.hovered
+                            y: parent.height * 0.12
+                            text: "Bookmarks data path:\n" + root.youtubePath
+                            delay: 300
+                        }
+                    }
                 }
                 Label {
                     text: "Bookmarks:"
@@ -1543,9 +1577,10 @@ ApplicationWindow {
 
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
-                    ToolTip.text: "Clear bookmark data path"
+                    ToolTip.text: "Clear bookmarks data path"
                 }
 
+                // history
                 Item {
                     width: 32
                     height: 32
@@ -1562,6 +1597,21 @@ ApplicationWindow {
                         source: histimg
                         anchors.fill: histimg
                         color: "white"
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        property bool hovered: false
+                        onEntered:  hovered = true
+                        onExited: hovered = false
+
+                        ToolTip {
+                            visible: parent.hovered
+                            y: parent.height * 0.12
+                            text: "YouTube history path:\n" + root.historyPath
+                            delay: 300
+                        }
                     }
                 }
                 Label {
@@ -1601,6 +1651,7 @@ ApplicationWindow {
                     ToolTip.text: "Clear YouTube history path"
                 }
 
+                // chromium profile
                 Image {
                     width: 32
                     height: 32
@@ -1608,6 +1659,21 @@ ApplicationWindow {
                     Layout.preferredHeight: height
                     Layout.alignment: Qt.AlignVCenter
                     source: "qrc:/images/google-chrome-is.svg"
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        property bool hovered: false
+                        onEntered:  hovered = true
+                        onExited: hovered = false
+
+                        ToolTip {
+                            visible: parent.hovered
+                            y: parent.height * 0.12
+                            text: "Chromium cookies path:\n" + root.profilePath
+                            delay: 300
+                        }
+                    }
                 }
                 Label {
                     text: "Profile:"
@@ -1655,6 +1721,21 @@ ApplicationWindow {
                     Layout.preferredHeight: height
                     Layout.alignment: Qt.AlignVCenter
                     source: "qrc:/images/ad-blocker-fi-128.png"
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        property bool hovered: false
+                        onEntered:  hovered = true
+                        onExited: hovered = false
+
+                        ToolTip {
+                            visible: parent.hovered
+                            y: parent.height * 0.12
+                            text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
+                            delay: 300
+                        }
+                    }
                 }
                 Label {
                     text: "Easylist:"
@@ -1713,6 +1794,21 @@ ApplicationWindow {
                         anchors.fill: extworkdirimg
                         color: "white"
                     }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        property bool hovered: false
+                        onEntered:  hovered = true
+                        onExited: hovered = false
+
+                        ToolTip {
+                            visible: parent.hovered
+                            y: parent.height * 0.12
+                            text: "Working directory for external executable:\n" + root.extWorkingDirPath
+                            delay: 300
+                        }
+                    }
                 }
                 Label {
                     text: "Ext Working Dir:"
@@ -1754,6 +1850,7 @@ ApplicationWindow {
                 // external workdir end
 
 
+                // https://stackoverflow.com/questions/23791343/qml-repeater-for-multiple-items-without-a-wrapping-item
                 // external app
                 Item {
                     visible: root.extWorkingDirExists
