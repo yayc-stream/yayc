@@ -1005,7 +1005,8 @@ public:
         if (!thumb.size() || key.isEmpty())
             return;
         QMutexLocker locker(&m_mutex);
-        m_images[key] = QImage::fromData(thumb);
+        auto img = QImage::fromData(thumb);
+        m_images[key] = std::move(img);
     }
 
     QImage requestImage(const QString &id,
@@ -1455,6 +1456,9 @@ public slots:
         if (!m_ready)
             return false;
         const QString &key = keyFromViewItem(item);
+        return isStarred(key);
+    }
+    bool isStarred(const QString &key) const {
         if (!key.size() || !m_cache.contains(key))
             return false;
         return m_cache.value(key).starred;
@@ -1479,6 +1483,9 @@ public slots:
         if (starred == currentValue)
             return;
         const QString &key = keyFromViewItem(item);
+        starEntry(key, starred);
+    }
+    void starEntry(const QString &key, bool starred) {
         if (!key.size() || !m_cache.contains(key))
             return;
 

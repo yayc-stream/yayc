@@ -58,6 +58,7 @@ ApplicationWindow {
     property alias addVideoEnabled: buttonAddVideo.enabled
 
     property int addedVideoTrigger: 0
+    function triggerVideoAdded() { addedVideoTrigger += 1 }
     property url url: "https://youtube.com"
     property bool filesystemModelReady: false
 
@@ -560,7 +561,7 @@ ApplicationWindow {
                                          videoDuration,
                                          videoPosition)
             }
-            root.addedVideoTrigger += 1
+            root.triggerVideoAdded()
         }
     } // timePuller
 
@@ -648,7 +649,7 @@ ApplicationWindow {
                         height: enabled ? implicitHeight : 0
                         onClicked: {
                             fileSystemModel.deleteEntry(treeViewContainer.contextMenu.videoIndex)
-                            root.addedVideoTrigger += 1
+                            root.triggerVideoAdded()
                         }
                         icon.source: "/icons/remove.svg"
                         display: MenuItem.TextBesideIcon
@@ -690,6 +691,7 @@ ApplicationWindow {
                         onClicked: {
                             var starred = fileSystemModel.isStarred(treeViewContainer.contextMenu.videoIndex)
                             fileSystemModel.starEntry(treeViewContainer.contextMenu.videoIndex, !starred)
+                            buttonStarVideo.triggerStarred()
                         }
                         icon.source: "/icons/"+(fileSystemModel.isStarred(treeViewContainer.contextMenu.videoIndex)
                                                 ? "star_fill.svg" : "star.svg")
@@ -1385,6 +1387,38 @@ ApplicationWindow {
                                   : "Add Video to Bookmarks"
                     ToolTip.delay: 300
 
+                }
+                ToolButton {
+                    id: buttonStarVideo
+                    text: "Star"
+                    enabled: buttonAddVideo.currentVideoAdded
+                    visible: true
+                    onClicked: {
+                        fileSystemModel.starEntry(webEngineView.key, !starred)
+                        triggerStarred()
+                    }
+
+                    function isStarred(key, counter) {
+                        return enabled &&
+                                fileSystemModel.isStarred(key)
+                    }
+
+                    property int _starredTrigger: 0;
+                    function triggerStarred() { _starredTrigger += 1 }
+                    property bool starred: isStarred(webEngineView.key, _starredTrigger)
+
+                    icon {
+                        source: "/icons/"+(buttonStarVideo.starred
+                                                ? "star_fill.svg" : "star.svg")
+                    }
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: (starred)
+                                  ? "Unstar current video"
+                                  : "Star current video"
+                    ToolTip.delay: 300
                 }
                 ToolButton {
                     id: buttonCopyLink
