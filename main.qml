@@ -464,6 +464,10 @@ ApplicationWindow {
         property string channelAvatar
         property string keyBefore
 
+        function getCurrentVideoURL() {
+
+        }
+
         onVideoPositionChanged: {
             if (webEngineView.key != keyBefore) {
                 root.addVideoEnabled = false
@@ -1225,8 +1229,22 @@ ApplicationWindow {
 
                 property Menu contextMenu: Menu {
                     MenuItem {
-                        text: "Add"
-                        enabled: typeof(root.lastHoveredLink) !== "undefined" && root.lastHoveredLink !== ""
+                        text: currentVideoAdded ? "Added" : "Add"
+                        enabled: linkHovered && !currentVideoAdded
+
+                        property bool linkHovered: typeof(root.lastHoveredLink) !== "undefined" && root.lastHoveredLink !== ""
+                        property bool currentVideoAdded: linkHovered && fileSystemModel.isVideoBookmarked(utilities.getVideoID(root.lastHoveredLink))
+                        icon {
+                            source: "/icons/add.svg"
+                            color: (currentVideoAdded) // ToDo: deduplicate
+                                   ? (enabled)
+                                     ? properties.addedTextColor
+                                     : properties.addedDisabledTextColor
+                                   : (enabled)
+                                     ? "white"
+                                     : properties.disabledTextColor
+                        }
+
                         onClicked: {
                             var key = utilities.getVideoID(root.lastHoveredLink)
                             if (key !== "")
@@ -1237,7 +1255,6 @@ ApplicationWindow {
                                             "",
                                             "")
                         }
-                        icon.source: "/icons/add.svg"
                         display: MenuItem.TextBesideIcon
                     }
                     Repeater {
@@ -1910,46 +1927,51 @@ ApplicationWindow {
                     text: "External cmd:"
                     Layout.alignment: Qt.AlignVCenter
                 }
-                TextField {
-                    id: extCmdName
-                    focus: true
-                    selectByMouse: true
-                    font.pixelSize: properties.fsP1
-                    cursorVisible: true
-                    color: properties.textColor
-                    Layout.columnSpan: 2
-                    Layout.fillWidth: true
+                Row {
+                    Layout.columnSpan: 5
                     Layout.alignment: Qt.AlignLeft
-                    text: root.extCommandName
-                    onTextChanged: root.extCommandName = text
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Name of the external command on the menu:\n" + extCmdName.text
-
-                }
-                TextField {
-                    id: extCmdCmd
-                    focus: true
-                    selectByMouse: true
-                    font.pixelSize: properties.fsP1
-                    cursorVisible: true
-                    color: properties.textColor
-                    Layout.columnSpan: 3
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignLeft
+                    spacing: 10
+                    TextField {
+                        id: extCmdName
+                        width: 80
+                        focus: true
+                        selectByMouse: true
+                        font.pixelSize: properties.fsP1
+                        cursorVisible: true
+                        color: properties.textColor
 
-                    text: root.extCommand
-                    onTextChanged: {
-                        if (utilities.executableExists(text)) {
-                            root.extCommand = text;
-                        }
+                        text: root.extCommandName
+                        onTextChanged: root.extCommandName = text
+
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 300
+                        ToolTip.text: "Name of the external command on the menu:\n" + extCmdName.text
+
                     }
+                    TextField {
+                        id: extCmdCmd
+                        focus: true
+                        selectByMouse: true
+                        font.pixelSize: properties.fsP1
+                        cursorVisible: true
+                        color: properties.textColor
+                        Layout.fillWidth: true
 
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "External command to trigger through context menu:\n" + extCmdCmd.text
+                        width: parent.width - parent.spacing - extCmdName.width
 
+                        text: root.extCommand
+                        onTextChanged: {
+                            if (utilities.executableExists(text)) {
+                                root.extCommand = text;
+                            }
+                        }
+
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 300
+                        ToolTip.text: "External command to trigger through context menu:\n" + extCmdCmd.text
+
+                    }
                 }
                 Button {
                     flat: true
@@ -1971,10 +1993,32 @@ ApplicationWindow {
                 }
                 // external app end
 
+                Row {
+                    Layout.columnSpan: 8
+                    Layout.alignment: Qt.AlignLeft
+                    Layout.fillWidth: true
+                    CheckBox {
+                        id: darkModeCheck
+                        checked: root.darkMode
+                        text: qsTr("Dark mode (requires restart)")
+                        onCheckedChanged: {
+                            root.darkMode = checked
+                        }
+                    }
+                    CheckBox {
+                        id: debugModeCHeck
+                        checked: root.debugMode
+                        text: qsTr("Developer mode")
+                        onCheckedChanged: {
+                            root.debugMode = checked
+                        }
+                    }
+                }
                 Button {
                     id: buttonOpenJSDialog
                     flat: true
                     display: Button.TextOnly
+                    visible: root.debugMode
                     text: "Custom\nScript"
                     Layout.alignment: Qt.AlignVCenter
                     Layout.leftMargin: -12
@@ -1984,31 +2028,6 @@ ApplicationWindow {
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
                     ToolTip.text: "Edit the custom script that is run after loading a video page"
-                }
-                Row {
-                    Layout.columnSpan: 2
-                    Layout.alignment: Qt.AlignVCenter
-                    CheckBox {
-                        id: darkModeCheck
-                        checked: root.darkMode
-                        text: qsTr("Dark mode (requires restart)")
-                        onCheckedChanged: {
-                            root.darkMode = checked
-                        }
-                    }
-                }
-                Row {
-                    Layout.columnSpan: 1
-                    Layout.alignment: Qt.AlignVCenter
-
-                    CheckBox {
-                        id: debugModeCHeck
-                        checked: root.debugMode
-                        text: qsTr("Developer mode")
-                        onCheckedChanged: {
-                            root.debugMode = checked
-                        }
-                    }
                 }
                 Button {
                     id: buttonResetSettings
@@ -2029,7 +2048,8 @@ ApplicationWindow {
                     ToolTip.text: "Clear all settings (restarts YAYC)"
                 }
                 Item {
-
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: true
                 }
             } // GridLayout
 
