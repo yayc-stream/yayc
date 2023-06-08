@@ -63,6 +63,8 @@ ApplicationWindow {
     property bool filesystemModelReady: false
 
     function quit() {
+        // the setting is an alias for reloading purposes
+        settings.lastUrl = timePuller.getCurrentVideoURLWithPosition()
         syncAll()
         Qt.quit()
     }
@@ -445,6 +447,8 @@ ApplicationWindow {
                 backend.channelAvatar = activeShort.firstElementChild.firstElementChild.firstElementChild.src
 
                 backend.videoTitle = document.title;
+                backend.videoDuration = 0;
+                backend.videoPosition = 0;
                 //console.log(document.title);
             }, 100);
         "
@@ -464,8 +468,10 @@ ApplicationWindow {
         property string channelAvatar
         property string keyBefore
 
-        function getCurrentVideoURL() {
-
+        function getCurrentVideoURLWithPosition() {
+            if (root.addVideoEnabled)
+                return utilities.urlWithPosition(webEngineView.url, timePuller.videoPosition)
+            return webEngineView.url
         }
 
         onVideoPositionChanged: {

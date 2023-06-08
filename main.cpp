@@ -144,7 +144,9 @@ public:
         if (LUT.isEmpty()) {
             LUT["youtube.com"] = Platform::YTB;
         }
-        const QString host = url.host();
+        QString host = url.host();
+        if (host.startsWith("www."))
+            host = host.mid(4); // = remove first 4 chars
         if (!LUT.contains(host))
             return Platform::UNK;
         return LUT.value(host);
@@ -160,34 +162,54 @@ public:
     }
     ~YaycUtilities() override {}
 
+    Q_INVOKABLE QUrl urlWithPosition(const QString &url,
+                                 const int position) const {
+        auto vendor = Platform::urlToVendor(url);
+        if (vendor == Platform::UNK) {
+            return {}; // FixMe!
+        }
+        if (vendor == Platform::YTB) {
+            if (url.indexOf(QLatin1String("&t=")) >= 0
+                    || position == 0)
+                return url;
+            auto id = getVideoID(url);
+            if (id.isEmpty())
+                return {};
 
-    Q_INVOKABLE bool isYoutubeVideoUrl(QUrl url) {
+            return url + QLatin1String("&t=")
+                    + QString::number(int(position))
+                    + QLatin1Char('s');
+        }
+        return {};
+    }
+
+    Q_INVOKABLE bool isYoutubeVideoUrl(QUrl url) const {
         url = removeWww(url);
         const QString surl = url.toString();
         return (isYoutubeStandardUrl(surl) || isYoutubeShortsUrl(surl));
     }
 
-    Q_INVOKABLE bool isYoutubeStandardUrl(QUrl url) {
+    Q_INVOKABLE bool isYoutubeStandardUrl(QUrl url) const {
         url = removeWww(url);
         const QString surl = url.toString();
         return isYoutubeStandardUrl(surl);
     }
 
-    bool isYoutubeStandardUrl(const QString &url) {
+    bool isYoutubeStandardUrl(const QString &url) const {
         return url.startsWith(standardVideoPattern);
     }
 
-    Q_INVOKABLE bool isYoutubeShortsUrl(QUrl url) {
+    Q_INVOKABLE bool isYoutubeShortsUrl(QUrl url) const {
         url = removeWww(url);
         const QString surl = url.toString();
         return isYoutubeShortsUrl(surl);
     }
 
-    bool isYoutubeShortsUrl(const QString &url) {
+    bool isYoutubeShortsUrl(const QString &url) const {
         return url.startsWith(shortsVideoPattern);
     }
 
-    Q_INVOKABLE QString getVideoID(QUrl url) {
+    Q_INVOKABLE QString getVideoID(QUrl url) const {
         url = removeWww(url);
         const QString surl = url.toString();
         Platform::Vendor vendor = Platform::urlToVendor(url);
