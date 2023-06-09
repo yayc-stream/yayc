@@ -141,10 +141,9 @@ ApplicationWindow {
     property string easyListPath
     property string extWorkingDirPath
     property bool extWorkingDirExists: root.extWorkingDirPath !== ""
-    property string extCommand
     property bool extCommandEnabled: (root.extWorkingDirExists
-                                      && root.extCommand !== "")
-    property string extCommandName
+                                      && root.externalCommands.length > 0
+                                      && root.externalCommands[0].command !== "")
 
     property bool firstRun: true
     property bool limitationOfLiabilityAccepted: false
@@ -158,6 +157,28 @@ ApplicationWindow {
     property bool debugMode: false
     property real wevZoomFactor: 1.0
 
+    property var externalCommands: []
+    function pushEmptyCommand() {
+        var empty = {name : "", command : ""}
+        if (root.externalCommands.length !== 0
+                && root.externalCommands[root.externalCommands.length - 1].name == ""
+                && root.externalCommands[root.externalCommands.length - 1].command == "")
+            return;
+        var newCommands = root.externalCommands
+        newCommands.push(empty)
+        root.externalCommands = newCommands
+    }
+    function removeCommand(idx) {
+        var newCommands = []
+        for (var i = 0; i < root.externalCommands.length; i++) {
+            if (i !== idx)
+                newCommands.push(root.externalCommands[i])
+        }
+        root.externalCommands = newCommands
+        if (newCommands.length == 0)
+            pushEmptyCommand()
+    }
+
     Settings {
         id: settings
         property alias lolAccepted: root.limitationOfLiabilityAccepted
@@ -167,8 +188,7 @@ ApplicationWindow {
         property alias historyPath: root.historyPath
         property alias easyListPath: root.easyListPath
         property alias extWorkingDirPath: root.extWorkingDirPath
-        property alias extCommand: root.extCommand
-        property alias extCommandName: root.extCommandName
+        property alias externalCommands: root.externalCommands
         property alias lastUrl: webEngineView.url
         property alias lastestRemoteVersion: root.lastestRemoteVersion
         property alias lastVersionCheckDate: root.lastVersionCheckDate
@@ -227,6 +247,9 @@ ApplicationWindow {
         if (easyListPath !== "")
             requestInterceptor.setEasyListPath(easyListPath)
         splitView.restoreState(settings.splitView)
+        if (root.externalCommands.length == 0) {
+            root.pushEmptyCommand()
+        }
     }
     Component.onDestruction: {
         settings.splitView = splitView.saveState()
@@ -775,16 +798,16 @@ ApplicationWindow {
                         height: enabled ? implicitHeight : 0
 
                         Repeater {
-                            model: 1
+                            model: root.externalCommands
                             MenuItem {
-                                text: root.extCommandName
+                                text: root.externalCommands[index].name
                                 enabled: treeViewContainer.contextMenu.deleteVideoItem
                                          && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
                                 visible: true
                                 height: enabled ? implicitHeight : 0
                                 onClicked: {
                                     fileSystemModel.openInExternalApp(treeViewContainer.contextMenu.videoIndex,
-                                                                      root.extCommand,
+                                                                      root.externalCommands[index].command,
                                                                       root.extWorkingDirPath)
                                 }
                                 icon.source: "/icons/extension.svg"
@@ -1554,7 +1577,10 @@ ApplicationWindow {
                 Layout.alignment: Qt.AlignRight
                 Layout.rightMargin: 8
                 text: qsTr("Close")
-                onClicked: settingsMenu.close()
+                onClicked: {
+                    root.externalCommands = root.externalCommands // hack to push notifications
+                    settingsMenu.close()
+                }
 
                 hoverEnabled: true
                 ToolTip.visible: hovered
@@ -1569,457 +1595,530 @@ ApplicationWindow {
                 height: 1
                 width: settingsMenu.width - 32
             }
-
-            GridLayout {
-                width: parent.width
-                columns: 8
-                rowSpacing: 16
-                columnSpacing: 16
-
-                // bookmarks
-                Image {
-                    width: 32
-                    height: 32
-                    Layout.preferredWidth: width
-                    Layout.preferredHeight: height
-                    source: "qrc:/images/youtube-128.png"
-                    Layout.alignment: Qt.AlignVCenter
-
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        property bool hovered: false
-                        onEntered:  hovered = true
-                        onExited: hovered = false
-
-                        ToolTip {
-                            visible: parent.hovered
-                            y: parent.height * 0.12
-                            text: "Bookmarks data path:\n" + root.youtubePath
-                            delay: 300
-                        }
-                    }
-                }
-                Label {
-                    text: "Bookmarks:"
-                    Layout.alignment: Qt.AlignVCenter
-                }
-                Label {
-                    Layout.columnSpan: 4
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignLeft
-                    text: (root.youtubePath === "") ? "<undefined>" : root.youtubePath
-                }
-                Button {
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/folder_open.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    onClicked: fileDialogVideos.open()
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Bookmarks data path:\n" + root.youtubePath
-                }
-                Button {
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/delete_forever.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -16
-                    Layout.rightMargin: 0
-                    onClicked: root.youtubePath = ""
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Clear bookmarks data path"
+            Rectangle {
+                id: settingsScrollViewContainer
+                anchors {
+                    left: parent.left
+                    right: parent.right
                 }
 
-                // history
-                Item {
-                    width: 32
-                    height: 32
-                    Layout.preferredWidth: width
-                    Layout.preferredHeight: height
-                    Layout.alignment: Qt.AlignVCenter
-                    Image {
-                        id: histimg
-                        source: "/icons/history.svg"
-                        visible: false
-                        anchors.fill: parent
-                    }
-                    ColorOverlay {
-                        source: histimg
-                        anchors.fill: histimg
-                        color: "white"
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        property bool hovered: false
-                        onEntered:  hovered = true
-                        onExited: hovered = false
-
-                        ToolTip {
-                            visible: parent.hovered
-                            y: parent.height * 0.12
-                            text: "YouTube history path:\n" + root.historyPath
-                            delay: 300
-                        }
-                    }
-                }
-                Label {
-                    text: "History:"
-                    Layout.alignment: Qt.AlignVCenter
-                }
-                Label {
-                    Layout.columnSpan: 4
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignLeft
-                    text:  (root.historyPath === "") ? "<undefined>" : root.historyPath
-                }
-                Button {
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/folder_open.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    onClicked: fileDialogHistory.open()
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "YouTube history path:\n" + root.historyPath
-                }
-                Button {
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/delete_forever.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -16
-                    Layout.rightMargin: 0
-                    onClicked: root.historyPath = ""
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Clear YouTube history path"
-                }
-
-                // chromium profile
-                Image {
-                    width: 32
-                    height: 32
-                    Layout.preferredWidth: width
-                    Layout.preferredHeight: height
-                    Layout.alignment: Qt.AlignVCenter
-                    source: "qrc:/images/google-chrome-is.svg"
-
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        property bool hovered: false
-                        onEntered:  hovered = true
-                        onExited: hovered = false
-
-                        ToolTip {
-                            visible: parent.hovered
-                            y: parent.height * 0.12
-                            text: "Chromium cookies path:\n" + root.profilePath
-                            delay: 300
-                        }
-                    }
-                }
-                Label {
-                    text: "Profile:"
-                    Layout.alignment: Qt.AlignVCenter
-                }
-                Label {
-                    Layout.columnSpan: 4
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignLeft
-                    text: (root.profilePath === "") ? "<undefined>" : root.profilePath
-                }
-                Button {
-                    id: buttonOpenGProfile
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/folder_open.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    onClicked: fileDialogProfile.open()
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Chromium cookies path:\n" + root.profilePath
-                }
-                Button {
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/delete_forever.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -16
-                    Layout.rightMargin: 0
-                    onClicked: root.profilePath = ""
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Clear Chromium cookies path"
-                }
-
-                // easylist
-                Image {
-                    width: 32
-                    height: 32
-                    Layout.preferredWidth: width
-                    Layout.preferredHeight: height
-                    Layout.alignment: Qt.AlignVCenter
-                    source: "qrc:/images/ad-blocker-fi-128.png"
-
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        property bool hovered: false
-                        onEntered:  hovered = true
-                        onExited: hovered = false
-
-                        ToolTip {
-                            visible: parent.hovered
-                            y: parent.height * 0.12
-                            text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
-                            delay: 300
-                        }
-                    }
-                }
-                Label {
-                    text: "Easylist:"
-                    Layout.alignment: Qt.AlignVCenter
-                }
-                Label {
-                    Layout.columnSpan: 4
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignLeft
-                    text: (root.easyListPath === "") ? "<undefined>" : root.easyListPath
-                }
-                Button {
-                    id: buttonOpenEasylist
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/folder_open.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    onClicked: fileDialogEasylist.open()
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
-                }
-                Button {
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/delete_forever.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -16
-                    Layout.rightMargin: 0
-                    onClicked: root.easyListPath = ""
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Clear easylist path"
-                }
-                // easylist end
-
-                // external workdir
-                Item {
-                    width: 32
-                    height: 32
-                    Layout.preferredWidth: width
-                    Layout.preferredHeight: height
-                    Layout.alignment: Qt.AlignVCenter
-                    Image {
-                        id: extworkdirimg
-                        source: "/icons/exit_to_app.svg"
-                        visible: false
-                        anchors.fill: parent
-                    }
-                    ColorOverlay {
-                        source: extworkdirimg
-                        anchors.fill: extworkdirimg
-                        color: "white"
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        property bool hovered: false
-                        onEntered:  hovered = true
-                        onExited: hovered = false
-
-                        ToolTip {
-                            visible: parent.hovered
-                            y: parent.height * 0.12
-                            text: "Working directory for external executable:\n" + root.extWorkingDirPath
-                            delay: 300
-                        }
-                    }
-                }
-                Label {
-                    text: "Ext Working Dir:"
-                    Layout.alignment: Qt.AlignVCenter
-                }
-                Label {
-                    Layout.columnSpan: 4
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignLeft
-                    text: (!root.extWorkingDirExists) ? "<undefined>" : root.extWorkingDirPath
-                }
-                Button {
-                    id: buttonOpenExternalWorkingDir
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/folder_open.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    onClicked: fileDialogExtWorkingDir.open()
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Working directory for external executable:\n" + root.extWorkingDirPath
-                }
-                Button {
-                    flat: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/delete_forever.svg"
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -16
-                    Layout.rightMargin: 0
-                    onClicked: root.extWorkingDirPath = ""
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Clear external executable working directory path"
-                }
-                // external workdir end
+                height: 210
+                color: "transparent"
+                border.color: "transparent"
 
 
-                // https://stackoverflow.com/questions/23791343/qml-repeater-for-multiple-items-without-a-wrapping-item
-                // external app
-                Item {
-                    visible: root.extWorkingDirExists
-                    width: 32
-                    height: 32
-                    Layout.preferredWidth: width
-                    Layout.preferredHeight: height
-                    Layout.alignment: Qt.AlignVCenter
-                    Image {
-                        id: extcmdimg
-                        source: "/icons/extension.svg"
-                        visible: false
-                        anchors.fill: parent
-                    }
-                    ColorOverlay {
-                        source: extcmdimg
-                        anchors.fill: extcmdimg
-                        color: "white"
-                    }
-                }
-                Label {
-                    visible: root.extWorkingDirExists
-                    text: "External cmd:"
-                    Layout.alignment: Qt.AlignVCenter
-                }
-                Row {
-                    Layout.columnSpan: 5
-                    Layout.alignment: Qt.AlignLeft
-                    Layout.fillWidth: true
-                    spacing: 10
-                    TextField {
-                        id: extCmdName
-                        width: 80
-                        focus: true
-                        selectByMouse: true
-                        font.pixelSize: properties.fsP1
-                        cursorVisible: true
-                        color: properties.textColor
+                ScrollView {
+                    anchors.fill: parent
+                    clip: true
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-                        text: root.extCommandName
-                        onTextChanged: root.extCommandName = text
+                    ColumnLayout {
+                        width: settingsScrollViewContainer.width
+                        spacing: 16
+                        GridLayout {
+                            width: parent.width
+                            columns: 8
+                            rowSpacing: 16
+                            columnSpacing: 16
 
-                        ToolTip.visible: hovered
-                        ToolTip.delay: 300
-                        ToolTip.text: "Name of the external command on the menu:\n" + extCmdName.text
+                            // bookmarks
+                            Image {
+                                width: 32
+                                height: 32
+                                Layout.preferredWidth: width
+                                Layout.preferredHeight: height
+                                source: "qrc:/images/youtube-128.png"
+                                Layout.alignment: Qt.AlignVCenter
 
-                    }
-                    TextField {
-                        id: extCmdCmd
-                        focus: true
-                        selectByMouse: true
-                        font.pixelSize: properties.fsP1
-                        cursorVisible: true
-                        color: properties.textColor
-                        Layout.fillWidth: true
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    property bool hovered: false
+                                    onEntered:  hovered = true
+                                    onExited: hovered = false
 
-                        width: parent.width - parent.spacing - extCmdName.width
-
-                        text: root.extCommand
-                        onTextChanged: {
-                            if (utilities.executableExists(text)) {
-                                root.extCommand = text;
+                                    ToolTip {
+                                        visible: parent.hovered
+                                        y: parent.height * 0.12
+                                        text: "Bookmarks data path:\n" + root.youtubePath
+                                        delay: 300
+                                    }
+                                }
                             }
-                        }
+                            Label {
+                                text: "Bookmarks:"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            Label {
+                                Layout.columnSpan: 4
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignLeft
+                                text: (root.youtubePath === "") ? "<undefined>" : root.youtubePath
+                            }
+                            Button {
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/folder_open.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                onClicked: fileDialogVideos.open()
+                                hoverEnabled: true
 
-                        ToolTip.visible: hovered
-                        ToolTip.delay: 300
-                        ToolTip.text: "External command to trigger through context menu:\n" + extCmdCmd.text
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Bookmarks data path:\n" + root.youtubePath
+                            }
+                            Button {
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/delete_forever.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.leftMargin: -16
+                                Layout.rightMargin: 0
+                                onClicked: root.youtubePath = ""
+                                hoverEnabled: true
 
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Clear bookmarks data path"
+                            }
+
+                            // history
+                            Item {
+                                width: 32
+                                height: 32
+                                Layout.preferredWidth: width
+                                Layout.preferredHeight: height
+                                Layout.alignment: Qt.AlignVCenter
+                                Image {
+                                    id: histimg
+                                    source: "/icons/history.svg"
+                                    visible: false
+                                    anchors.fill: parent
+                                }
+                                ColorOverlay {
+                                    source: histimg
+                                    anchors.fill: histimg
+                                    color: "white"
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    property bool hovered: false
+                                    onEntered:  hovered = true
+                                    onExited: hovered = false
+
+                                    ToolTip {
+                                        visible: parent.hovered
+                                        y: parent.height * 0.12
+                                        text: "YouTube history path:\n" + root.historyPath
+                                        delay: 300
+                                    }
+                                }
+                            }
+                            Label {
+                                text: "History:"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            Label {
+                                Layout.columnSpan: 4
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignLeft
+                                text:  (root.historyPath === "") ? "<undefined>" : root.historyPath
+                            }
+                            Button {
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/folder_open.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                onClicked: fileDialogHistory.open()
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "YouTube history path:\n" + root.historyPath
+                            }
+                            Button {
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/delete_forever.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.leftMargin: -16
+                                Layout.rightMargin: 0
+                                onClicked: root.historyPath = ""
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Clear YouTube history path"
+                            }
+
+                            // chromium profile
+                            Image {
+                                width: 32
+                                height: 32
+                                Layout.preferredWidth: width
+                                Layout.preferredHeight: height
+                                Layout.alignment: Qt.AlignVCenter
+                                source: "qrc:/images/google-chrome-is.svg"
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    property bool hovered: false
+                                    onEntered:  hovered = true
+                                    onExited: hovered = false
+
+                                    ToolTip {
+                                        visible: parent.hovered
+                                        y: parent.height * 0.12
+                                        text: "Chromium cookies path:\n" + root.profilePath
+                                        delay: 300
+                                    }
+                                }
+                            }
+                            Label {
+                                text: "Profile:"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            Label {
+                                Layout.columnSpan: 4
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignLeft
+                                text: (root.profilePath === "") ? "<undefined>" : root.profilePath
+                            }
+                            Button {
+                                id: buttonOpenGProfile
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/folder_open.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                onClicked: fileDialogProfile.open()
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Chromium cookies path:\n" + root.profilePath
+                            }
+                            Button {
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/delete_forever.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.leftMargin: -16
+                                Layout.rightMargin: 0
+                                onClicked: root.profilePath = ""
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Clear Chromium cookies path"
+                            }
+                        } // GridLayout
+                        GridLayout {
+                            width: parent.width
+                            columns: 8
+                            rowSpacing: 16
+                            columnSpacing: 16
+                            visible: root.debugMode
+
+                            // easylist
+                            Image {
+                                width: 32
+                                height: 32
+                                Layout.preferredWidth: width
+                                Layout.preferredHeight: height
+                                Layout.alignment: Qt.AlignVCenter
+                                source: "qrc:/images/ad-blocker-fi-128.png"
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    property bool hovered: false
+                                    onEntered:  hovered = true
+                                    onExited: hovered = false
+
+                                    ToolTip {
+                                        visible: parent.hovered
+                                        y: parent.height * 0.12
+                                        text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
+                                        delay: 300
+                                    }
+                                }
+                            }
+                            Label {
+                                text: "Easylist:"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            Label {
+                                Layout.columnSpan: 4
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignLeft
+                                text: (root.easyListPath === "") ? "<undefined>" : root.easyListPath
+                            }
+                            Button {
+                                id: buttonOpenEasylist
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/folder_open.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                onClicked: fileDialogEasylist.open()
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
+                            }
+                            Button {
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/delete_forever.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.leftMargin: -16
+                                Layout.rightMargin: 0
+                                onClicked: root.easyListPath = ""
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Clear easylist path"
+                            }
+                            // easylist end
+
+                            // external workdir
+                            Item {
+                                width: 32
+                                height: 32
+                                Layout.preferredWidth: width
+                                Layout.preferredHeight: height
+                                Layout.alignment: Qt.AlignVCenter
+                                Image {
+                                    id: extworkdirimg
+                                    source: "/icons/exit_to_app.svg"
+                                    visible: false
+                                    anchors.fill: parent
+                                }
+                                ColorOverlay {
+                                    source: extworkdirimg
+                                    anchors.fill: extworkdirimg
+                                    color: "white"
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    property bool hovered: false
+                                    onEntered:  hovered = true
+                                    onExited: hovered = false
+
+                                    ToolTip {
+                                        visible: parent.hovered
+                                        y: parent.height * 0.12
+                                        text: "Working directory for external executable:\n" + root.extWorkingDirPath
+                                        delay: 300
+                                    }
+                                }
+                            }
+                            Label {
+                                text: "Ext Working Dir:"
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                            Label {
+                                Layout.columnSpan: 4
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignLeft
+                                text: (!root.extWorkingDirExists) ? "<undefined>" : root.extWorkingDirPath
+                            }
+                            Button {
+                                id: buttonOpenExternalWorkingDir
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/folder_open.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                onClicked: fileDialogExtWorkingDir.open()
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Working directory for external executable:\n" + root.extWorkingDirPath
+                            }
+                            Button {
+                                flat: true
+                                display: Button.IconOnly
+                                icon.source: "/icons/delete_forever.svg"
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.leftMargin: -16
+                                Layout.rightMargin: 0
+                                onClicked: root.extWorkingDirPath = ""
+                                hoverEnabled: true
+
+                                ToolTip.visible: hovered
+                                ToolTip.delay: 300
+                                ToolTip.text: "Clear external executable working directory path"
+                            }
+                            // external workdir end
+
+                            // external app
+                            Repeater {
+                                id: extCommandsRepeater
+                                model: root.externalCommands
+                                delegate: RowLayout {
+                                    Layout.columnSpan: 8
+                                    Layout.alignment: Qt.AlignLeft
+                                    Layout.fillWidth: true
+                                    spacing: 10
+
+                                    Item {
+                                        visible: root.extWorkingDirExists
+                                        width: 32
+                                        height: 32
+                                        Layout.preferredWidth: width
+                                        Layout.preferredHeight: height
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Image {
+                                            id: extcmdimg
+                                            source: "/icons/extension.svg"
+                                            visible: false
+                                            anchors.fill: parent
+                                        }
+                                        ColorOverlay {
+                                            source: extcmdimg
+                                            anchors.fill: extcmdimg
+                                            color: "white"
+                                        }
+                                    }
+                                    Label {
+                                        visible: root.extWorkingDirExists
+                                        text: "External cmd:"
+                                        Layout.alignment: Qt.AlignVCenter
+                                    }
+
+                                    TextField {
+                                        id: extCmdName
+                                        width: 80
+                                        focus: true
+                                        selectByMouse: true
+                                        font.pixelSize: properties.fsP1
+                                        cursorVisible: true
+                                        color: properties.textColor
+
+                                        text: modelData.name
+                                        onTextChanged: {
+                                            root.externalCommands[index].name = text
+                                        }
+
+                                        ToolTip.visible: hovered
+                                        ToolTip.delay: 300
+                                        ToolTip.text: "Name of the external command on the menu:\n" + extCmdName.text
+
+                                    }
+                                    TextField {
+                                        id: extCmdCmd
+                                        focus: true
+                                        selectByMouse: true
+                                        font.pixelSize: properties.fsP1
+                                        cursorVisible: true
+                                        color: properties.textColor
+                                        Layout.fillWidth: true
+
+                                        width: parent.width - parent.spacing - extCmdName.width
+
+                                        text: modelData.command
+                                        onTextChanged: {
+                                            if (utilities.executableExists(text)) {
+                                                root.externalCommands[index].command = text
+                                                color = properties.textColor
+                                            } else {
+                                                color = "firebrick"
+                                            }
+                                        }
+
+                                        ToolTip.visible: hovered
+                                        ToolTip.delay: 300
+                                        ToolTip.text: "External command to trigger through context menu:\n" + extCmdCmd.text
+
+                                    }
+                                    Button {
+                                        flat: true
+                                        visible: root.extWorkingDirExists
+                                        display: Button.IconOnly
+                                        icon.source: "/icons/delete_forever.svg"
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.leftMargin: -8
+                                        Layout.rightMargin: 0
+                                        onClicked: {
+                                            root.removeCommand(index)
+                                        }
+                                        hoverEnabled: true
+
+                                        ToolTip.visible: hovered
+                                        ToolTip.delay: 300
+                                        ToolTip.text: "Clear external command"
+                                    }
+                                    Button {
+                                        flat: true
+                                        visible: index === (extCommandsRepeater.count - 1)
+                                        display: Button.IconOnly
+                                        icon.source: "/icons/add.svg"
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Layout.leftMargin: -8
+                                        Layout.rightMargin: 0
+                                        onClicked: {
+                                            root.pushEmptyCommand()
+                                        }
+                                        hoverEnabled: true
+
+                                        ToolTip.visible: hovered
+                                        ToolTip.delay: 300
+                                        ToolTip.text: "Add another command"
+                                    }
+                                }
+                            }
+                            // external apps end
+                        } // GridLayout Experimental settings
+                    }
+                }
+            }
+
+            Row {
+                Layout.columnSpan: 8
+                Layout.alignment: Qt.AlignLeft
+                Layout.fillWidth: true
+                CheckBox {
+                    id: darkModeCheck
+                    checked: root.darkMode
+                    text: qsTr("Dark mode (requires restart)")
+                    onCheckedChanged: {
+                        root.darkMode = checked
+                    }
+                }
+                CheckBox {
+                    id: debugModeCHeck
+                    checked: root.debugMode
+                    text: qsTr("Developer mode")
+                    onCheckedChanged: {
+                        root.debugMode = checked
                     }
                 }
                 Button {
+                    id: buttonResetSettings
                     flat: true
-                    visible: root.extWorkingDirExists
+                    visible: root.debugMode
+                    enabled: true
                     display: Button.IconOnly
-                    icon.source: "/icons/delete_forever.svg"
+                    icon.source: "/icons/restart.svg"
+                    text: "Custom\nScript"
+                    Layout.columnSpan: 1
                     Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -16
-                    Layout.rightMargin: 0
-                    onClicked: {
-                        root.extCommandName = ""
-                        root.extCommand = ""
-                    }
+                    Layout.leftMargin: -12
+                    onClicked: utilities.clearSettings()
                     hoverEnabled: true
 
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
-                    ToolTip.text: "Clear external command"
+                    ToolTip.text: "Clear all settings (restarts YAYC)"
                 }
-                // external app end
 
-                Row {
-                    Layout.columnSpan: 8
-                    Layout.alignment: Qt.AlignLeft
-                    Layout.fillWidth: true
-                    CheckBox {
-                        id: darkModeCheck
-                        checked: root.darkMode
-                        text: qsTr("Dark mode (requires restart)")
-                        onCheckedChanged: {
-                            root.darkMode = checked
-                        }
-                    }
-                    CheckBox {
-                        id: debugModeCHeck
-                        checked: root.debugMode
-                        text: qsTr("Developer mode")
-                        onCheckedChanged: {
-                            root.debugMode = checked
-                        }
-                    }
-                }
                 Button {
                     id: buttonOpenJSDialog
                     flat: true
@@ -2035,34 +2134,18 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "Edit the custom script that is run after loading a video page"
                 }
-                Button {
-                    id: buttonResetSettings
-                    flat: true
-                    visible: root.debugMode
-                    enabled: visible
-                    display: Button.IconOnly
-                    icon.source: "/icons/restart.svg"
-                    text: "Custom\nScript"
-                    Layout.columnSpan: 1
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -12
-                    onClicked: utilities.clearSettings()
-                    hoverEnabled: true
+            }
 
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Clear all settings (restarts YAYC)"
-                }
-                Item {
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.fillWidth: true
-                }
-            } // GridLayout
+
+//            Item {
+//                Layout.alignment: Qt.AlignVCenter
+//                Layout.fillWidth: true
+//            }
 
             RowLayout {
                 Item {
                     Layout.fillWidth: true
-                    height: buttonOpenGProfile.height * 6
+                    height: newReleaseContainer.height * 1.5
                 }
 
                 Rectangle {
@@ -2101,9 +2184,9 @@ ApplicationWindow {
 
                 Item {
                     Layout.fillWidth: true
-                    height: buttonOpenGProfile.height * 6
+                    height: newReleaseContainer.height * 1.5
                 }
-            }
+            } // New Release RowLayout
 
             RowLayout {
                 ColumnLayout {
@@ -2233,8 +2316,8 @@ ApplicationWindow {
                             }
                         }
                     }
-                }
-            } // RowLayout
+                } // Support Button
+            } // About+Help+Support RowLayout
         } // ColumnLayout
     } // settingsMenu Dialog
 
