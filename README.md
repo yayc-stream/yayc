@@ -60,9 +60,10 @@ make
 
 ## Releases
 
-For the time being we provide pre-built AppImage packages for older distributions (created on Ubuntu 18.04), and a portable Win32 build.
-The AppImage we currently offer has issues on modern distributions.
-If this is your case, we encourage you to try building YAYC on your system, since modern distributions should provide all the necessary Qt 5.15 libraries, and YAYC is expected to be relatively easy to build.
+For the time being we provide a portable Win32 build.
+We will not provide pre-built AppImage packages for Linux distributions as this technology proved to be insufficient when it comes to shipping QtWebEngine and OpenSSL based applications.
+If you are using a Linux OS, we encourage you to try building YAYC on your system, since modern distributions should provide all the necessary Qt 5.15 libraries, and YAYC is expected to be relatively easy to build (see above).
+We are currently working on creating macOS binary distribution packages.
 
 ## Usage
 
