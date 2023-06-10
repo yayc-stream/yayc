@@ -364,7 +364,12 @@ ApplicationWindow {
     }
 
     function deUrlizePath(path) {
-        return path.slice(7) // strip file://
+        path = path.slice(7) // strip file://
+        if (Qt.platform.os === "windows" &&
+                path[0] === '/') {
+            path = path.slice(1)
+        }
+        return path
     }
 
     function isCurrentVideoAdded(key, trigger) {

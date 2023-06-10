@@ -924,7 +924,8 @@ public:
         if (newPath.startsWith("file://")) {
             newPath = newPath.mid(7);
 #if defined(Q_OS_WINDOWS)
-            newPath = newPath.mid(1); // Strip one more /
+            if (newPath[0] == '/')
+                newPath = newPath.mid(1); // Strip one more /
 #endif
         }
 
