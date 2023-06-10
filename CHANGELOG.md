@@ -1,3 +1,21 @@
+## YAYC v1.1.0 (2023.06) -- Luna
+
+### ✨ New Features
+
+- License upgrade: now CC-BY-NC-SA
+- Easylist support
+- Option to define custom javascript to be ran at every page load
+- Option to enable/disable dark theme (bright theme not really maintained at the present, though)
+- Switched to dense UI theme
+- Support to launch video URLs in external applications
+- Star button now also in the main toolbar
+
+### 🐞 Bug fixes
+
+- Fixed directory selection on Windows
+- Last opened video now saved/restored keeping track of progress
+
+
 ## YAYC v1.0.0 (2023.03) -- Neo
 
 ### ✨ New Features
