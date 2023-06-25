@@ -1089,7 +1089,9 @@ public:
         return QVariant::fromValue(m_proxyModel.get());
     }
 
-    explicit FileSystemModel(QString contextPropertyName, bool bookmarks, QObject *parent = nullptr)
+    explicit FileSystemModel(QString contextPropertyName,
+                             bool bookmarks,
+                             QObject *parent = nullptr)
     : QFileSystemModel(parent),
       m_bookmarksModel(bookmarks),
       m_contextPropertyName(contextPropertyName)
@@ -1143,8 +1145,10 @@ public:
         }
         if (!rootPath().isEmpty() && (rootPath() != ".")) {
             // create a new one
-            FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName, true, engine);
-            fsmodel->m_bookmarksModel = m_bookmarksModel;
+            FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName,
+                                                           m_bookmarksModel,
+                                                           engine);
+
             this->deleteLater();
             return fsmodel->setRoot(newPath);
         }
@@ -1164,6 +1168,8 @@ public:
         if (m_bookmarksModel) {
             m_root.mkdir(".channels");
             m_channelCache = cacheChannels(m_root);
+        } else {
+            qDebug() << "setRoot history model";
         }
         ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider*>(engine->imageProvider(QLatin1String("videothumbnail")));
         if (!provider) {
@@ -1287,13 +1293,7 @@ public:
 
 public slots:
     QString keyFromViewItem(const QModelIndex &item) const {
-        if (!m_ready)
-            return QLatin1String("");
-        auto index = m_proxyModel->mapToSource(item);
-        if (isDir(index)) {
-            return "";
-        }
-        return itemKey(index);
+        return key(item); // ToDo: Deduplicate!
     }
 
     QVariant videoUrl(QModelIndex item) {
@@ -1450,6 +1450,11 @@ public slots:
         if (!m_ready)
             return false;
         const QString &key = keyFromViewItem(item);
+        return isViewed(key);
+    }
+    bool isViewed(const QString &key) const {
+        if (!m_ready)
+            return false;
         if (!key.size() || !m_cache.contains(key))
             return false;
         return m_cache.value(key).viewed;
@@ -1491,7 +1496,10 @@ public slots:
         if (!m_ready)
             return false;
         const QString &key = keyFromViewItem(item);
-        if (!key.size() || !m_cache.contains(key))
+        return hasWorkingDir(key, extWorkingDirRoot);
+    }
+    bool hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
             return false;
 
         QDir d(extWorkingDirRoot);
@@ -1850,8 +1858,10 @@ int main(int argc, char *argv[])
         }, Qt::QueuedConnection);
 
 
-        FileSystemModel *fsmodel = new FileSystemModel("fileSystemModel", true, &engine);
-        FileSystemModel *historyModel = new FileSystemModel("historyModel", false, &engine);
+        FileSystemModel *historyModel =
+               new FileSystemModel("historyModel", false, &engine);
+        FileSystemModel *fsmodel =
+               new FileSystemModel("fileSystemModel", true, &engine);
 
         engine.rootContext()->setContextProperty("fileSystemModel", fsmodel);
         engine.rootContext()->setContextProperty("historyModel", historyModel);

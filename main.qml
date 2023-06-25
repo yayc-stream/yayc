@@ -242,8 +242,9 @@ ApplicationWindow {
         fileSystemModel.filesAdded.connect(onFSModelFilesAdded)
         if (youtubePath !== "")
             fileSystemModel.setRoot(youtubePath)
-        if (historyPath !== "")
+        if (historyPath !== "") {
             historyModel.setRoot(historyPath)
+        }
         if (easyListPath !== "")
             requestInterceptor.setEasyListPath(easyListPath)
         splitView.restoreState(settings.splitView)
@@ -264,8 +265,9 @@ ApplicationWindow {
 
     onHistoryPathChanged: {
         settings.sync()
-        if (historyPath !== "")
+        if (historyPath !== "") {
             historyModel.setRoot(historyPath)
+        }
     }
 
     onProfilePathChanged: {
@@ -614,570 +616,29 @@ ApplicationWindow {
         SplitView {
             id: splitView
             anchors.fill: parent
-            Rectangle {
+
+            BookmarksTreeView {
+                id: bookmarksContainer
+                historyView: false
+                width: 200
+                implicitWidth: 200
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
                 }
+            }
+            BookmarksTreeView {
+                id: historyContainer
+                visible: false
+                historyView: true
+                width: 200
                 implicitWidth: 200
-                color: "black"
-                enabled: true
-                id: treeViewContainer
-
-                property Menu contextMenu: Menu {
-                    cascade: true
-                    property bool deleteCategoryItem: false
-                    property bool deleteVideoItem: false
-                    property var categoryIndex
-                    property var videoIndex
-                    property string key: ""
-                    onOpened: {
-                        // workaround for the submenu occasionally showing opened
-                        extAppMenu.close()
-                    }
-
-                    function setCategoryIndex(idx) {
-                        categoryIndex = idx
-                        deleteCategoryItem = true
-                        deleteVideoItem = false
-                    }
-
-                    function setVideoIndex(idx) {
-                        videoIndex = idx
-                        key = fileSystemModel.keyFromViewItem(idx)
-                        deleteCategoryItem = false
-                        deleteVideoItem = true
-                    }
-
-                    MenuItem {
-                        text: "Add category"
-                        enabled: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            addCategoryDialog.open()
-                        }
-                        icon.source: "/icons/create_new_folder.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Add video"
-                        enabled: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            addVideoDialog.open()
-                        }
-                        icon.source: "/icons/add.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Delete category"
-                        enabled: treeViewContainer.contextMenu.deleteCategoryItem
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            fileSystemModel.deleteEntry(treeViewContainer.contextMenu.categoryIndex)
-                        }
-                        icon.source: "/icons/folder_delete.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Delete video"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            fileSystemModel.deleteEntry(treeViewContainer.contextMenu.videoIndex)
-                            root.triggerVideoAdded()
-                        }
-                        icon.source: "/icons/remove.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-//                    MenuItem {
-//                        text: "Download video"
-//                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-//                        visible: true
-//                        height: enabled ? implicitHeight : 0
-//                        onClicked: {
-//                            fileSystemModel.downloadEntry(treeViewContainer.contextMenu.videoIndex)
-//                        }
-//                        icon.source: "/icons/download_for_offline.svg"
-//                        display: MenuItem.TextBesideIcon
-//                    }
-
-                    MenuItem {
-                        TextEdit{
-                            id: copyLinkClipboardProxy
-                            visible: false
-                        }
-                        text: "Copy Link"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            copyLinkClipboardProxy.text = fileSystemModel.videoUrl(treeViewContainer.contextMenu.videoIndex)
-                            copyLinkClipboardProxy.selectAll();
-                            copyLinkClipboardProxy.copy()
-                        }
-                        icon.source: "/icons/content_copy.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Toggle Star"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            var starred = fileSystemModel.isStarred(treeViewContainer.contextMenu.videoIndex)
-                            fileSystemModel.starEntry(treeViewContainer.contextMenu.videoIndex, !starred)
-                            buttonStarVideo.triggerStarred()
-                        }
-                        icon.source: "/icons/"+(fileSystemModel.isStarred(treeViewContainer.contextMenu.videoIndex)
-                                                ? "star_fill.svg" : "star.svg")
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Toggle Viewed"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            var viewed = fileSystemModel.isViewed(treeViewContainer.contextMenu.videoIndex)
-                            fileSystemModel.viewEntry(treeViewContainer.contextMenu.videoIndex, !viewed)
-                        }
-                        icon.source: "/icons/"+(fileSystemModel.isViewed(treeViewContainer.contextMenu.videoIndex)
-                                                ? "check_circle_fill.svg" : "check_circle.svg")
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: (view.selectedKey !== treeViewContainer.contextMenu.key)
-                              ? "Cut"
-                              : "Un-Cut"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            if (view.selectedKey !== treeViewContainer.contextMenu.key) {
-                                view.selectedKey = treeViewContainer.contextMenu.key
-                            } else {
-                                view.selectedKey = ""
-                            }
-                        }
-                        icon.source: "/icons/content_cut.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Paste"
-                        enabled: treeViewContainer.contextMenu.deleteCategoryItem
-                                 && (view.selectedKey !== "")
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            var key = view.selectedKey
-                            view.selectedKey = ""
-                            var res = fileSystemModel.moveVideo(key, treeViewContainer.contextMenu.categoryIndex)
-                        }
-                        icon.source: "/icons/content_paste.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    MenuItem {
-                        text: "Open containing folder"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                                 && root.extWorkingDirExists
-                                 && fileSystemModel.hasWorkingDir(treeViewContainer.contextMenu.videoIndex,
-                                                                  root.extWorkingDirPath)
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            fileSystemModel.openInBrowser(treeViewContainer.contextMenu.videoIndex,
-                                                          root.extWorkingDirPath)
-                        }
-                        icon.source: "/icons/open_in_browser.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                    Menu {
-                        id: extAppMenu
-                        title: "Launch in external app"
-                        enabled: treeViewContainer.contextMenu.deleteVideoItem
-                                 && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
-                        visible: enabled
-                        height: enabled ? implicitHeight : 0
-
-                        Repeater {
-                            model: root.externalCommands
-                            MenuItem {
-                                text: root.externalCommands[index].name
-                                enabled: treeViewContainer.contextMenu.deleteVideoItem
-                                         && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
-                                visible: true
-                                height: enabled ? implicitHeight : 0
-                                onClicked: {
-                                    fileSystemModel.openInExternalApp(treeViewContainer.contextMenu.videoIndex,
-                                                                      root.externalCommands[index].command,
-                                                                      root.extWorkingDirPath)
-                                }
-                                icon.source: "/icons/extension.svg"
-                                display: MenuItem.TextBesideIcon
-                            }
-                        }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.RightButton
-                    onClicked: {
-                        if (mouse.button === Qt.RightButton) {
-                            parent.contextMenu.deleteCategoryItem = parent.contextMenu.deleteVideoItem = false
-                            parent.contextMenu.popup()
-                        }
-                    }
-                }
-
-                QC1.TreeView {
-                    id: view
-
-                    anchors.fill: parent
-                    model: (fileSystemModel) ? fileSystemModel.sortFilterProxyModel : undefined
-                    rootIndex: (fileSystemModel) ? fileSystemModel.rootPathIndex : undefined
-                    selectionMode: 0
-
-                    focus: true
-                    headerVisible: false
-                    alternatingRowColors: false
-                    backgroundVisible: false
-                    property string selectedKey: ""
-
-                    QC1.TableViewColumn {
-                        title: "Name"
-                        role: "fileName"
-                        resizable: true
-                    }
-
-                    style: QC1S.TreeViewStyle {
-                        textColor: properties.textColor
-                        highlightedTextColor: properties.textColor
-                        backgroundColor: properties.paneBackgroundColor
-                        alternateBackgroundColor: properties.paneBackgroundColor
-                        branchDelegate: Item {
-                            width: 16
-                            height: 16
-                            Image {
-                                visible: styleData.column === 0 && styleData.hasChildren
-                                anchors.fill: parent
-                                anchors.verticalCenterOffset: 2
-                                source: "qrc:/images/arrow.png"
-                                transform: Rotation {
-                                    origin.x: width / 2
-                                    origin.y: height / 2
-                                    angle: styleData.isExpanded ? 0 : -90
-                                }
-                            }
-                        }
-
-                        itemDelegate: Rectangle {
-                            id: treeViewDelegate
-                            readonly property int defaultLineHeight: 26 // turns out to be 26/28 on standard desktop, in absence of uncommon characters
-                            height: Math.round(defaultLineHeight * 1.1)
-                            border.color: (ma.drag.active)
-                                          ? "red"
-                                          : (!styleData.hasChildren && view.selectedKey === key)
-                                            ? "maroon"
-                                            : (da.hovered
-                                               ? "green"
-                                               : "transparent")
-                            border.width: 2
-                            color: (styleData.hasChildren)
-                                   ? properties.categoryBgColor
-                                   : properties.fileBgColor
-                            property var qmodelindex: styleData.index
-                            property string key: (!styleData.hasChildren)
-                                                 ? styleData.value //fileSystemModel.keyFromViewItem(qmodelindex)
-                                                 : ""
-
-                            property real duration: (!styleData.hasChildren)
-                                                    ? fileSystemModel.duration(qmodelindex)
-                                                    : 0
-                            property real progress: (!styleData.hasChildren)
-                                                    ? fileSystemModel.progress(key)
-                                                    : 0
-                            property string title: fileSystemModel.title(qmodelindex) // with key it doesn't update, somehow
-                            property bool playing: (!styleData.hasChildren)
-                                                   ? (webEngineView.key === key)
-                                                   : false
-                            property string videoUrl: (!styleData.hasChildren)
-                                                      ? fileSystemModel.videoUrl(qmodelindex)
-                                                      : ""
-                            property string videoIconUrl: (!styleData.hasChildren)
-                                                          ? fileSystemModel.videoIconUrl(qmodelindex)
-                                                          : ""
-                            property bool starred: (!styleData.hasChildren)
-                                                   ? fileSystemModel.isStarred(qmodelindex)
-                                                   : false
-                            property bool hasWorkingDir: (!styleData.hasChildren && root.extWorkingDirExists)
-                                                   ? fileSystemModel.hasWorkingDir(qmodelindex, root.extWorkingDirPath)
-                                                   : false
-                            property bool shorts: (!styleData.hasChildren)
-                                                  ? utilities.isYoutubeShortsUrl(videoUrl)
-                                                  : false
-
-                            onStarredChanged: {
-                            }
-
-                            onQmodelindexChanged: {
-                                treeViewDelegate.updateProgress()
-                            }
-
-                            function updateProgress() {
-                                if (!styleData.hasChildren && key) {
-                                    progress = fileSystemModel.progress(key)
-                                }
-                            }
-
-                            onVisibleChanged: {
-                                treeViewDelegate.updateProgress()
-                            }
-
-                            ToolTip {
-                                visible: ma.containsMouse && !styleData.hasChildren
-                                text: treeViewDelegate.title
-                                delay: 300
-                                font {
-                                    family: mainFont.name
-                                }
-
-                                Image {
-                                    id: tooltipThumbnail
-                                    visible: parent.visible
-                                    source : (visible && treeViewDelegate.key !== "") ? "image://videothumbnail/" + treeViewDelegate.key : ""
-                                    anchors.left: parent.right
-                                    anchors.leftMargin: 10
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    fillMode: Image.PreserveAspectFit
-                                    height: 128
-                                }
-                            }
-
-                            Drag.active: ma.drag.active
-                            Drag.dragType: Drag.Automatic
-                            Drag.imageSource : "qrc:/images/save.png"
-                            Image {
-                                visible: !styleData.hasChildren
-                                anchors {
-                                    left: parent.left
-                                    leftMargin: 2
-                                    top: parent.top
-                                    topMargin: 2
-                                    bottom: parent.bottom
-                                    bottomMargin: 2
-                                }
-                                source: treeViewDelegate.videoIconUrl
-
-                                fillMode: Image.PreserveAspectFit
-
-                                Image {
-                                    visible: treeViewDelegate.starred
-                                    anchors.fill: parent
-                                    source: "qrc:/images/starred.png"
-                                }
-                                Image {
-                                    visible: treeViewDelegate.hasWorkingDir
-                                    anchors.fill: parent
-                                    source: "qrc:/images/workingdirpresent.png"
-                                }
-                            }
-                            Image {
-                                visible: styleData.hasChildren
-                                anchors {
-                                    left: parent.left
-                                    leftMargin: 2
-                                    top: parent.top
-                                    topMargin: 4
-                                    bottom: parent.bottom
-                                    bottomMargin: 4
-                                }
-                                source: "qrc:/images/folder-128.png"
-                                fillMode: Image.PreserveAspectFit
-                            }
-
-                            Rectangle {
-                                id: progressBar
-                                visible: !styleData.hasChildren
-                                height: (treeViewDelegate.playing) ? 3 : 1
-                                property int totalWidth : parent.width - itemText.x
-                                property real progress: (styleData.hasChildren)
-                                                        ? 0
-                                                        : treeViewDelegate.progress
-
-                                anchors {
-                                    left: itemText.left
-                                    bottom: parent.bottom
-                                    bottomMargin: 1
-                                    right: parent.right
-                                    rightMargin: (1. - progress) * totalWidth
-                                }
-                                color: (treeViewDelegate.playing)
-                                       ? "green"
-                                       : "red"
-                            }
-
-                            Text {
-                                id: itemText
-                                verticalAlignment: Text.AlignVCenter
-                                horizontalAlignment: styleData.textAlignment
-
-                                anchors {
-                                    fill: parent
-                                    leftMargin: horizontalAlignment === Text.AlignLeft ? 24 : 1
-                                    rightMargin: horizontalAlignment === Text.AlignRight ? 8 : 1
-                                }
-                                text: styleData.hasChildren ? styleData.value : title
-                                elide: Text.ElideRight
-                                color: (!styleData.hasChildren && !treeViewDelegate.shorts &&
-                                        (treeViewDelegate.duration === 0.0))
-                                       ? properties.disabledTextColor
-                                       : textColor
-                                renderType: Text.QtRendering
-                                font {
-                                    pixelSize: properties.fsP1
-                                    family: mainFont.name
-                                }
-                            }
-                            DropArea {
-                                id: da
-                                anchors.fill: parent
-                                enabled: styleData.hasChildren && !ma.drag.active
-                                visible: enabled
-                                property bool hovered: false
-                                onEntered: {
-                                    hovered = true
-                                }
-                                onExited: {
-                                    hovered = false
-                                }
-                                onDropped:
-                                {
-                                    hovered = false
-                                    if (typeof(drag.source.key) !== "undefined") { // moving category
-                                        fileSystemModel.moveEntry(drag.source.qmodelindex, treeViewDelegate.qmodelindex)
-                                    } else {
-                                        fileSystemModel.moveVideo(drag.source.key, treeViewDelegate.qmodelindex)
-                                    }
-                                }
-                            }
-                            MouseArea {
-                                id: ma
-                                anchors.fill: parent
-                                enabled: true // !styleData.hasChildren allow categories to be moved
-                                visible: enabled
-                                drag.target: dummy
-                                drag.smoothed: false // Disable smoothed so that the Item pixel from where we started the drag remains under the mouse cursor
-                                acceptedButtons: Qt.RightButton | Qt.LeftButton
-                                hoverEnabled: true
-
-                                function contextualAction() {
-                                    if (styleData.hasChildren) {
-                                        treeViewContainer.contextMenu.setCategoryIndex(treeViewDelegate.qmodelindex)
-                                        treeViewContainer.contextMenu.popup()
-                                    } else {
-                                        treeViewContainer.contextMenu.setVideoIndex(treeViewDelegate.qmodelindex)
-                                        treeViewContainer.contextMenu.popup()
-                                    }
-                                }
-                                cursorShape: (styleData.hasChildren)
-                                             ? Qt.ArrowCursor
-                                             : Qt.PointingHandCursor
-                                onClicked: {
-                                    if (mouse.button === Qt.RightButton) {
-                                        contextualAction()
-                                    } else if (mouse.button === Qt.LeftButton) {
-                                        if (styleData.hasChildren) {
-                                            return
-                                        }
-                                        var url = treeViewDelegate.videoUrl
-                                        webEngineView.url = url;
-                                    }
-                                }
-                                pressAndHoldInterval: 1000
-                                onPressAndHold: {
-                                    contextualAction()
-                                }
-
-                                onPressed: {
-
-                                }
-
-                                onReleased: {
-
-                                }
-                                onDoubleClicked: {
-                                    if (styleData.hasChildren) {
-                                        if (view.isExpanded(treeViewDelegate.qmodelindex))
-                                            view.collapse(treeViewDelegate.qmodelindex)
-                                        else
-                                            view.expand(treeViewDelegate.qmodelindex)
-                                    }
-                                }
-                            }
-                        }
-
-                        headerDelegate: Rectangle {
-                            height: Math.round(textItem.implicitHeight * 1.2)
-                            color: "black"
-                            border.color: properties.viewBorderColor
-                            Text {
-                                id: textItem
-                                anchors.fill: parent
-                                verticalAlignment: Text.AlignVCenter
-                                horizontalAlignment: styleData.textAlignment
-                                anchors.leftMargin: horizontalAlignment === Text.AlignLeft ? 12 : 1
-                                anchors.rightMargin: horizontalAlignment === Text.AlignRight ? 8 : 1
-                                text: styleData.hasChildren ? styleData.value : title
-                                elide: Text.ElideRight
-                                color: textColor
-                                renderType: Text.QtRendering
-                            }
-                        }
-                        handle: Rectangle {
-                            implicitWidth: 20
-                            implicitHeight: 30
-                            color: "transparent"
-                            Rectangle {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                implicitWidth: 14
-                                anchors.bottom: parent.bottom
-                                anchors.top: parent.top
-                                color: properties.selectionColor
-                            }
-                        }
-                        scrollBarBackground: Rectangle {
-                            implicitWidth: 20
-                            implicitHeight: 30
-                            color: properties.paneBackgroundColor
-                        }
-                        decrementControl: Image {
-                            width: 20
-                            source: "qrc:/images/arrow.png"
-                            transform: Rotation {
-                                origin.x: width / 2
-                                origin.y: height / 2
-                                angle: 180
-                            }
-                        }
-                        incrementControl: Image {
-                            width: 20
-                            source: "qrc:/images/arrow.png"
-                        }
-                    }
-
-
-                    onActivated : {
-                        if (!styleData.hasChildren) {
-                            var url = fileSystemModel.videoUrl(index)
-                            webEngineView.url = url;
-                        }
-                    }
+                anchors {
+                    top: parent.top
+                    bottom: parent.bottom
                 }
             }
+
             WebEngineView {
                 id: webEngineView
                 url: root.url
@@ -1384,6 +845,46 @@ ApplicationWindow {
                 }
 
                 ToolButton {
+                    text: "Bookmarks"
+                    enabled: true
+                    checkable: true
+                    checked: bookmarksContainer.visible
+                    onCheckedChanged: {
+                        bookmarksContainer.visible = checked
+                    }
+
+                    icon.source: "/icons/bookmarks.svg"
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: (checked)
+                                  ? "Hide bookmarks pane"
+                                  : "Show bookmarks pane"
+                    ToolTip.delay: 300
+                }
+
+                ToolButton {
+                    text: "History"
+                    enabled: true
+                    checkable: true
+                    checked: historyContainer.visible
+                    onCheckedChanged: {
+                        historyContainer.visible = checked
+                    }
+
+                    icon.source: "/icons/event_repeat.svg"
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: (checked)
+                                  ? "Hide history pane"
+                                  : "Show history pane"
+                    ToolTip.delay: 300
+                }
+
+                ToolButton {
                     property int itemAction: webEngineView.loading ? WebEngineView.Stop : WebEngineView.Reload
                     text: webEngineView.action(itemAction).text
                     enabled: webEngineView.action(itemAction).enabled
@@ -1476,6 +977,10 @@ ApplicationWindow {
                     text: "Copy"
                     enabled: root.addVideoEnabled
                     visible: true
+                    TextEdit{
+                        id: copyLinkClipboardProxy
+                        visible: false
+                    }
                     onClicked: {
                         copyLinkClipboardProxy.text = webEngineView.url
                         copyLinkClipboardProxy.selectAll();
@@ -1605,7 +1110,7 @@ ApplicationWindow {
                 anchors {
                     left: parent.left
                     right: parent.right
-                }
+                } // ToDo: fix warning
 
                 height: 210
                 color: "transparent"
