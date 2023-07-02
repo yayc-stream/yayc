@@ -19,6 +19,7 @@ In addition to the above,
 #include <QLoggingCategory>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QtQml>
 #include <QtWebEngine/qtwebengineglobal.h>
 #include <QtWebEngine/qquickwebengineprofile.h>
 #include <QtWebEngineCore/qwebengineurlrequestinterceptor.h>
@@ -314,6 +315,8 @@ public:
     Q_INVOKABLE bool executableExists(const QString &exe) const {
         return isExec(exe);
     }
+
+    Q_INVOKABLE void fetchMissingThumbnails();
 
     static bool isShortVideo(const QString &fkey) {
         if (!fkey.size())
@@ -1064,6 +1067,76 @@ public:
     QIcon defaultIcon;
 };
 
+class FileSystemModel;
+class ThumbnailFetcher : public QObject
+{
+    Q_OBJECT
+public:
+
+    virtual ~ThumbnailFetcher() override {}
+
+    static ThumbnailFetcher & GetInstance() {
+        static ThumbnailFetcher instance;
+        return instance;
+    }
+
+    static void registerModel(FileSystemModel &model) {
+        auto &instance = GetInstance();
+        instance.m_models.insert(&model);
+    }
+
+    static void unregisterModel(FileSystemModel &model) {
+        auto &instance = GetInstance();
+        instance.m_models.remove(&model);
+    }
+
+    static void fetch(const QString &key) {
+        auto &instance = GetInstance();
+        instance.fetchThumbnail(key);
+    }
+
+    static void fetchMissing() {
+        printStats();
+        auto &instance = GetInstance();
+        instance.fetchMissingThumbnails();
+    }
+
+    static void printStats() {
+        auto &instance = GetInstance();
+        instance.fetchMissingThumbnails();
+        QLoggingCategory category("qmldebug");
+        qCInfo(category) << "Failed fetching "<< instance.m_failures << " thumbnail requests";
+        return;
+    }
+
+
+private slots:
+    void onThumbnailRequestFinished();
+    void fetchMissingThumbnails();
+
+private:
+    explicit ThumbnailFetcher(QObject * parent = nullptr) : QObject(parent) {}
+    // ToDo: support other platforms!
+    void fetchThumbnail(const QString &key)
+    {
+        auto ytKey = videoID(key);
+
+        QNetworkRequest req(QUrl(
+            QString(QLatin1String("https://img.youtube.com/vi/%1/0.jpg")).arg(ytKey)));
+        auto *reply = m_nam.get(req);
+        if (!reply)
+            qFatal("NULL QNetworkReply while retrieving thumbnails");
+        QObject::connect(reply, &QNetworkReply::finished,
+                         this, &ThumbnailFetcher::onThumbnailRequestFinished);
+        reply->setProperty("key", key);
+    }
+
+private:
+    QNetworkAccessManager m_nam;
+    QSet<FileSystemModel*> m_models;
+    int m_failures = 0;
+};
+
 class FileSystemModel : public QFileSystemModel {
     Q_OBJECT
 
@@ -1089,7 +1162,9 @@ public:
         return QVariant::fromValue(m_proxyModel.get());
     }
 
-    explicit FileSystemModel(QString contextPropertyName, bool bookmarks, QObject *parent = nullptr)
+    explicit FileSystemModel(QString contextPropertyName,
+                             bool bookmarks,
+                             QObject *parent = nullptr)
     : QFileSystemModel(parent),
       m_bookmarksModel(bookmarks),
       m_contextPropertyName(contextPropertyName)
@@ -1111,10 +1186,11 @@ public:
         QScopedPointer<NoDirSortProxyModel> pm(new NoDirSortProxyModel);
         pm->setObjectName("ProxyModel");
         m_proxyModel.swap(pm);
+        ThumbnailFetcher::registerModel(*this);
     }
 
-    ~FileSystemModel() override
-    {
+    ~FileSystemModel() override {
+        ThumbnailFetcher::unregisterModel(*this);
     }
 
     enum Roles  {
@@ -1143,8 +1219,10 @@ public:
         }
         if (!rootPath().isEmpty() && (rootPath() != ".")) {
             // create a new one
-            FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName, true, engine);
-            fsmodel->m_bookmarksModel = m_bookmarksModel;
+            FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName,
+                                                           m_bookmarksModel,
+                                                           engine);
+
             this->deleteLater();
             return fsmodel->setRoot(newPath);
         }
@@ -1164,6 +1242,8 @@ public:
         if (m_bookmarksModel) {
             m_root.mkdir(".channels");
             m_channelCache = cacheChannels(m_root);
+        } else {
+            qDebug() << "setRoot history model";
         }
         ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider*>(engine->imageProvider(QLatin1String("videothumbnail")));
         if (!provider) {
@@ -1287,13 +1367,7 @@ public:
 
 public slots:
     QString keyFromViewItem(const QModelIndex &item) const {
-        if (!m_ready)
-            return QLatin1String("");
-        auto index = m_proxyModel->mapToSource(item);
-        if (isDir(index)) {
-            return "";
-        }
-        return itemKey(index);
+        return key(item); // ToDo: Deduplicate!
     }
 
     QVariant videoUrl(QModelIndex item) {
@@ -1450,6 +1524,11 @@ public slots:
         if (!m_ready)
             return false;
         const QString &key = keyFromViewItem(item);
+        return isViewed(key);
+    }
+    bool isViewed(const QString &key) const {
+        if (!m_ready)
+            return false;
         if (!key.size() || !m_cache.contains(key))
             return false;
         return m_cache.value(key).viewed;
@@ -1491,7 +1570,10 @@ public slots:
         if (!m_ready)
             return false;
         const QString &key = keyFromViewItem(item);
-        if (!key.size() || !m_cache.contains(key))
+        return hasWorkingDir(key, extWorkingDirRoot);
+    }
+    bool hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
             return false;
 
         QDir d(extWorkingDirRoot);
@@ -1657,7 +1739,7 @@ public slots:
 
         if (!m_cache.contains(key))
             m_cache.insert(key, VideoMetadata(key, rootDirectory()));
-        if (!m_cache.value(key).thumbnail().size()) {
+        if (!m_cache.value(key).hasThumbnail()) {
             fetchThumbnail(key);
         }
         // ToDo: handle more platforms!
@@ -1687,30 +1769,6 @@ signals:
     void sortFilterProxyModelChanged();
 
 private slots:
-    void onThumbnailRequestFinished()
-    {
-        QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-        if (!reply)
-            qFatal("NULL QNetworkReply while retrieving thumbnails");
-
-        if (reply->error() == QNetworkReply::NoError ) {
-            QString key = reply->property("key").toString();
-            if (m_cache.contains(key)) {
-
-                QByteArray networkContent = reply->readAll();
-
-                m_cache[key].setThumbnail(networkContent);
-                QQmlApplicationEngine *engine = qobject_cast<QQmlApplicationEngine*>(parent());
-                ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider*>(engine->imageProvider(QLatin1String("videothumbnail")));
-                provider->insert(key, m_cache[key].thumbnail());
-            }
-        } else {
-            qWarning() << "Error while retrieving thumbnail: " << reply->errorString() << " : "
-                      << reply->url() ;
-        }
-        reply->deleteLater();
-    }
-
     void onChannelAvatarRequestFinished()
     {
         QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
@@ -1734,6 +1792,12 @@ private slots:
     }
 
 private:
+    void addThumbnail(const QString &key, const QByteArray &thumbnailData) {
+        if (m_cache.contains(key) && !m_cache[key].hasThumbnail()) {
+            m_cache[key].setThumbnail(thumbnailData);
+        }
+    }
+
     void addChannel(const QString &channelId,
                     const Platform::Vendor vendor,
                     const QString &channelName,
@@ -1781,20 +1845,60 @@ private:
         reply->setProperty("persist", persist);
     }
 
-    void fetchThumbnail(const QString &key)
-    {
-        auto ytKey = videoID(key);
-        // ToDo: support other platforms!
-        QNetworkRequest req(QUrl(
-            QString(QLatin1String("https://img.youtube.com/vi/%1/0.jpg")).arg(ytKey)));
-        auto *reply = m_nam.get(req);
-        if (!reply)
-            qFatal("NULL QNetworkReply while retrieving thumbnails");
-        QObject::connect(reply, &QNetworkReply::finished,
-                         this, &FileSystemModel::onThumbnailRequestFinished);
-        reply->setProperty("key", key);
+    void fetchThumbnail(const QString &key) {
+        ThumbnailFetcher::fetch(key);
     }
+
+friend class ThumbnailFetcher;
 }; // FileSysyemModel
+
+void ThumbnailFetcher::onThumbnailRequestFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+    if (!reply)
+        qFatal("NULL QNetworkReply while retrieving thumbnails");
+
+    if (reply->error() == QNetworkReply::NoError ) {
+        QString key = reply->property("key").toString();
+        QByteArray networkContent = reply->readAll();
+        if (networkContent.size()) {
+            for (auto &m: m_models) {
+                m->addThumbnail(key, networkContent);
+            }
+            if (m_models.size()) {
+                QQmlApplicationEngine *engine =
+                        qobject_cast<QQmlApplicationEngine*>((*m_models.begin())->parent());
+                ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider*>(engine->imageProvider(QLatin1String("videothumbnail")));
+                provider->insert(key, networkContent);
+            }
+        } else {
+            ++m_failures;
+        }
+    } else {
+        qWarning() << "Error while retrieving thumbnail: " << reply->errorString() << " : "
+                  << reply->url() ;
+        ++m_failures;
+    }
+    reply->deleteLater();
+}
+
+void ThumbnailFetcher::fetchMissingThumbnails() {
+    QSet<QString> missingKeys;
+    for (auto &m : qAsConst(m_models)) {
+        for (auto i = m->m_cache.begin(); i != m->m_cache.end(); ++i) {
+            if (!i.value().hasThumbnail())
+                missingKeys.insert(i.key());
+        }
+    }
+    for (const auto &k: missingKeys) {
+        fetchThumbnail(k);
+    }
+}
+
+void YaycUtilities::fetchMissingThumbnails()
+{
+    ThumbnailFetcher::fetchMissing();
+}
 
 int main(int argc, char *argv[])
 {
@@ -1812,8 +1916,6 @@ int main(int argc, char *argv[])
 
 
         if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
-//          qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkModeEnabled=true"); // QTBUG-84484
-//          qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--blink-settings=darkMode=4,darkModeImagePolicy=2");
             // https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
             qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
                     QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
@@ -1850,8 +1952,10 @@ int main(int argc, char *argv[])
         }, Qt::QueuedConnection);
 
 
-        FileSystemModel *fsmodel = new FileSystemModel("fileSystemModel", true, &engine);
-        FileSystemModel *historyModel = new FileSystemModel("historyModel", false, &engine);
+        FileSystemModel *historyModel =
+               new FileSystemModel("historyModel", false, &engine);
+        FileSystemModel *fsmodel =
+               new FileSystemModel("fileSystemModel", true, &engine);
 
         engine.rootContext()->setContextProperty("fileSystemModel", fsmodel);
         engine.rootContext()->setContextProperty("historyModel", historyModel);
