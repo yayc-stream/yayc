@@ -96,6 +96,13 @@ ApplicationWindow {
         }
     }
 
+    Shortcut {
+        sequence: "Ctrl+F"
+        onActivated: {
+            utilities.fetchMissingThumbnails()
+        }
+    }
+
     onClosing: {
         close.accepted = false
         root.minimizeToTray()
