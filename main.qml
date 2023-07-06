@@ -103,6 +103,21 @@ ApplicationWindow {
         }
     }
 
+    //    Shortcut {
+    //        sequence: "Ctrl+E"
+    //        onActivated: {
+    //            bookmarksContainer.expandAll()
+    //        }
+    //    }
+
+    //    Shortcut {
+    //        sequence: "Ctrl+C"
+    //        onActivated: {
+    //            bookmarksContainer.collapse()
+    //        }
+    //    }
+
+
     onClosing: {
         close.accepted = false
         root.minimizeToTray()
@@ -250,7 +265,7 @@ ApplicationWindow {
         if (youtubePath !== "")
             fileSystemModel.setRoot(youtubePath)
         if (historyPath !== "") {
-            historyModel.setRoot(historyPath)
+            setRoot(historyPath)
         }
         if (easyListPath !== "")
             requestInterceptor.setEasyListPath(easyListPath)
@@ -408,6 +423,7 @@ ApplicationWindow {
         property string labelFontFamily: "Open Sans"
         property color fileBgColor: "black"
         property color categoryBgColor: "black"
+        property color checkedButtonColor: "#EF9A9A" // Red material accent
         readonly property real fsH0: 40
         readonly property real fsH1: 34
         readonly property real fsH2: 28
@@ -633,6 +649,7 @@ ApplicationWindow {
                     top: parent.top
                     bottom: parent.bottom
                 }
+                showFiltering: bookmarksToolButton.searching
             }
             BookmarksTreeView {
                 id: historyContainer
@@ -644,6 +661,7 @@ ApplicationWindow {
                     top: parent.top
                     bottom: parent.bottom
                 }
+                showFiltering: historyToolButton.searching
             }
 
             WebEngineView {
@@ -853,34 +871,90 @@ ApplicationWindow {
 
                 ToolButton {
                     text: "Bookmarks"
+                    id: bookmarksToolButton
                     enabled: true
-                    checkable: true
-                    checked: bookmarksContainer.visible
-                    onCheckedChanged: {
-                        bookmarksContainer.visible = checked
+                    checkable: false
+                    property bool checked_: true // bypassing built in checkable to make it tristate
+                    property bool searching: false
+                    onClicked: {
+                        if (checked_)
+                            if (!searching)
+                                searching = true
+                            else
+                                checked_ = searching = false
+                        else
+                            checked_ = true
+
+                        bookmarksContainer.visible = checked_
                     }
 
-                    icon.source: "/icons/bookmarks.svg"
+                    icon {
+                        source: "/icons/bookmarks.svg"
+                        color: (checked_)
+                               ? properties.checkedButtonColor
+                               : "white"
+                    }
                     display: AbstractButton.IconOnly
 
                     hoverEnabled: true
                     ToolTip.visible: hovered
-                    ToolTip.text: (checked)
+                    ToolTip.text: (checked_)
                                   ? "Hide bookmarks pane"
                                   : "Show bookmarks pane"
                     ToolTip.delay: 300
+
+                    Image {
+                        id: bookmarksToolButtonOverlay
+                        anchors {
+                            left: parent.horizontalCenter
+                            right: parent.right
+                            top: parent.verticalCenter
+                            bottom: parent.bottom
+                            leftMargin: 4
+                            topMargin: 4
+                        }
+
+                        source: "/icons/search.svg"
+                        enabled: true
+                        visible: parent.searching
+                        z: parent.z + 1
+
+                        layer.enabled: true
+                        layer.effect: ColorOverlay {
+                            source: bookmarksToolButtonOverlay
+                            anchors.fill: bookmarksToolButtonOverlay
+                            color: "white"
+                            visible: true
+                        }
+                    }
                 }
 
                 ToolButton {
                     text: "History"
+                    id: historyToolButton
                     enabled: true
-                    checkable: true
-                    checked: historyContainer.visible
-                    onCheckedChanged: {
-                        historyContainer.visible = checked
+                    checkable: false
+                    property bool checked_: fapse // bypassing built in checkable to make it tristate
+                    property bool searching: false
+                    onClicked: {
+                        if (checked_)
+                            if (!searching)
+                                searching = true
+                            else
+                                checked_ = searching = false
+                        else
+                            checked_ = true
+
+                        historyContainer.visible = checked_
                     }
 
-                    icon.source: "/icons/event_repeat.svg"
+                    icon {
+                        source: "/icons/event_repeat.svg"
+                        color: (checked_)
+                               ? properties.checkedButtonColor
+                               : "white"
+                    }
+
                     display: AbstractButton.IconOnly
 
                     hoverEnabled: true
@@ -889,6 +963,31 @@ ApplicationWindow {
                                   ? "Hide history pane"
                                   : "Show history pane"
                     ToolTip.delay: 300
+
+                    Image {
+                        id: historyToolButtonOverlay
+                        anchors {
+                            left: parent.horizontalCenter
+                            right: parent.right
+                            top: parent.verticalCenter
+                            bottom: parent.bottom
+                            leftMargin: 4
+                            topMargin: 4
+                        }
+
+                        source: "/icons/search.svg"
+                        enabled: true
+                        visible: parent.searching
+                        z: parent.z + 1
+
+                        layer.enabled: true
+                        layer.effect: ColorOverlay {
+                            source: historyToolButtonOverlay
+                            anchors.fill: historyToolButtonOverlay
+                            color: "white"
+                            visible: true
+                        }
+                    }
                 }
 
                 ToolButton {
@@ -1150,9 +1249,9 @@ ApplicationWindow {
                                 MouseArea {
                                     anchors.fill: parent
                                     hoverEnabled: true
-                                    property bool hovered: false
-                                    onEntered:  hovered = true
-                                    onExited: hovered = false
+                                        property bool hovered: false
+                                        onEntered:  hovered = true
+                                        onExited: hovered = false
 
                                     ToolTip {
                                         visible: parent.hovered

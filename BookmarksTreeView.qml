@@ -34,6 +34,9 @@ Rectangle {
     color: "black"
     enabled: true
     id: viewContainer
+    property bool showFiltering: false
+    property bool searchInTitles: true
+    property bool searchInChannelNames: true
     property bool historyView
     property var model: (historyView === undefined) ? undefined
                             : ((historyView) ?
@@ -212,6 +215,7 @@ Rectangle {
             icon.source: "/icons/open_in_browser.svg"
             display: MenuItem.TextBesideIcon
         }
+        // ToDo: add Menu for tagging
         Menu {
             id: extAppMenu
             title: "Launch in external app"
@@ -242,8 +246,128 @@ Rectangle {
         }
     }
 
+    onSearchInTitlesChanged: model.searchInTitles = viewContainer.searchInTitles
+    onSearchInChannelNamesChanged: model.searchInChannelNames = viewContainer.searchInChannelNames
+
+    function search() {
+        viewContainer.model.searchTerm = filterTF.text
+    }
+
+    Rectangle {
+        id: filterContainer
+        color: "transparent"
+        enabled: viewContainer.showFiltering
+        visible: enabled
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: parent.top
+        }
+        height: 48
+
+        Row {
+            spacing: 4
+            TextField {
+                id: filterTF
+                width: filterContainer.width * 0.85
+                height: filterContainer.height * 0.95
+
+                selectByMouse: true
+                onAccepted: {
+                    viewContainer.search()
+                }
+            }
+            Column {
+                Image {
+                    id: filterButton
+                    source: "/icons/search.svg"
+                    height: filterContainer.height * 0.6
+                    width: height
+                    enabled: true
+                    visible: true
+                    layer.enabled: true
+                    layer.effect: ColorOverlay {
+                        source: filterButton
+                        anchors.fill: filterButton
+                        color: "white"
+                        visible: true
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+
+                        onClicked: {
+                            viewContainer.search()
+                        }
+
+                        property bool hovered: false
+                        onEntered:  hovered = true
+                        onExited: hovered = false
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Search"
+                        ToolTip.delay: 300
+                    }
+                }
+                Row {
+                    Image {
+                        id: filterButtonVideoTitle
+                        source:  "/icons/video_file.svg"
+                        height: filterContainer.height * 0.3
+                        width: height
+                        layer.enabled: true
+                        layer.mipmap: true
+                        layer.effect: ColorOverlay {
+                            color: (viewContainer.searchInTitles) ? properties.checkedButtonColor : "white"
+                            visible: true
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                viewContainer.searchInTitles = !viewContainer.searchInTitles
+                            }
+
+                            property bool hovered: false
+                            onEntered:  hovered = true
+                            onExited: hovered = false
+                            hoverEnabled: true
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Click to " + ((viewContainer.searchInTitles) ? "disable" : "enable") + " search in video titles"
+                            ToolTip.delay: 300
+                        }
+                    }
+                    Image {
+                        id: filterButtonChannelName
+                        source:  "/icons/tv_channel_media_television.svg"
+                        height: filterContainer.height * 0.3
+                        width: height
+                        layer.enabled: true
+                        layer.mipmap: true
+                        layer.effect: ColorOverlay {
+                            color: (viewContainer.searchInChannelNames) ? properties.checkedButtonColor : "white"
+                            visible: true
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                viewContainer.searchInChannelNames = !viewContainer.searchInChannelNames
+                            }
+
+                            property bool hovered: false
+                            onEntered:  hovered = true
+                            onExited: hovered = false
+                            hoverEnabled: true
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Click to " + ((viewContainer.searchInChannelNames) ? "disable" : "enable") + " search in channel names"
+                            ToolTip.delay: 300
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     MouseArea {
-        anchors.fill: parent
+        anchors.fill: view
         acceptedButtons: Qt.RightButton
         onClicked: {
             if (mouse.button === Qt.RightButton) {
@@ -253,10 +377,37 @@ Rectangle {
         }
     }
 
+    // not working apparently
+//    function expandAll() {
+//        for(var i=0; i < view.model.rowCount(); i++) {
+//            var index = view.model.index(i,0)
+//            if(!view.isExpanded(index)) {
+//                view.expand(index)
+//            }
+//        }
+//    }
+
+//    function collapse()  {
+//        for(var i=0; i < view.model.rowCount(); i++) {
+//            var index = view.model.index(i,0)
+//            if(view.isExpanded(index)) {
+//                view.collapse(index)
+//            }
+//        }
+//    }
+
     QC1.TreeView {
         id: view
 
-        anchors.fill: parent
+        anchors {
+            left: parent.left
+            right: parent.right
+            top: (viewContainer.showFiltering)
+                 ? filterContainer.bottom
+                 : parent.top
+            bottom: parent.bottom
+        }
+
         model: (viewContainer.model !== undefined)
                ? viewContainer.model.sortFilterProxyModel : undefined
         rootIndex: (viewContainer.model !== undefined)
@@ -268,6 +419,8 @@ Rectangle {
         alternatingRowColors: false
         backgroundVisible: false
         property string selectedKey: ""
+
+
 
         QC1.TableViewColumn {
             title: "Name"
@@ -373,6 +526,7 @@ Rectangle {
                         id: tooltipThumbnail
                         visible: parent.visible
                         source : (visible && treeViewDelegate.key !== "") ? "image://videothumbnail/" + treeViewDelegate.key : ""
+                        asynchronous: true
                         anchors.left: parent.right
                         anchors.leftMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
