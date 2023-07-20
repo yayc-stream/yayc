@@ -296,10 +296,13 @@ Rectangle {
         Column {
             anchors.fill: parent
             Row {
-                spacing: 4
+                spacing: 0
                 TextField {
                     id: filterTF
-                    width: filterContainer.width * 0.85
+                    width: filterContainer.width
+                           - searchColumn.width
+                           - clearSearchButton.width
+                           - parent.spacing * 2
                     height: 40
 
                     font {
@@ -311,36 +314,57 @@ Rectangle {
                         viewContainer.search()
                     }
                 }
+                ToolButton {
+                    id: clearSearchButton
+                    readonly property int buttonSize: 40
+                    height: buttonSize
+                    width: height
+                    enabled: filterTF.text !== ""
+                    checkable: false
+
+                    onClicked: {
+                        filterTF.text = ""
+                        viewContainer.search()
+                    }
+
+                    icon {
+                        height: buttonSize
+                        width: buttonSize
+                        source: "/icons/backspace.svg"
+                    }
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Clear search term"
+                    ToolTip.delay: 300
+                }
+
                 Column {
-                    Image {
+                    id: searchColumn
+
+                    ToolButton {
                         id: filterButton
-                        source: "/icons/search.svg"
-                        height: filterTF.height * 0.6
+                        readonly property int buttonSize: filterTF.height * 0.75
+                        height: buttonSize
                         width: height
-                        enabled: true
-                        visible: true
-                        layer.enabled: true
-                        layer.effect: ColorOverlay {
-                            source: filterButton
-                            anchors.fill: filterButton
-                            color: "white"
-                            visible: true
-                        }
-                        MouseArea {
-                            anchors.fill: parent
+                        checkable: false
 
-                            onClicked: {
-                                viewContainer.search()
-                            }
-
-                            property bool hovered: false
-                            onEntered:  hovered = true
-                            onExited: hovered = false
-                            hoverEnabled: true
-                            ToolTip.visible: hovered
-                            ToolTip.text: "Search"
-                            ToolTip.delay: 300
+                        onClicked: {
+                            viewContainer.search()
                         }
+
+                        icon {
+                            height: buttonSize * 2.2
+                            width: buttonSize * 2.2
+                            source: "/icons/search.svg"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Search"
+                        ToolTip.delay: 300
                     }
                     Row {
                         Image {

@@ -2039,8 +2039,8 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
 
     QString title = fsm->data(nameIndex, FileSystemModel::TitleRole).toString();
 
-    QLoggingCategory category("qmldebug");
-    qCInfo(category) << "Analyzing "<< title << " k "<<key;
+//    QLoggingCategory category("qmldebug");
+//    qCInfo(category) << "Analyzing "<< title << " k "<<key;
 
     const bool starred = fsm->isStarred(key);
     if ((starred && !m_searchInStarred) || (!starred && !m_searchInUnstarred))
@@ -2055,7 +2055,7 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
         return false;
 
 
-    const bool viewed = fsm->isViewed(key);
+    const bool viewed = !shortVideo && fsm->isViewed(key);
     if ((viewed && !m_searchInWatched) || (!viewed && !m_searchInUnwatched))
         return false;
 
