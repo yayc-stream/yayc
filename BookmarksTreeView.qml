@@ -34,6 +34,17 @@ Rectangle {
     color: "black"
     enabled: true
     id: viewContainer
+
+    property alias searchInStarred: selectorStarred.checked
+    property alias searchInUnstarred: selectorUnstarred.checked
+    property alias searchInOpened: selectorOpened.checked
+    property alias searchInUnopened: selectorUnopened.checked
+    property alias searchInWatched: selectorWatched.checked
+    property alias searchInUnwatched: selectorUnwatched.checked
+    property alias searchInSaved: selectorSaved.checked
+    property alias searchInUnsaved: selectorUnsaved.checked
+    property alias searchInShorts: selectorShorts.checked
+
     property bool showFiltering: false
     property bool searchInTitles: true
     property bool searchInChannelNames: true
@@ -246,11 +257,28 @@ Rectangle {
         }
     }
 
-    onSearchInTitlesChanged: model.searchInTitles = viewContainer.searchInTitles
-    onSearchInChannelNamesChanged: model.searchInChannelNames = viewContainer.searchInChannelNames
+    onSearchInTitlesChanged: model.sortFilterProxyModel.searchInTitles = viewContainer.searchInTitles
+    onSearchInChannelNamesChanged: model.sortFilterProxyModel.searchInChannelNames = viewContainer.searchInChannelNames
+
+    onSearchInSavedChanged: {
+        model.sortFilterProxyModel.workingDirRoot = root.extWorkingDirPath
+        model.sortFilterProxyModel.searchInSaved = viewContainer.searchInSaved;
+    }
+    onSearchInUnsavedChanged: {
+        model.sortFilterProxyModel.workingDirRoot = root.extWorkingDirPath
+        model.sortFilterProxyModel.searchInUnsaved = viewContainer.searchInUnsaved;
+    }
+    onSearchInStarredChanged: model.sortFilterProxyModel.searchInStarred = viewContainer.searchInStarred
+    onSearchInUnstarredChanged: model.sortFilterProxyModel.searchInUnstarred = viewContainer.searchInUnstarred
+    onSearchInOpenedChanged: model.sortFilterProxyModel.searchInOpened = viewContainer.searchInOpened
+    onSearchInUnopenedChanged: model.sortFilterProxyModel.searchInUnopened = viewContainer.searchInUnopened
+    onSearchInWatchedChanged: model.sortFilterProxyModel.searchInWatched = viewContainer.searchInWatched
+    onSearchInUnwatchedChanged: model.sortFilterProxyModel.searchInUnwatched = viewContainer.searchInUnwatched
+    onSearchInShortsChanged: model.sortFilterProxyModel.searchInShorts = viewContainer.searchInShorts
+
 
     function search() {
-        viewContainer.model.searchTerm = filterTF.text
+        viewContainer.model.sortFilterProxyModel.searchTerm = filterTF.text
     }
 
     Rectangle {
@@ -263,108 +291,324 @@ Rectangle {
             right: parent.right
             top: parent.top
         }
-        height: 48
+        height: 64
 
-        Row {
-            spacing: 4
-            TextField {
-                id: filterTF
-                width: filterContainer.width * 0.85
-                height: filterContainer.height * 0.95
+        Column {
+            anchors.fill: parent
+            Row {
+                spacing: 4
+                TextField {
+                    id: filterTF
+                    width: filterContainer.width * 0.85
+                    height: 40
 
-                selectByMouse: true
-                onAccepted: {
-                    viewContainer.search()
+                    font {
+                        pixelSize: 16
+                    }
+
+                    selectByMouse: true
+                    onAccepted: {
+                        viewContainer.search()
+                    }
+                }
+                Column {
+                    Image {
+                        id: filterButton
+                        source: "/icons/search.svg"
+                        height: filterTF.height * 0.6
+                        width: height
+                        enabled: true
+                        visible: true
+                        layer.enabled: true
+                        layer.effect: ColorOverlay {
+                            source: filterButton
+                            anchors.fill: filterButton
+                            color: "white"
+                            visible: true
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+
+                            onClicked: {
+                                viewContainer.search()
+                            }
+
+                            property bool hovered: false
+                            onEntered:  hovered = true
+                            onExited: hovered = false
+                            hoverEnabled: true
+                            ToolTip.visible: hovered
+                            ToolTip.text: "Search"
+                            ToolTip.delay: 300
+                        }
+                    }
+                    Row {
+                        Image {
+                            id: filterButtonVideoTitle
+                            source:  "/icons/video_file.svg"
+                            height: filterTF.height * 0.3
+                            width: height
+                            layer.enabled: true
+                            layer.mipmap: true
+                            layer.effect: ColorOverlay {
+                                color: (viewContainer.searchInTitles) ? properties.checkedButtonColor : "white"
+                                visible: true
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    viewContainer.searchInTitles = !viewContainer.searchInTitles
+                                }
+
+                                property bool hovered: false
+                                onEntered:  hovered = true
+                                onExited: hovered = false
+                                hoverEnabled: true
+                                ToolTip.visible: hovered
+                                ToolTip.text: "Click to " + ((viewContainer.searchInTitles) ? "disable" : "enable") + " search in video titles"
+                                ToolTip.delay: 300
+                            }
+                        }
+                        Image {
+                            id: filterButtonChannelName
+                            source:  "/icons/tv_channel_media_television.svg"
+                            height: filterTF.height * 0.3
+                            width: height
+                            layer.enabled: true
+                            layer.mipmap: true
+                            layer.effect: ColorOverlay {
+                                color: (viewContainer.searchInChannelNames) ? properties.checkedButtonColor : "white"
+                                visible: true
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    viewContainer.searchInChannelNames = !viewContainer.searchInChannelNames
+                                }
+
+                                property bool hovered: false
+                                onEntered:  hovered = true
+                                onExited: hovered = false
+                                hoverEnabled: true
+                                ToolTip.visible: hovered
+                                ToolTip.text: "Click to " + ((viewContainer.searchInChannelNames) ? "disable" : "enable") + " search in channel names"
+                                ToolTip.delay: 300
+                            }
+                        }
+                    }
                 }
             }
-            Column {
-                Image {
-                    id: filterButton
-                    source: "/icons/search.svg"
-                    height: filterContainer.height * 0.6
-                    width: height
-                    enabled: true
-                    visible: true
-                    layer.enabled: true
-                    layer.effect: ColorOverlay {
-                        source: filterButton
-                        anchors.fill: filterButton
-                        color: "white"
-                        visible: true
-                    }
-                    MouseArea {
-                        anchors.fill: parent
 
-                        onClicked: {
-                            viewContainer.search()
+            ToolBar {
+
+                height: 16
+                width: filterContainer.width
+
+                background: Rectangle {
+                        height: 16
+                        width: filterContainer.width
+                        color: "transparent"
+                }
+
+                Row {
+                    height: buttonSize * .5
+                    topPadding: buttonSize * -.25
+                    leftPadding: -4
+                    spacing: -8
+                    readonly property int buttonSize: 30
+
+                    ToolButton {
+                        id: selectorUnstarred
+                        height: parent.buttonSize
+                        width: height
+                        enabled: true
+                        checkable: true
+                        checked: true
+
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/icons/star.svg"
                         }
+                        display: AbstractButton.IconOnly
 
-                        property bool hovered: false
-                        onEntered:  hovered = true
-                        onExited: hovered = false
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: "Search"
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " unstarred"
                         ToolTip.delay: 300
                     }
-                }
-                Row {
-                    Image {
-                        id: filterButtonVideoTitle
-                        source:  "/icons/video_file.svg"
-                        height: filterContainer.height * 0.3
+                    ToolButton {
+                        id: selectorStarred
+                        height: parent.buttonSize
                         width: height
-                        layer.enabled: true
-                        layer.mipmap: true
-                        layer.effect: ColorOverlay {
-                            color: (viewContainer.searchInTitles) ? properties.checkedButtonColor : "white"
-                            visible: true
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                viewContainer.searchInTitles = !viewContainer.searchInTitles
-                            }
+                        enabled: true
+                        checkable: true
+                        checked: true
 
-                            property bool hovered: false
-                            onEntered:  hovered = true
-                            onExited: hovered = false
-                            hoverEnabled: true
-                            ToolTip.visible: hovered
-                            ToolTip.text: "Click to " + ((viewContainer.searchInTitles) ? "disable" : "enable") + " search in video titles"
-                            ToolTip.delay: 300
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/icons/star_fill.svg"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " starred"
+                        ToolTip.delay: 300
+                    }
+                    ToolButton {
+                        id: selectorUnopened
+                        height: parent.buttonSize
+                        width: height
+                        enabled: true
+                        checkable: true
+                        checked: true
+
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/icons/door_closed.svg"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " unopened"
+                        ToolTip.delay: 300
+                    }
+                    ToolButton {
+                        id: selectorOpened
+                        height: parent.buttonSize
+                        width: height
+                        enabled: true
+                        checkable: true
+                        checked: true
+
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/icons/door_open.svg"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " opened"
+                        ToolTip.delay: 300
+                    }
+                    ToolButton {
+                        id: selectorUnwatched
+                        height: parent.buttonSize
+                        width: height
+                        enabled: true
+                        checkable: true
+                        checked: true
+
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/images/video.png"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " unwatched"
+                        ToolTip.delay: 300
+                    }
+                    ToolButton {
+                        id: selectorWatched
+                        height: parent.buttonSize
+                        width: height
+                        enabled: true
+                        checkable: true
+                        checked: true
+
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/images/videoChecked.png"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " Watched"
+                        ToolTip.delay: 300
+
+                        Image {
+                            anchors.centerIn: parent
+                            source: "/images/Checked.png"
+                            width: parent.width * .6
+                            height: parent.height * .6
+                            z: parent.z + 1
                         }
                     }
-                    Image {
-                        id: filterButtonChannelName
-                        source:  "/icons/tv_channel_media_television.svg"
-                        height: filterContainer.height * 0.3
+                    ToolButton {
+                        id: selectorShorts
+                        height: parent.buttonSize
                         width: height
-                        layer.enabled: true
-                        layer.mipmap: true
-                        layer.effect: ColorOverlay {
-                            color: (viewContainer.searchInChannelNames) ? properties.checkedButtonColor : "white"
-                            visible: true
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                viewContainer.searchInChannelNames = !viewContainer.searchInChannelNames
-                            }
+                        enabled: true
+                        checkable: true
+                        checked: true
 
-                            property bool hovered: false
-                            onEntered:  hovered = true
-                            onExited: hovered = false
-                            hoverEnabled: true
-                            ToolTip.visible: hovered
-                            ToolTip.text: "Click to " + ((viewContainer.searchInChannelNames) ? "disable" : "enable") + " search in channel names"
-                            ToolTip.delay: 300
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/images/short.png"
                         }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " Shorts"
+                        ToolTip.delay: 300
                     }
-                }
-            }
-        }
-    }
+                    ToolButton {
+                        id: selectorSaved
+                        height: parent.buttonSize
+                        width: height
+                        enabled: true
+                        checkable: true
+                        checked: true
+
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/icons/snippet_folder.svg"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " videos with storage data"
+                        ToolTip.delay: 300
+                    }
+                    ToolButton {
+                        id: selectorUnsaved
+                        height: parent.buttonSize
+                        width: height
+                        enabled: true
+                        checkable: true
+                        checked: true
+
+                        icon {
+                            height: parent.buttonSize
+                            width: parent.buttonSize
+                            source: "/icons/scan_delete.svg"
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " videos without storage data"
+                        ToolTip.delay: 300
+                    }
+                } // RowLayout
+            } // ToolBar
+        } // Column
+    } // Rectangle
 
     MouseArea {
         anchors.fill: view

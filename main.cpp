@@ -980,11 +980,86 @@ void EasylistLoader::run()
 
 
 class NoDirSortProxyModel : public QSortFilterProxyModel {
-public:
+    Q_OBJECT
+
+    QString m_searchTerm;
     bool m_searchInTitles{true};
     bool m_searchInChannelNames{true};
 
-    NoDirSortProxyModel() = default;
+    bool m_searchInStarred{true};
+    bool m_searchInUnstarred{true};
+    bool m_searchInOpened{true};
+    bool m_searchInUnopened{true};
+    bool m_searchInWatched{true};
+    bool m_searchInUnwatched{true};
+    bool m_searchInSaved{true};
+    bool m_searchInUnsaved{true};
+    bool m_searchInShorts{true};
+    QString m_workingDirRoot;
+
+    Q_PROPERTY(QString searchTerm READ searchTerm WRITE setSearchTerm NOTIFY searchTermChanged)
+    Q_PROPERTY(bool searchInTitles READ searchInTitles WRITE setSearchInTitles NOTIFY searchInTitlesChanged)
+    Q_PROPERTY(bool searchInChannelNames READ searchInChannelNames WRITE setSearchInChannelNames NOTIFY searchInChannelNamesChanged)
+
+    Q_PROPERTY(bool searchInStarred MEMBER m_searchInStarred NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnstarred MEMBER m_searchInUnstarred NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInOpened MEMBER m_searchInOpened NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnopened MEMBER m_searchInUnopened NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInWatched MEMBER m_searchInWatched NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnwatched MEMBER m_searchInUnwatched NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInSaved MEMBER m_searchInSaved NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnsaved MEMBER m_searchInUnsaved NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInShorts MEMBER m_searchInShorts NOTIFY searchParametersChanged)
+    Q_PROPERTY(QString workingDirRoot MEMBER m_workingDirRoot NOTIFY searchParametersChanged)
+
+public:
+    QString searchTerm() const {
+        return m_searchTerm;
+    }
+
+    void setSearchTerm(const QString &term) {
+        if (term == m_searchTerm)
+            return;
+
+        m_searchTerm = term;
+        updateSearchTerm();
+
+        emit searchTermChanged();
+    }
+
+    bool searchInTitles() const {
+        return m_searchInTitles;
+    }
+
+    void setSearchInTitles(bool enabled) {
+        if (enabled == m_searchInTitles)
+            return;
+
+        m_searchInTitles = enabled;
+        updateSearchTerm();
+        emit searchInTitlesChanged();
+    }
+
+    bool searchInChannelNames() const {
+        return m_searchInChannelNames;
+    }
+
+    void setSearchInChannelNames(bool enabled) {
+        if (enabled == m_searchInChannelNames)
+            return;
+
+        m_searchInChannelNames = enabled;
+        updateSearchTerm();
+
+        emit searchInChannelNamesChanged();
+    }
+
+
+    NoDirSortProxyModel() : QSortFilterProxyModel() {
+        connect(this, &NoDirSortProxyModel::searchParametersChanged, [&]() {
+                    updateSearchTerm();
+                });
+    }
     ~NoDirSortProxyModel() override {};
 
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override
@@ -1018,6 +1093,21 @@ public:
         // uses file modification date, i believe
         return QSortFilterProxyModel::lessThan(left, right);
     }
+
+    void updateSearchTerm() {
+        QString pattern;
+        if (!m_searchTerm.isEmpty())
+            pattern = "*" + m_searchTerm + "*";
+
+        setFilterRegExp(QRegExp(pattern, Qt::CaseInsensitive,
+                                              QRegExp::WildcardUnix));
+    }
+
+signals:
+    void searchTermChanged();
+    void searchInTitlesChanged();
+    void searchInChannelNamesChanged();
+    void searchParametersChanged();
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
@@ -1155,18 +1245,14 @@ class FileSystemModel : public QFileSystemModel {
     QModelIndex m_rootPathIndex;
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
-    QString m_searchTerm;
-    bool m_searchInTitles{true};
-    bool m_searchInChannelNames{true};
+
     QNetworkAccessManager m_nam;
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
 
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
-    Q_PROPERTY(QString searchTerm READ searchTerm WRITE setSearchTerm NOTIFY searchTermChanged)
-    Q_PROPERTY(bool searchInTitles READ searchInTitles WRITE setSearchInTitles NOTIFY searchInTitlesChanged)
-    Q_PROPERTY(bool searchInChannelNames READ searchInChannelNames WRITE setSearchInChannelNames NOTIFY searchInChannelNamesChanged)
+
 public:
     QVariant rootPathIndex() const {
         return QVariant::fromValue(m_rootPathIndex);
@@ -1176,50 +1262,6 @@ public:
         return QVariant::fromValue(m_proxyModel.get());
     }
 
-    QString searchTerm() const {
-        return m_searchTerm;
-    }
-
-    void setSearchTerm(const QString &term) {
-        if (term == m_searchTerm)
-            return;
-
-        m_searchTerm = term;
-        if (m_ready) {
-            updateSearchTerm();
-        }
-        emit searchTermChanged();
-    }
-
-    bool searchInTitles() const {
-        return m_searchInTitles;
-    }
-
-    void setSearchInTitles(bool enabled) {
-        if (enabled == m_searchInTitles)
-            return;
-
-        m_searchInTitles = enabled;
-        if (m_ready) {
-            updateSearchTerm();
-        }
-        emit searchInTitlesChanged();
-    }
-
-    bool searchInChannelNames() const {
-        return m_searchInChannelNames;
-    }
-
-    void setSearchInChannelNames(bool enabled) {
-        if (enabled == m_searchInChannelNames)
-            return;
-
-        m_searchInChannelNames = enabled;
-        if (m_ready) {
-            updateSearchTerm();
-        }
-        emit searchInChannelNamesChanged();
-    }
 
     explicit FileSystemModel(QString contextPropertyName,
                              bool bookmarks,
@@ -1337,7 +1379,7 @@ public:
             }
             engine->rootContext()->setContextProperty(m_contextPropertyName, this);
 
-            updateSearchTerm();
+//            updateSearchTerm();
 
             if (!m_ready)
                 emit firstInitializationCompleted(m_root.path());
@@ -1618,13 +1660,20 @@ public slots:
         if (!m_ready)
             return 0;
         const QString &key = keyFromViewItem(item);
+        return duration(key);
+    }
+    qreal duration(const QString &key) const {
+        if (!m_ready)
+            return 0;
+
+
+        if (!key.size())
+            return 0.;
+
         if (!m_cache.contains(key)) {
             qWarning() << "FileSystemModel::duration: Key "<<key<<" not present!";
             return 0;
         }
-
-        if (!key.size())
-            return 0.;
 
         return m_cache.value(key).duration;
     }
@@ -1910,16 +1959,6 @@ private slots:
     }
 
 private:
-    void updateSearchTerm() {
-        QString pattern;
-        if (!m_searchTerm.isEmpty())
-            pattern = "*" + m_searchTerm + "*";
-        m_proxyModel->m_searchInTitles = m_searchInTitles;
-        m_proxyModel->m_searchInChannelNames = m_searchInChannelNames;
-        m_proxyModel->setFilterRegExp(QRegExp(pattern, Qt::CaseInsensitive,
-                                              QRegExp::WildcardUnix));
-    }
-
     void addThumbnail(const QString &key, const QByteArray &thumbnailData) {
         if (m_cache.contains(key) && !m_cache[key].hasThumbnail()) {
             m_cache[key].setThumbnail(thumbnailData);
@@ -1953,7 +1992,9 @@ private:
     QString itemKey(const QModelIndex &index) const {
         if (!m_ready)
             return QLatin1String("");
-        return fileInfo(index).baseName();
+        const auto &fi = fileInfo(index);
+        const QString &baseName = fi.baseName();
+        return baseName;
     }
 
     void fetchAvatar(const QString &key, QString url, const bool persist) {
@@ -1984,31 +2025,52 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
 {
     QRegExp re = filterRegExp();
 
-    QModelIndex nameIndex = sourceModel()->index(sourceRow, 0, sourceParent);
-    const bool isDir = sourceModel()->hasChildren(nameIndex);
+    FileSystemModel *fsm = qobject_cast<FileSystemModel *>(sourceModel());
 
-    QString title;
-    if (!isDir)
-        title = sourceModel()->data(nameIndex, FileSystemModel::TitleRole).toString();
-    else
-        title = sourceModel()->data(nameIndex, Qt::DisplayRole).toString();
+    QModelIndex nameIndex = fsm->index(sourceRow, 0, sourceParent);
+    const bool isDir = fsm->hasChildren(nameIndex);
 
-//    QLoggingCategory category("qmldebug");
-//    qCInfo(category) << "Analyzing "<< title;
+    const QString key = fsm->data(nameIndex, FileSystemModel::FileNameRole).toString();
 
     if (isDir) { // pass all directories (categories), filter out .* directories
                  // otherwise, if parent is filtered out, children won't be processed
-        return title.contains(allowedDirsPattern);
+        return key.contains(allowedDirsPattern);
     }
+
+    QString title = fsm->data(nameIndex, FileSystemModel::TitleRole).toString();
+
+    QLoggingCategory category("qmldebug");
+    qCInfo(category) << "Analyzing "<< title << " k "<<key;
+
+    const bool starred = fsm->isStarred(key);
+    if ((starred && !m_searchInStarred) || (!starred && !m_searchInUnstarred))
+        return false;
+
+    const bool shortVideo = YaycUtilities::isShortVideo(key);
+    if (shortVideo && !m_searchInShorts)
+        return false;
+
+    const bool opened = !shortVideo && fsm->duration(key) > 0.;
+    if ((opened && !m_searchInOpened) || (!opened && !m_searchInUnopened))
+        return false;
+
+
+    const bool viewed = fsm->isViewed(key);
+    if ((viewed && !m_searchInWatched) || (!viewed && !m_searchInUnwatched))
+        return false;
+
+    const bool hasWorkingDir = m_workingDirRoot.isEmpty() || fsm->hasWorkingDir(key, m_workingDirRoot);
+    if ((!hasWorkingDir && !m_searchInUnsaved) || (hasWorkingDir && !m_searchInSaved))
+        return false;
 
     if (re.isEmpty())
         return true;
 
     const QString channelName =
-            sourceModel()->data(nameIndex, FileSystemModel::ChannelNameRole).toString();
+            fsm->data(nameIndex, FileSystemModel::ChannelNameRole).toString();
 
     const QString channelId =
-            sourceModel()->data(nameIndex, FileSystemModel::ChannelIdRole).toString();
+            fsm->data(nameIndex, FileSystemModel::ChannelIdRole).toString();
 
 
     bool searchInTitles = m_searchInTitles || (!m_searchInTitles && !m_searchInChannelNames);

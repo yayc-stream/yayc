@@ -265,7 +265,7 @@ ApplicationWindow {
         if (youtubePath !== "")
             fileSystemModel.setRoot(youtubePath)
         if (historyPath !== "") {
-            setRoot(historyPath)
+            historyModel.setRoot(historyPath)
         }
         if (easyListPath !== "")
             requestInterceptor.setEasyListPath(easyListPath)
@@ -934,7 +934,7 @@ ApplicationWindow {
                     id: historyToolButton
                     enabled: true
                     checkable: false
-                    property bool checked_: fapse // bypassing built in checkable to make it tristate
+                    property bool checked_: false // bypassing built in checkable to make it tristate
                     property bool searching: false
                     onClicked: {
                         if (checked_)
