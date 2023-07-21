@@ -103,21 +103,6 @@ ApplicationWindow {
         }
     }
 
-    //    Shortcut {
-    //        sequence: "Ctrl+E"
-    //        onActivated: {
-    //            bookmarksContainer.expandAll()
-    //        }
-    //    }
-
-    //    Shortcut {
-    //        sequence: "Ctrl+C"
-    //        onActivated: {
-    //            bookmarksContainer.collapse()
-    //        }
-    //    }
-
-
     onClosing: {
         close.accepted = false
         root.minimizeToTray()
@@ -462,6 +447,18 @@ ApplicationWindow {
     QtObject{
         id: internals
 
+        function getPlayer(isShorts) {
+            var res = ""
+            if (isShorts) {
+                res += "var ytplayer = document.getElementById('player').getPlayer();
+"
+            } else {
+                res += "var ytplayer = document.getElementById('movie_player');
+"
+            }
+            return res
+        }
+
         property string script_videoTime: "
             var backend;
             new QWebChannel(qt.webChannelTransport, function (channel) {
@@ -473,11 +470,13 @@ ApplicationWindow {
                 backend.channelName = document.getElementById('text').firstChild.text;
                 backend.channelAvatar = document.getElementById('owner').firstElementChild.firstElementChild.firstElementChild.firstElementChild.src;
 
-                ytplayer = document.getElementById('movie_player');
+                var ytplayer = document.getElementById('movie_player');
 
                 backend.videoTitle = ytplayer.getVideoData().title;
                 backend.videoDuration = ytplayer.getDuration();
                 backend.videoPosition = ytplayer.getCurrentTime();
+                backend.playbackRate = ytplayer.getPlaybackRate();
+                backend.playerState = ytplayer.getPlayerState();
             }, 100);
             //puller();
         "
@@ -499,12 +498,67 @@ ApplicationWindow {
                 backend.channelName = activeShort.children[1].getElementsByTagName('yt-formatted-string')[0].textContent
                 backend.channelAvatar = activeShort.firstElementChild.firstElementChild.firstElementChild.src
 
+                var ytplayer = document.getElementById('player').getPlayer();
+
                 backend.videoTitle = document.title;
                 backend.videoDuration = 0;
                 backend.videoPosition = 0;
+                backend.playbackRate = ytplayer.getPlaybackRate();
+                backend.playerState = ytplayer.getPlayerState();
                 //console.log(document.title);
             }, 100);
         "
+
+        function getPlaybackRateSetterScript(rate, isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.setPlaybackRate(" + rate + ");
+        }, 100);
+"
+            return res;
+        }
+
+        property var videoSpeeds: [
+            "0.25",
+            "0.50",
+            "0.75",
+            "1.00",
+            "1.25",
+            "1.50",
+            "1.75",
+            "2.00",
+        ]
+
+        function getPlayVideoScript(isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.playVideo();
+        }, 100);
+"
+            return res;
+        }
+
+        function getPlayNextVideoScript(isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.playNextVideo();
+        }, 100);
+"
+            return res;
+        }
+
+        function getPauseVideoScript(isShorts) {
+            var res = "
+            setTimeout(function() {
+" + getPlayer(isShorts) +
+"                 ytplayer.pauseVideo();
+        }, 100);
+"
+            return res;
+        }
     }
 
     QtObject {
@@ -520,6 +574,8 @@ ApplicationWindow {
         property string channelName
         property string channelAvatar
         property string keyBefore
+        property real playbackRate
+        property int playerState
 
         function getCurrentVideoURLWithPosition() {
             if (root.addVideoEnabled)
@@ -555,6 +611,10 @@ ApplicationWindow {
 
             // it's a short, url didn't change, and title is not null
             updateShort()
+        }
+
+        onPlaybackRateChanged: {
+
         }
 
         function update() {
@@ -727,11 +787,11 @@ ApplicationWindow {
 
                 Timer {
                     id: dataPuller
-                    interval: 10000;
+                    interval: 3000;
                     running: false;
                     repeat: true
                     function pullTime() {
-                        interval = 10000
+                        interval = 3000
                         // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
                         timePuller.keyBefore = webEngineView.key
 
@@ -1103,6 +1163,69 @@ ApplicationWindow {
                 }
 
                 ToolButton {
+                    id: buttonSpeed
+                    enabled: root.addVideoEnabled
+                    visible: true
+                    checkable: true
+
+                    onCheckedChanged: {
+                        if (checked) {
+                            ToolTip.toolTip.close()
+                            playbackRateMenu.open()
+                        } else {
+                            playbackRateMenu.close()
+                        }
+                    }
+
+                    icon.source: "/icons/speed.svg"
+
+                    display: (text !== "1.00")
+                             ? AbstractButton.TextUnderIcon
+                             : AbstractButton.IconOnly
+                    text: (timePuller.playbackRate) ? timePuller.playbackRate.toFixed(2) : "1.00"
+                    spacing: -6
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Set playback rate"
+                    ToolTip.delay: 300
+                }
+
+                ToolButton {
+                    id: buttonPlayPause
+                    enabled: root.addVideoEnabled && (timePuller.playerState !== -1)
+                    visible: true
+                    checkable: false
+
+                    onClicked: {
+                        var scriptToRun
+                        if (timePuller.playerState === 1)
+                            scriptToRun = internals.getPauseVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
+// Br0ken, try https://stackoverflow.com/a/58581660/962856
+//                        else if (timePuller.playerState === -1)
+//                            scriptToRun = internals.getPlayNextVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
+                        else
+                            scriptToRun = internals.getPlayVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
+
+                        console.log(timePuller.playerState, scriptToRun)
+                        webEngineView.runJavaScript(scriptToRun)
+                    }
+
+                    icon.source: (timePuller.playerState === 1)
+                                    ? "/icons/pause.svg"
+                                    : "/icons/play_arrow.svg"
+
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: (timePuller.playerState === 1)
+                                    ? "Pause video"
+                                    : "Play video"
+                    ToolTip.delay: 300
+                }
+
+                ToolButton {
                     id: settingsButton
                     text: "Settings"
                     icon.source: "/icons/settings.svg"
@@ -1157,6 +1280,49 @@ ApplicationWindow {
             }
         }
     } // header
+
+    Menu {
+        id: playbackRateMenu
+        y: 0
+        x: buttonSpeed.x + buttonSpeed.width - width
+        width: 48
+        visible: false
+
+        Repeater {
+            model: internals.videoSpeeds
+
+
+            ToolButton {
+
+                height: speedsMenu.width
+                width: height
+                enabled: true
+                checkable: false
+                checked: timePuller.playbackRate.toFixed(2) === text
+
+                z: playbackRateMenu.z + 5
+
+                text: internals.videoSpeeds[index]
+
+                display: AbstractButton.TextOnly
+
+                onClicked: {
+                    buttonSpeed.checked = false
+                    var scriptToRun = internals.getPlaybackRateSetterScript(
+                                text, utilities.isYoutubeShortsUrl(webEngineView.url)
+                             )
+//                    console.log(scriptToRun)
+                    webEngineView.runJavaScript(scriptToRun)
+                }
+
+                hoverEnabled: true
+                ToolTip.visible: hovered
+                ToolTip.text: "Set playback rate to " + text
+                ToolTip.delay: 300
+
+            }
+        }
+    }
 
     Dialog {
         id: settingsMenu
@@ -2504,7 +2670,7 @@ ApplicationWindow {
                 console.log("Wrong URL fed!")
                 return;
             }
-            if (requestInterceputilitiestor.isYoutubeShortsUrl(u)) {
+            if (utilities.isYoutubeShortsUrl(u)) {
                 fileSystemModel.addEntry(utilities.getVideoID(u),
                                          "", // title
                                          "", // channel URL
