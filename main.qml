@@ -163,6 +163,7 @@ ApplicationWindow {
     property bool darkMode: true
     property bool debugMode: false
     property real wevZoomFactor: 1.0
+    property real wevZoomFactorVideo: 1.0
 
     property var externalCommands: []
     function pushEmptyCommand() {
@@ -205,6 +206,7 @@ ApplicationWindow {
         property alias darkMode: root.darkMode
         property alias debugMode: root.debugMode
         property alias wevZoomFactor: root.wevZoomFactor
+        property alias wevZoomFactorVideo: root.wevZoomFactorVideo
         property var splitView
 
         Component.onCompleted: {
@@ -280,6 +282,16 @@ ApplicationWindow {
     onProfilePathChanged: {
         webEngineView.reload()
         settings.sync()
+    }
+
+    Timer {
+        id: zoomFactorSyncer
+        repeat: true
+        running: true
+        interval: 1000 * 5
+        onTriggered: {
+            syncZoomFactor()
+        }
     }
 
     Timer {
@@ -366,10 +378,17 @@ ApplicationWindow {
     }
 
     function syncAll() {
-        root.wevZoomFactor = webEngineView.zoomFactor
+        syncZoomFactor()
         fileSystemModel.sync()
         historyModel.sync();
         settings.sync()
+    }
+
+    function syncZoomFactor() {
+        if (utilities.isYoutubeVideoUrl(webEngineView.url))
+            root.wevZoomFactorVideo = webEngineView.zoomFactor
+        else
+            root.wevZoomFactor = webEngineView.zoomFactor
     }
 
     function deUrlizePath(path) {
@@ -487,7 +506,7 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
         "
-        property string script_videoTitleShorts: "
+        property string script_videoTimeShorts: "
             var backend;
             new QWebChannel(qt.webChannelTransport, function (channel) {
                 backend = channel.objects.backend;
@@ -501,8 +520,8 @@ ApplicationWindow {
                 var ytplayer = document.getElementById('player').getPlayer();
 
                 backend.videoTitle = document.title;
-                backend.videoDuration = 0;
-                backend.videoPosition = 0;
+                backend.videoDuration = ytplayer.getDuration();
+                backend.videoPosition = ytplayer.getCurrentTime();
                 backend.playbackRate = ytplayer.getPlaybackRate();
                 backend.playerState = ytplayer.getPlayerState();
                 //console.log(document.title);
@@ -591,26 +610,15 @@ ApplicationWindow {
             }
             //console.log("CHAN: ",channelURL, channelName, channelAvatar)
             root.addVideoEnabled = true
-            // it's not a short, url didn't change, position changed
-            update()
-        }
 
-        onVideoTitleChanged: {
-            if (webEngineView.key != keyBefore) {
-                root.addVideoEnabled = false
-                // console.log("timePuller data changed while URL changed")
-                return
-            }
-            root.addVideoEnabled = true
-            if (!utilities.isYoutubeShortsUrl(webEngineView.url)) {
+            if (utilities.isYoutubeShortsUrl(webEngineView.url)
+                  && (videoTitle === "")) {
                 // silently ignore
                 return;
             }
-            if (videoTitle === "")
-                return;
 
-            // it's a short, url didn't change, and title is not null
-            updateShort()
+            // url didn't change, position changed
+            update()
         }
 
         onPlaybackRateChanged: {
@@ -641,24 +649,6 @@ ApplicationWindow {
                                       videoPosition)
             }
         }
-        function updateShort() {
-            fileSystemModel.updateEntry(webEngineView.key,
-                                        videoTitle,
-                                        channelURL,
-                                        channelAvatar,
-                                        channelName)
-            if (!historyModel.updateEntry(webEngineView.key,
-                                          videoTitle,
-                                          channelURL,
-                                          channelAvatar,
-                                          channelName)) {
-                historyModel.addEntry(webEngineView.key,
-                                      videoTitle,
-                                      channelURL,
-                                      channelAvatar,
-                                      channelName)
-            }
-        }
         function addCurrentVideo() {
             if (!utilities.isYoutubeVideoUrl(webEngineView.url)) {
                 // Q_UNREACHABLE
@@ -669,21 +659,16 @@ ApplicationWindow {
                 return
             }
 
-            if (utilities.isYoutubeShortsUrl(webEngineView.url)) {
-                fileSystemModel.addEntry(webEngineView.key,
-                                         videoTitle,
-                                         channelURL,
-                                         channelAvatar,
-                                         channelName)
-            } else {
-                fileSystemModel.addEntry(webEngineView.key,
-                                         videoTitle,
-                                         channelURL,
-                                         channelAvatar,
-                                         channelName,
-                                         videoDuration,
-                                         videoPosition)
-            }
+            fileSystemModel.addEntry(webEngineView.key,
+                                     videoTitle,
+                                     channelURL,
+                                     channelAvatar,
+                                     channelName,
+                                     videoDuration,
+                                     videoPosition)
+
+            if (utilities.isYoutubeShortsUrl(webEngineView.url))
+                fileSystemModel.viewEntry(webEngineView.key, true);
             root.triggerVideoAdded()
         }
     } // timePuller
@@ -729,7 +714,9 @@ ApplicationWindow {
                 url: root.url
                 property string key
 
-                zoomFactor: root.wevZoomFactor
+                zoomFactor: (utilities.isYoutubeVideoUrl(url))
+                            ? root.wevZoomFactorVideo
+                            : root.wevZoomFactor
 
                 enabled: true
                 visible: enabled
@@ -757,15 +744,11 @@ ApplicationWindow {
                 onUrlChanged: {
                     root.addVideoEnabled = false
                     if (utilities.isYoutubeVideoUrl(url)) {
+                        zoomFactor = root.wevZoomFactorVideo
                         key = utilities.getVideoID(url)
-                        if (utilities.isYoutubeShortsUrl(url)) {
-                            fileSystemModel.viewEntry(key, true);
-                            dataPuller.interval = 5000;
-                        } else {
-                            dataPuller.interval = 5000;
-                        }
                         dataPuller.start()
                     } else {
+                        zoomFactor = root.wevZoomFactor
                         dataPuller.stop()
                         key = ""
                     }
@@ -796,7 +779,7 @@ ApplicationWindow {
                         timePuller.keyBefore = webEngineView.key
 
                         if (utilities.isYoutubeShortsUrl(webEngineView.url)) {
-                            webEngineView.runJavaScript(internals.script_videoTitleShorts)
+                            webEngineView.runJavaScript(internals.script_videoTimeShorts)
                         } else {
                             webEngineView.runJavaScript(internals.script_videoTime)
                         }

@@ -546,6 +546,9 @@ struct VideoMetadata
 
     bool dirty{false};
     bool hasThumbnail() const { return thumbnailData.size(); }
+    bool isShorts() const {
+        return videoType(key).startsWith('s');
+    }
 
     void setDuration(qreal d) {
         if (d == duration)
@@ -558,10 +561,16 @@ struct VideoMetadata
         if (p == position)
             return;
         auto oldPosition = position;
+
+        // Don't rewind shorts so they look completed on the bookmark view
+        if (isShorts() &&  viewed && p < oldPosition)
+            return;
+
         position = p;
         dirty = true;
         const auto threshold = duration * 0.9;
-        if (duration > 5 && position > threshold && oldPosition <= threshold) {
+
+        if (duration > 3. && position > threshold && oldPosition <= threshold) {
             // set only when trespassing threshold
             viewed = true;
         }

@@ -879,8 +879,9 @@ Rectangle {
                     }
                     text: styleData.hasChildren ? styleData.value : title
                     elide: Text.ElideRight
-                    color: (!styleData.hasChildren && !treeViewDelegate.shorts &&
-                            (treeViewDelegate.duration === 0.0))
+                    color: (!styleData.hasChildren
+                            // && !treeViewDelegate.shorts
+                            && treeViewDelegate.duration === 0.0)
                            ? properties.disabledTextColor
                            : textColor
                     renderType: Text.QtRendering
