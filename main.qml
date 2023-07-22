@@ -164,6 +164,8 @@ ApplicationWindow {
     property bool debugMode: false
     property real wevZoomFactor: 1.0
     property real wevZoomFactorVideo: 1.0
+    property alias volume: sliderVolume.value
+    property bool muted: false
 
     property var externalCommands: []
     function pushEmptyCommand() {
@@ -496,6 +498,8 @@ ApplicationWindow {
                 backend.videoPosition = ytplayer.getCurrentTime();
                 backend.playbackRate = ytplayer.getPlaybackRate();
                 backend.playerState = ytplayer.getPlayerState();
+                backend.volume = ytplayer.getVolume();
+                backend.muted = ytplayer.isMuted();
             }, 100);
             //puller();
         "
@@ -524,6 +528,8 @@ ApplicationWindow {
                 backend.videoPosition = ytplayer.getCurrentTime();
                 backend.playbackRate = ytplayer.getPlaybackRate();
                 backend.playerState = ytplayer.getPlayerState();
+                backend.volume = ytplayer.getVolume();
+                backend.muted = ytplayer.isMuted();
                 //console.log(document.title);
             }, 100);
         "
@@ -534,6 +540,35 @@ ApplicationWindow {
     " + getPlayer(isShorts) +
 "                 ytplayer.setPlaybackRate(" + rate + ");
         }, 100);
+"
+            return res;
+        }
+
+        function getVolumeSetterScript(volume, isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.setVolume(" + volume + ");
+        }, 100);
+"
+            return res;
+        }
+
+        function getMutedSetterScript(muted, isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts)
+
+            if (muted) {
+                res += "                 ytplayer.mute();
+"
+            } else {
+                res += "                 ytplayer.unMute();
+"
+            }
+
+            res +=
+"       }, 100);
 "
             return res;
         }
@@ -595,6 +630,11 @@ ApplicationWindow {
         property string keyBefore
         property real playbackRate
         property int playerState
+        property int volume
+        property bool muted
+
+        onVolumeChanged: root.volume = volume
+        onMutedChanged: root.muted = muted
 
         function getCurrentVideoURLWithPosition() {
             if (root.addVideoEnabled)
@@ -611,7 +651,7 @@ ApplicationWindow {
             //console.log("CHAN: ",channelURL, channelName, channelAvatar)
             root.addVideoEnabled = true
 
-            if (utilities.isYoutubeShortsUrl(webEngineView.url)
+            if ((webEngineView.key !== "" && webEngineView.isShorts)
                   && (videoTitle === "")) {
                 // silently ignore
                 return;
@@ -667,7 +707,7 @@ ApplicationWindow {
                                      videoDuration,
                                      videoPosition)
 
-            if (utilities.isYoutubeShortsUrl(webEngineView.url))
+            if (webEngineView.key !== "" && webEngineView.isShorts)
                 fileSystemModel.viewEntry(webEngineView.key, true);
             root.triggerVideoAdded()
         }
@@ -713,6 +753,7 @@ ApplicationWindow {
                 id: webEngineView
                 url: root.url
                 property string key
+                property bool isShorts: false
 
                 zoomFactor: (utilities.isYoutubeVideoUrl(url))
                             ? root.wevZoomFactorVideo
@@ -746,6 +787,7 @@ ApplicationWindow {
                     if (utilities.isYoutubeVideoUrl(url)) {
                         zoomFactor = root.wevZoomFactorVideo
                         key = utilities.getVideoID(url)
+                        isShorts = utilities.isYoutubeShortsUrl(url)
                         dataPuller.start()
                     } else {
                         zoomFactor = root.wevZoomFactor
@@ -778,7 +820,7 @@ ApplicationWindow {
                         // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
                         timePuller.keyBefore = webEngineView.key
 
-                        if (utilities.isYoutubeShortsUrl(webEngineView.url)) {
+                        if (webEngineView.key !== "" && webEngineView.isShorts) {
                             webEngineView.runJavaScript(internals.script_videoTimeShorts)
                         } else {
                             webEngineView.runJavaScript(internals.script_videoTime)
@@ -1182,13 +1224,13 @@ ApplicationWindow {
 
                     onClicked: {
                         var scriptToRun
-                        if (timePuller.playerState === 1)
-                            scriptToRun = internals.getPauseVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
+                        if (timePuller.playerState === 1 && webEngineView.key !== "")
+                            scriptToRun = internals.getPauseVideoScript(webEngineView.isShorts)
 // Br0ken, try https://stackoverflow.com/a/58581660/962856
 //                        else if (timePuller.playerState === -1)
 //                            scriptToRun = internals.getPlayNextVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
                         else
-                            scriptToRun = internals.getPlayVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
+                            scriptToRun = internals.getPlayVideoScript(webEngineView.isShorts)
 
                         console.log(timePuller.playerState, scriptToRun)
                         webEngineView.runJavaScript(scriptToRun)
@@ -1206,6 +1248,29 @@ ApplicationWindow {
                                     ? "Pause video"
                                     : "Play video"
                     ToolTip.delay: 300
+                }
+
+                Slider {
+                    id: sliderVolume
+                    enabled: root.addVideoEnabled
+                    implicitWidth: 64
+
+                    value: 0
+                    from: 0
+                    stepSize: 1
+                    to: 100
+                    snapMode: Slider.SnapAlways
+
+                    onValueChanged: {
+                        var scriptToRun = internals.getVolumeSetterScript(value, utilities.isYoutubeShortsUrl(webEngineView.url))
+                        webEngineView.runJavaScript(scriptToRun)
+                    }
+
+                    ToolTip {
+                        parent: sliderVolume.handle
+                        visible: sliderVolume.pressed
+                        text: sliderVolume.value.toFixed(0)
+                    }
                 }
 
                 ToolButton {
@@ -1277,7 +1342,7 @@ ApplicationWindow {
 
             ToolButton {
 
-                height: speedsMenu.width
+                height: playbackRateMenu.width
                 width: height
                 enabled: true
                 checkable: false
