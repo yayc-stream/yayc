@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -52,6 +52,8 @@ In addition to the above,
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 #include <QTcpSocket>
 #include <QMutex>
 #include <QRecursiveMutex>
@@ -69,7 +71,7 @@ constexpr const int EXIT_CODE_REBOOT = -123456789;
 constexpr const int EXIT_CODE_ERASE_SETTINGS = -123456788;
 const QString videoExtension{"yayc"};
 const QString channelExtension{"yaycc"};
-const QString shortsVideoPattern{"https://youtube.com/shorts/"};
+const QString shortsVideoPattern{"https://youtube.com/shorts/"}; // ToDo: use www and rework removeWww()
 const QString standardVideoPattern{"https://youtube.com/watch?v="};
 const QString repositoryURL{"https://github.com/yayc-stream/yayc"};
 const QString latestReleaseVersionURL{"https://raw.githubusercontent.com/yayc-stream/yayc/master/APPVERSION"};
@@ -81,6 +83,9 @@ QByteArray appVersion() {
 }
 QString videoType(const QString &key) {
     return key.mid(3,2);
+}
+bool isShorts(const QString &key) {
+    return videoType(key).startsWith('s');
 }
 QString videoVendor(const QString &key) {
     return key.mid(0,3);
@@ -153,6 +158,24 @@ public:
             return Platform::UNK;
         return LUT.value(host);
     }
+
+    static QString toUrl(const QString &key, qreal position = 0.) {
+        auto vendor = Platform::toVendor(videoVendor(key));
+        if (vendor == Platform::UNK) {
+            return {}; // FixMe!
+        }
+        if (vendor == Platform::YTB) {
+            const QString &type = videoType(key);
+            const QString &id = videoID(key);
+            if (type.startsWith('s')) {
+                return shortsVideoPattern + id; // ToDo: position not supported for shorts yet
+            } else if (type.startsWith('v')) {
+                return standardVideoPattern + id + ((position > 0.)
+                                                    ? "&t=" + QString::number(int(position)) +"s"
+                                                    : "" );
+            } else return {};
+        }
+    }
 };
 
 class YaycUtilities : public QObject {
@@ -185,29 +208,29 @@ public:
         return {};
     }
 
-    Q_INVOKABLE bool isYoutubeVideoUrl(QUrl url) const {
+    Q_INVOKABLE static bool isYoutubeVideoUrl(QUrl url) {
         url = removeWww(url);
         const QString surl = url.toString();
         return (isYoutubeStandardUrl(surl) || isYoutubeShortsUrl(surl));
     }
 
-    Q_INVOKABLE bool isYoutubeStandardUrl(QUrl url) const {
+    Q_INVOKABLE static bool isYoutubeStandardUrl(QUrl url) {
         url = removeWww(url);
         const QString surl = url.toString();
         return isYoutubeStandardUrl(surl);
     }
 
-    bool isYoutubeStandardUrl(const QString &url) const {
+    static bool isYoutubeStandardUrl(const QString &url) {
         return url.startsWith(standardVideoPattern);
     }
 
-    Q_INVOKABLE bool isYoutubeShortsUrl(QUrl url) const {
+    Q_INVOKABLE static bool isYoutubeShortsUrl(QUrl url) {
         url = removeWww(url);
         const QString surl = url.toString();
         return isYoutubeShortsUrl(surl);
     }
 
-    bool isYoutubeShortsUrl(const QString &url) const {
+    static bool isYoutubeShortsUrl(const QString &url) {
         return url.startsWith(shortsVideoPattern);
     }
 
@@ -401,6 +424,8 @@ protected:
 
 struct ChannelMetadata
 {
+    using KeyType = QPair<QString, Platform::Vendor>; // Id, vendor
+
     QString id;
     QDir channelsRoot;
     QString name;
@@ -425,7 +450,7 @@ struct ChannelMetadata
     ChannelMetadata() {}
     ChannelMetadata(const QString &key, const QDir &parent)
         : channelsRoot(parent) {
-        auto data = fromKey(key);
+        const KeyType data = fromKeyString(key);
         id = data.first;
         vendor = data.second;
     }
@@ -440,10 +465,10 @@ struct ChannelMetadata
     static QString key(const QString &id, const Platform::Vendor vendor) {
         return Platform::toString(vendor) + "_" + id;
     }
-    QPair<QString, Platform::Vendor> fromKey(const QString &key) {
+    static KeyType fromKeyString(const QString &key) {
         const QString platformString = videoVendor(key);
         const QString id = channelID(key);
-        return QPair<QString, Platform::Vendor>(id, Platform::toVendor(platformString));
+        return KeyType(id, Platform::toVendor(platformString));
     }
 
     QString filePath() const {
@@ -546,9 +571,6 @@ struct VideoMetadata
 
     bool dirty{false};
     bool hasThumbnail() const { return thumbnailData.size(); }
-    bool isShorts() const {
-        return videoType(key).startsWith('s');
-    }
 
     void setDuration(qreal d) {
         if (d == duration)
@@ -563,7 +585,7 @@ struct VideoMetadata
         auto oldPosition = position;
 
         // Don't rewind shorts so they look completed on the bookmark view
-        if (isShorts() &&  viewed && p < oldPosition)
+        if (isShorts(key) &&  viewed && p < oldPosition)
             return;
 
         position = p;
@@ -739,20 +761,7 @@ struct VideoMetadata
     }
 
     QUrl url(bool startingTime = true) const {
-        if (vendor == Platform::UNK) {
-            return {}; // FixMe!
-        }
-        if (vendor == Platform::YTB) {
-            const QString &type = videoType(key);
-            const QString &id = videoID(key);
-            if (type.startsWith('s')) {
-                return shortsVideoPattern + id; // ToDo: position not supported for shorts yet
-            } else if (type.startsWith('v')) {
-                return standardVideoPattern + id + ((position > 0. && startingTime)
-                                                    ? "&t=" + QString::number(int(position)) +"s"
-                                                    : "" );
-            } else return {};
-        }
+        return Platform::toUrl(key, (position > 0. && startingTime) ? position : 0);
     }
 };
 
@@ -1202,6 +1211,16 @@ public:
         instance.fetchThumbnail(key);
     }
 
+    static void fetchChannel(const QString &key) {
+        auto &instance = GetInstance();
+        instance.fetchChannelInternal(key);
+    }
+
+    static void fetchChannelAvatar(const QString &channelKey, const QString &url) {
+        auto &instance = GetInstance();
+        instance.fetchChannelAvatarInternal(channelKey, url);
+    }
+
     static void fetchMissing() {
         printStats();
         auto &instance = GetInstance();
@@ -1219,6 +1238,8 @@ public:
 
 private slots:
     void onThumbnailRequestFinished();
+    void onVideoPageRequestFinished();
+    void onFetchAvatarRequestFinished();
     void fetchMissingThumbnails();
 
 private:
@@ -1238,10 +1259,49 @@ private:
         reply->setProperty("key", key);
     }
 
+    void fetchChannelInternal(const QString &key)
+    {
+        const QString sUrl = Platform::toUrl(key, 0);
+//        const Platform::Vendor vendor = Platform::toVendor(videoVendor(key)); // FixMe: handle multiple vendors gracefully
+        const QUrl url = sUrl;
+
+        QNetworkRequest req(url);
+        m_nam.setCookieJar(new QNetworkCookieJar);
+        req.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36");
+        req.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
+                         QNetworkRequest::AlwaysNetwork);
+        req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        req.setRawHeader("COOKIE" , "CONSENT=YES+42" );
+        auto *reply = m_nam.get(req);
+        if (!reply)
+            qFatal("NULL QNetworkReply while retrieving thumbnails");
+        QObject::connect(reply, &QNetworkReply::finished,
+                         this, &ThumbnailFetcher::onVideoPageRequestFinished);
+        reply->setProperty("key", key);
+    }
+
+    void fetchChannelAvatarInternal(const QString &channelKey, QString url) {
+        if (url.isEmpty())
+            return;
+        url = avatarUrl(url);
+
+        const QUrl u(url);
+        QNetworkRequest req(u);
+        auto *reply = m_nam.get(req);
+        if (!reply)
+            qFatal("NULL QNetworkReply while retrieving channel avatar");
+
+        QObject::connect(reply, &QNetworkReply::finished,
+                         this, &ThumbnailFetcher::onFetchAvatarRequestFinished);
+        ChannelMetadata::KeyType k = ChannelMetadata::fromKeyString(channelKey);
+        reply->setProperty("channelKey", channelKey); // embeds channel ID and vendor
+    }
+
 private:
     QNetworkAccessManager m_nam;
     QSet<FileSystemModel*> m_models;
     int m_failures = 0;
+    int m_channelIdFailures = 0;
 };
 
 class FileSystemModel : public QFileSystemModel {
@@ -1255,7 +1315,6 @@ class FileSystemModel : public QFileSystemModel {
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
 
-    QNetworkAccessManager m_nam;
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
 
@@ -1898,6 +1957,28 @@ public slots:
         return true;
     }
 
+    void updateChannelID(const QString &key,
+                         const QString &channelID) {
+        if (!m_ready || !m_bookmarksModel)
+            return;
+        if (!m_cache.contains(key)) {
+            return;
+        }
+        m_cache[key].setChannelID(channelID); // vendor is embedded in the key/Video already
+    }
+
+    void updateChannelAvatar(const QString &channelKey,
+                             const QByteArray avatar) {
+        if (!m_ready || !m_bookmarksModel)
+            return;
+        if (!m_channelCache.contains(channelKey)) {
+            return;
+        }
+        m_channelCache[channelKey].setThumbnail(avatar);
+        m_channelCache[channelKey].saveFile();
+    }
+
+
     bool addEntry(const QString &key,
                   const QString &title,
                   const QString &channelURL,
@@ -1915,16 +1996,20 @@ public slots:
             fetchThumbnail(key);
         }
         // ToDo: handle more platforms!
-        auto channelID = channelURL.mid(24); // strip https://www.youtube.com/
         m_cache[key].update(title, position, duration);
-        m_cache[key].setChannelID(channelID);
         m_cache[key].creationDate = QDateTime::currentDateTimeUtc();
 
-        if (!channelID.isEmpty() && m_bookmarksModel) {
-            addChannel(channelID,
-                       Platform::YTB,
-                       channelName,
-                       channelAvatarURL);
+        if (channelURL.isEmpty()) {
+            ThumbnailFetcher::fetchChannel(key);
+        } else {
+            auto channelID = channelURL.mid(24); // strip https://www.youtube.com/
+            m_cache[key].setChannelID(channelID);
+            if (!channelID.isEmpty() && m_bookmarksModel) {
+                addChannel(channelID,
+                           Platform::YTB,
+                           channelName,
+                           channelAvatarURL);
+            }
         }
 
         if (YaycUtilities::isShortVideo(key) && !channelURL.isEmpty()) {
@@ -1945,27 +2030,7 @@ signals:
     void firstInitializationCompleted(const QString &rootPath);
 
 private slots:
-    void onChannelAvatarRequestFinished()
-    {
-        QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-        if (!reply)
-            qFatal("NULL QNetworkReply while retrieving channel avatar");
 
-        if (reply->error() == QNetworkReply::NoError ) {
-            QString key = reply->property("key").toString();
-            if (m_channelCache.contains(key)) {
-                QByteArray networkContent = reply->readAll();
-                m_channelCache[key].setThumbnail(networkContent);
-                if (reply->property("persist").toBool()) {
-                    m_channelCache[key].saveFile();
-                }
-            }
-        } else {
-            qWarning() << "Error while retrieving channel avatar: " << reply->errorString() << " : "
-                      << reply->url() ;
-        }
-        reply->deleteLater();
-    }
 
 private:
     void addThumbnail(const QString &key, const QByteArray &thumbnailData) {
@@ -1974,10 +2039,20 @@ private:
         }
     }
 
+    void updateChannel(const QString &key,
+                       const QString &channelId,
+                       const QString &channelName) {
+        if (m_cache.contains(key)) {
+            m_cache[key].channelID = channelId;
+        }
+    }
+
     void addChannel(const QString &channelId,
                     const Platform::Vendor vendor,
                     const QString &channelName,
                     const QString &channelAvatarURL) {
+        if (!m_bookmarksModel || !m_ready)
+            return;
         const QString &key = ChannelMetadata::key(channelId, vendor);
         bool avatarNeedsFetch = true;
         bool persist = false;
@@ -1994,7 +2069,7 @@ private:
             persist = true;
         }
         if (avatarNeedsFetch)
-            fetchAvatar(key, channelAvatarURL, persist);
+            ThumbnailFetcher::fetchChannelAvatar(key, channelAvatarURL);
 
     }
     // this one needs the QModelIndex in FileSystemModel space!
@@ -2004,23 +2079,6 @@ private:
         const auto &fi = fileInfo(index);
         const QString &baseName = fi.baseName();
         return baseName;
-    }
-
-    void fetchAvatar(const QString &key, QString url, const bool persist) {
-        if (url.isEmpty())
-            return;
-        url = avatarUrl(url);
-
-        const QUrl u(url);
-        QNetworkRequest req(u);
-        auto *reply = m_nam.get(req);
-        if (!reply)
-            qFatal("NULL QNetworkReply while retrieving channel avatar");
-        m_channelCache[key].setThumbnail(QByteArrayLiteral("0")); // placeholder to skip subsequent calls while reply hasn't arrived.
-        QObject::connect(reply, &QNetworkReply::finished,
-                         this, &FileSystemModel::onChannelAvatarRequestFinished);
-        reply->setProperty("key", key);
-        reply->setProperty("persist", persist);
     }
 
     void fetchThumbnail(const QString &key) {
@@ -2105,7 +2163,7 @@ void ThumbnailFetcher::onThumbnailRequestFinished()
         QString key = reply->property("key").toString();
         QByteArray networkContent = reply->readAll();
         if (networkContent.size()) {
-            for (auto &m: m_models) {
+            for (auto &m: qAsConst(m_models)) {
                 m->addThumbnail(key, networkContent);
             }
             if (m_models.size()) {
@@ -2121,6 +2179,77 @@ void ThumbnailFetcher::onThumbnailRequestFinished()
         qWarning() << "Error while retrieving thumbnail: " << reply->errorString() << " : "
                   << reply->url() ;
         ++m_failures;
+    }
+    reply->deleteLater();
+}
+
+void ThumbnailFetcher::onVideoPageRequestFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+    if (!reply)
+        qFatal("NULL QNetworkReply while retrieving thumbnails");
+    if (reply->error() == QNetworkReply::NoError ) {
+        const QString key = reply->property("key").toString();
+
+        QByteArray networkContent = reply->readAll();
+        if (networkContent.size()) {
+            // parse content,  update key with parsed channel id
+            QString sData = QString::fromLatin1(networkContent);
+            QRegularExpression re("<span itemprop=\"author\" itemscope itemtype=\"http://schema.org/Person\"><link itemprop=\"url\" href=\"http://www.youtube.com/(.+?)\"><link itemprop=\"name\" content=\"(.+?)\">");
+            QRegularExpressionMatch match = re.match(sData);
+            if (match.hasMatch()) {
+                const QString channelId = match.captured(1);
+                const QString channelName = match.captured(2);
+
+                QRegularExpression re2;
+                if (!isShorts(key)) {
+                    re2 = QRegularExpression("channelAvatar\":\\{\"thumbnails\":\\[\\{\"url\":\"(https://.*?)\"");
+                } else {
+                    re2 = QRegularExpression("canonicalBaseUrl\":\"/"+channelId+"\"\\}\\}\\}\\]\\},\"channelThumbnail\":\\{\"thumbnails\":\\[\\{\"url\":\"(https://.*?)\"");
+                }
+
+                QRegularExpressionMatch match2 = re2.match(sData);
+
+                QString channelAvatarURL;
+                if (match2.hasMatch())
+                    channelAvatarURL = match2.captured(1);
+
+                for (auto &m: qAsConst(m_models)) {
+                    m->addChannel(channelId,
+                                  Platform::toVendor(videoVendor(key)),
+                                  channelName,
+                                  channelAvatarURL);
+                    m->updateChannelID(key, channelId);
+                }
+            } else {
+                ++m_channelIdFailures;
+            }
+        } else {
+            ++m_channelIdFailures;
+        }
+    } else {
+        qWarning() << "Error while retrieving video page: " << reply->errorString() << " : "
+                  << reply->url() ;
+        ++m_channelIdFailures;
+    }
+    reply->deleteLater();
+}
+
+void ThumbnailFetcher::onFetchAvatarRequestFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+    if (!reply)
+        qFatal("NULL QNetworkReply while retrieving thumbnails");
+    const QString channelKey = reply->property("channelKey").toString();
+
+    if (reply->error() == QNetworkReply::NoError ) {
+        const QByteArray &networkContent = reply->readAll();
+        for (auto &m: qAsConst(m_models)) {
+            m->updateChannelAvatar(channelKey, networkContent);
+        }
+    } else {
+        qWarning() << "Error while retrieving channel avatar: " << reply->errorString() << " : "
+                  << reply->url() ;
     }
     reply->deleteLater();
 }
@@ -2171,10 +2300,10 @@ int main(int argc, char *argv[])
 
         qInfo("Starting YAYC v%s ...", appVersion().data());
 #ifdef QT_NO_DEBUG_OUTPUT
-        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
-                                                        "qmldebug=true\n"
-                                                        "*.fatal=true\n"
-                                                        ));
+//        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
+//                                                        "qmldebug=true\n"
+//                                                        "*.fatal=true\n"
+//                                                        ));
 #endif
 
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

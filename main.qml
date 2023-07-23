@@ -162,8 +162,8 @@ ApplicationWindow {
     property string customScript
     property bool darkMode: true
     property bool debugMode: false
-    property real wevZoomFactor: 1.0
-    property real wevZoomFactorVideo: 1.0
+    property real wevZoomFactor
+    property real wevZoomFactorVideo
     property alias volume: sliderVolume.value
     property bool muted: false
 
@@ -189,6 +189,16 @@ ApplicationWindow {
             pushEmptyCommand()
     }
 
+    property bool settingsLoaded: false
+    Timer {
+        id: timerSettings
+        interval: 2000
+        running: false
+        repeat: false
+        onTriggered: {
+            root.settingsLoaded = true
+        }
+    }
     Settings {
         id: settings
         property alias lolAccepted: root.limitationOfLiabilityAccepted
@@ -213,6 +223,13 @@ ApplicationWindow {
 
         Component.onCompleted: {
             disclaimerContainer.visible = Qt.binding(function() { return !settings.lolAccepted })
+            webEngineView.zoomFactor =  Qt.binding(function() {
+                var res = (webEngineView.isYoutubeVideo)
+                                ? root.wevZoomFactorVideo
+                                : root.wevZoomFactor
+                return (res) ? res : 1.0
+            })
+            timerSettings.start()
         }
     }
 
@@ -387,7 +404,9 @@ ApplicationWindow {
     }
 
     function syncZoomFactor() {
-        if (utilities.isYoutubeVideoUrl(webEngineView.url))
+        if (!root.settingsLoaded)
+            return
+        if (webEngineView.isYoutubeVideo)
             root.wevZoomFactorVideo = webEngineView.zoomFactor
         else
             root.wevZoomFactor = webEngineView.zoomFactor
@@ -754,10 +773,7 @@ ApplicationWindow {
                 url: root.url
                 property string key
                 property bool isShorts: false
-
-                zoomFactor: (utilities.isYoutubeVideoUrl(url))
-                            ? root.wevZoomFactorVideo
-                            : root.wevZoomFactor
+                property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
 
                 enabled: true
                 visible: enabled
