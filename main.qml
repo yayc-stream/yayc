@@ -162,6 +162,7 @@ ApplicationWindow {
     property string customScript
     property bool darkMode: true
     property bool debugMode: false
+    property bool removeStorageOnDelete: false
     property real wevZoomFactor
     property real wevZoomFactorVideo
     property alias volume: sliderVolume.value
@@ -219,6 +220,7 @@ ApplicationWindow {
         property alias debugMode: root.debugMode
         property alias wevZoomFactor: root.wevZoomFactor
         property alias wevZoomFactorVideo: root.wevZoomFactorVideo
+        property alias removeStorageOnDelete: root.removeStorageOnDelete
         property var splitView
 
         Component.onCompleted: {
@@ -774,6 +776,9 @@ ApplicationWindow {
                 property string key
                 property bool isShorts: false
                 property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
+                property bool keyHasWorkingDir: root.extWorkingDirExists
+                    && fileSystemModel.hasWorkingDir(webEngineView.key,
+                                                     root.extWorkingDirPath) // fixMe: make it trigger when active
 
                 enabled: true
                 visible: enabled
@@ -854,7 +859,12 @@ ApplicationWindow {
                         enabled: linkHovered && !currentVideoAdded
 
                         property bool linkHovered: typeof(root.lastHoveredLink) !== "undefined" && root.lastHoveredLink !== ""
+                        property bool storagePresent: linkHovered && fileSystemModel.isVideoBookmarked(utilities.getVideoID(root.lastHoveredLink))
                         property bool currentVideoAdded: linkHovered && fileSystemModel.isVideoBookmarked(utilities.getVideoID(root.lastHoveredLink))
+                        property bool workingDirPresent: currentVideoAdded
+                                                         && root.extWorkingDirExists
+                                                         && fileSystemModel.hasWorkingDir(utilities.getVideoID(root.lastHoveredLink),
+                                                                                          root.extWorkingDirPath)
                         icon {
                             source: "/icons/add.svg"
                             color: (currentVideoAdded) // ToDo: deduplicate
@@ -864,6 +874,21 @@ ApplicationWindow {
                                    : (enabled)
                                      ? "white"
                                      : properties.disabledTextColor
+                        }
+
+                        Image {
+                            visible: parent.workingDirPresent
+                            anchors {
+                                left: parent.left
+                                top: parent.top
+                                bottom: parent.bottom
+                                leftMargin: 12
+                                topMargin: 12
+                                bottomMargin: 4
+                            }
+
+                            source: "qrc:/images/workingdirpresent.png"
+                            opacity: .7
                         }
 
                         onClicked: {
@@ -1127,6 +1152,9 @@ ApplicationWindow {
                     }
                     property bool currentVideoAdded: isCurrentVideoAdded(webEngineView.key,
                                                                          root.addedVideoTrigger)
+                    property bool workingDirPresent: currentVideoAdded
+                                                     && webEngineView.keyHasWorkingDir
+
                     icon {
                         source: "/icons/add.svg"
                         color: (currentVideoAdded)
@@ -1136,6 +1164,21 @@ ApplicationWindow {
                                : (enabled)
                                  ? "white"
                                  : properties.disabledTextColor
+                    }
+
+                    Image {
+                        visible: parent.workingDirPresent
+                        anchors {
+                            fill: parent
+
+                            rightMargin: 12
+                            topMargin: 12
+                            bottomMargin: 4
+                            leftMargin: 4
+                        }
+
+                        source: "qrc:/images/workingdirpresent.png"
+                        opacity: .5
                     }
                     display: AbstractButton.IconOnly
 
@@ -1979,6 +2022,21 @@ ApplicationWindow {
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
                     ToolTip.text: "Edit the custom script that is run after loading a video page"
+                }
+                CheckBox {
+                    id: deleteStorageCheck
+                    visible: root.debugMode
+                    checked: root.removeStorageOnDelete
+                    text: qsTr("Delete storage")
+                    onCheckedChanged: {
+                        root.removeStorageOnDelete = checked
+                    }
+
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
                 }
             }
 

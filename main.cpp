@@ -1196,15 +1196,9 @@ public:
         return instance;
     }
 
-    static void registerModel(FileSystemModel &model) {
-        auto &instance = GetInstance();
-        instance.m_models.insert(&model);
-    }
+    static void registerModel(FileSystemModel &model);
 
-    static void unregisterModel(FileSystemModel &model) {
-        auto &instance = GetInstance();
-        instance.m_models.remove(&model);
-    }
+    static void unregisterModel(FileSystemModel &model);
 
     static void fetch(const QString &key) {
         auto &instance = GetInstance();
@@ -1273,8 +1267,10 @@ private:
         req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
         req.setRawHeader("COOKIE" , "CONSENT=YES+42" );
         auto *reply = m_nam.get(req);
-        if (!reply)
-            qFatal("NULL QNetworkReply while retrieving thumbnails");
+        if (!reply) {
+            qWarning("NULL QNetworkReply while retrieving thumbnails");
+            return;
+        }
         QObject::connect(reply, &QNetworkReply::finished,
                          this, &ThumbnailFetcher::onVideoPageRequestFinished);
         reply->setProperty("key", key);
@@ -1288,8 +1284,10 @@ private:
         const QUrl u(url);
         QNetworkRequest req(u);
         auto *reply = m_nam.get(req);
-        if (!reply)
-            qFatal("NULL QNetworkReply while retrieving channel avatar");
+        if (!reply) {
+            qWarning("NULL QNetworkReply while retrieving channel avatar");
+            return;
+        }
 
         QObject::connect(reply, &QNetworkReply::finished,
                          this, &ThumbnailFetcher::onFetchAvatarRequestFinished);
@@ -1297,9 +1295,12 @@ private:
         reply->setProperty("channelKey", channelKey); // embeds channel ID and vendor
     }
 
+    FileSystemModel *bookmarksModel();
+
 private:
     QNetworkAccessManager m_nam;
     QSet<FileSystemModel*> m_models;
+
     int m_failures = 0;
     int m_channelIdFailures = 0;
 };
@@ -1664,7 +1665,9 @@ public slots:
         }
     }
 
-    bool deleteEntry(QModelIndex item) {
+    bool deleteEntry(QModelIndex item
+                     , const QString &extWorkingDirRoot
+                     , bool deleteStorage) {
         if (!m_ready)
             return false;
         item = m_proxyModel->mapToSource(item);
@@ -1695,6 +1698,21 @@ public slots:
 
             auto entry = m_cache.take(key);
             res = entry.eraseFile();
+
+            if (!extWorkingDirRoot.isEmpty() && deleteStorage) {
+                // delete storage data if any
+                QDir d(extWorkingDirRoot);
+
+                if (!d.exists()) {
+                } else {
+                    if (!d.exists(key)) {
+                    } else {
+                        if (d.cd(key))
+                            d.removeRecursively();
+                    }
+                }
+            }
+
             return res;
         }
     }
@@ -2156,11 +2174,13 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
 void ThumbnailFetcher::onThumbnailRequestFinished()
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-    if (!reply)
-        qFatal("NULL QNetworkReply while retrieving thumbnails");
+    if (!reply) {
+        qWarning("NULL QNetworkReply while retrieving thumbnails");
+        return;
+    }
 
+    const QString key = reply->property("key").toString();
     if (reply->error() == QNetworkReply::NoError ) {
-        QString key = reply->property("key").toString();
         QByteArray networkContent = reply->readAll();
         if (networkContent.size()) {
             for (auto &m: qAsConst(m_models)) {
@@ -2176,8 +2196,10 @@ void ThumbnailFetcher::onThumbnailRequestFinished()
             ++m_failures;
         }
     } else {
-        qWarning() << "Error while retrieving thumbnail: " << reply->errorString() << " : "
-                  << reply->url() ;
+        if (auto m = bookmarksModel())
+            qWarning() << "Error while retrieving thumbnail: " << reply->errorString() << " : "
+                << reply->url() << " Channel: " << m->m_cache.value(key).channelID
+                << " Video "<< m->m_cache.value(key).title;
         ++m_failures;
     }
     reply->deleteLater();
@@ -2186,8 +2208,10 @@ void ThumbnailFetcher::onThumbnailRequestFinished()
 void ThumbnailFetcher::onVideoPageRequestFinished()
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-    if (!reply)
+    if (!reply) {
         qFatal("NULL QNetworkReply while retrieving thumbnails");
+        return;
+    }
     if (reply->error() == QNetworkReply::NoError ) {
         const QString key = reply->property("key").toString();
 
@@ -2238,8 +2262,10 @@ void ThumbnailFetcher::onVideoPageRequestFinished()
 void ThumbnailFetcher::onFetchAvatarRequestFinished()
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-    if (!reply)
+    if (!reply) {
         qFatal("NULL QNetworkReply while retrieving thumbnails");
+        return;
+    }
     const QString channelKey = reply->property("channelKey").toString();
 
     if (reply->error() == QNetworkReply::NoError ) {
@@ -2256,15 +2282,51 @@ void ThumbnailFetcher::onFetchAvatarRequestFinished()
 
 void ThumbnailFetcher::fetchMissingThumbnails() {
     QSet<QString> missingKeys;
+    qDebug() << "Missing Thumbs:";
     for (auto &m : qAsConst(m_models)) {
         for (auto i = m->m_cache.begin(); i != m->m_cache.end(); ++i) {
-            if (!i.value().hasThumbnail())
+            if (!i.value().hasThumbnail()) {
                 missingKeys.insert(i.key());
+                qDebug() << i.key() << " "<< i.value().title;
+            }
         }
     }
     for (const auto &k: missingKeys) {
         fetchThumbnail(k);
     }
+    missingKeys.clear();
+    qDebug() << "Missing channel:";
+    if (auto m = bookmarksModel()) {
+        for (auto i = m->m_cache.begin(); i != m->m_cache.end(); ++i) {
+            if (i.value().channelID.isEmpty()) {
+                missingKeys.insert(i.key());
+                qDebug() << i.key() << " "<< i.value().title;
+            }
+        }
+    } else {
+        qFatal("m_bookmarksModel is NULL!");
+    }
+    for (const auto &k: missingKeys) {
+        fetchChannelInternal(k);
+    }
+}
+
+FileSystemModel *ThumbnailFetcher::bookmarksModel()
+{
+    for (auto m: qAsConst(m_models))
+        if (m->m_bookmarksModel)
+            return m;
+    return nullptr;
+}
+
+void ThumbnailFetcher::registerModel(FileSystemModel &model) {
+    auto &instance = GetInstance();
+    instance.m_models.insert(&model);
+}
+
+void ThumbnailFetcher::unregisterModel(FileSystemModel &model) {
+    auto &instance = GetInstance();
+    instance.m_models.remove(&model);
 }
 
 void YaycUtilities::fetchMissingThumbnails()
@@ -2300,10 +2362,10 @@ int main(int argc, char *argv[])
 
         qInfo("Starting YAYC v%s ...", appVersion().data());
 #ifdef QT_NO_DEBUG_OUTPUT
-//        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
-//                                                        "qmldebug=true\n"
-//                                                        "*.fatal=true\n"
-//                                                        ));
+        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
+                                                        "qmldebug=true\n"
+                                                        "*.fatal=true\n"
+                                                        ));
 #endif
 
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

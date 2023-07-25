@@ -65,7 +65,12 @@ Rectangle {
             extAppMenu.close()
         }
 
+        onClosed: {
+            view.contextedKey = ""
+        }
+
         function setCategoryIndex(idx) {
+            view.contextedKey = ""
             categoryIndex = idx
             deleteCategoryItem = true
             deleteVideoItem = false
@@ -74,6 +79,7 @@ Rectangle {
         function setVideoIndex(idx) {
             videoIndex = idx
             key = viewContainer.model.keyFromViewItem(idx)
+            view.contextedKey = key
             deleteCategoryItem = false
             deleteVideoItem = true
         }
@@ -118,7 +124,11 @@ Rectangle {
             visible: true
             height: enabled ? implicitHeight : 0
             onClicked: {
-                viewContainer.model.deleteEntry(viewContainer.contextMenu.videoIndex)
+                viewContainer.model.deleteEntry(viewContainer.contextMenu.videoIndex,
+                                                (root.removeStorageOnDelete)
+                                                ? root.extWorkingDirPath
+                                                : "",
+                                                root.removeStorageOnDelete)
                 root.triggerVideoAdded()
             }
             icon.source: "/icons/remove.svg"
@@ -687,8 +697,7 @@ Rectangle {
         alternatingRowColors: false
         backgroundVisible: false
         property string selectedKey: ""
-
-
+        property string contextedKey: ""
 
         QC1.TableViewColumn {
             title: "Name"
@@ -723,7 +732,7 @@ Rectangle {
                 height: Math.round(defaultLineHeight * 1.1)
                 border.color: (ma.drag.active)
                               ? "red"
-                              : (!styleData.hasChildren && view.selectedKey === key)
+                              : (!styleData.hasChildren && ((view.selectedKey === key) || (view.contextedKey === key)))
                                 ? "maroon"
                                 : (da.hovered
                                    ? "green"
