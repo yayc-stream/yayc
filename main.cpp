@@ -1667,7 +1667,7 @@ public slots:
 
     bool deleteEntry(QModelIndex item
                      , const QString &extWorkingDirRoot
-                     , bool deleteStorage) {
+                     , bool deleteStorage_) {
         if (!m_ready)
             return false;
         item = m_proxyModel->mapToSource(item);
@@ -1699,21 +1699,41 @@ public slots:
             auto entry = m_cache.take(key);
             res = entry.eraseFile();
 
-            if (!extWorkingDirRoot.isEmpty() && deleteStorage) {
-                // delete storage data if any
-                QDir d(extWorkingDirRoot);
-
-                if (!d.exists()) {
-                } else {
-                    if (!d.exists(key)) {
-                    } else {
-                        if (d.cd(key))
-                            d.removeRecursively();
-                    }
-                }
-            }
+            if (deleteStorage_)
+                deleteStorage(item, extWorkingDirRoot);
 
             return res;
+        }
+    }
+    void deleteStorage(QModelIndex item
+                     , const QString &extWorkingDirRoot) {
+        if (!m_ready)
+            return;
+        item = m_proxyModel->mapToSource(item);
+
+        if (!filePath(item).size()) {
+            qWarning() << "invalid input";
+            return;
+        }
+
+        const QString &key = itemKey(item);
+        if (!m_cache.contains(key)) {
+            qWarning() << "Not present in cache: " << key;
+            return;
+        }
+
+        if (!extWorkingDirRoot.isEmpty()) {
+            // delete storage data if any
+            QDir d(extWorkingDirRoot);
+
+            if (!d.exists()) {
+            } else {
+                if (!d.exists(key)) {
+                } else {
+                    if (d.cd(key))
+                        d.removeRecursively();
+                }
+            }
         }
     }
     void sync() {

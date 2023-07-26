@@ -236,6 +236,23 @@ Rectangle {
             icon.source: "/icons/open_in_browser.svg"
             display: MenuItem.TextBesideIcon
         }
+        MenuItem {
+            text: "Delete storage data"
+            enabled: viewContainer.contextMenu.deleteVideoItem
+                     && root.extWorkingDirExists
+                     && viewContainer.model.hasWorkingDir(
+                             viewContainer.contextMenu.videoIndex,
+                             root.extWorkingDirPath)
+            visible: true
+            height: enabled ? implicitHeight : 0
+            onClicked: {
+                viewContainer.model.deleteStorage(
+                    viewContainer.contextMenu.videoIndex,
+                    root.extWorkingDirPath)
+            }
+            icon.source: "/icons/delete_forever.svg"
+            display: MenuItem.TextBesideIcon
+        }
         // ToDo: add Menu for tagging
         Menu {
             id: extAppMenu
