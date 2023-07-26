@@ -624,18 +624,20 @@ struct VideoMetadata
         dirty = true;
     }
 
-    void setTitle(const QString &t) {
+    bool setTitle(const QString &t) {
         if (title == t)
-            return;
+            return false;
         title = t;
         dirty = true;
+        return true;
     }
 
-    void setChannelID(const QString &cid) {
+    bool setChannelID(const QString &cid) {
         if (channelID == cid)
-            return;
+            return false;
         channelID = cid;
         dirty = true;
+        return true;
     }
 
     bool update(const QString &t,
@@ -2014,7 +2016,25 @@ public slots:
         if (!m_cache.contains(key)) {
             return;
         }
-        m_cache[key].setChannelID(channelID); // vendor is embedded in the key/Video already
+        const bool updated = m_cache[key].setChannelID(channelID); // vendor is embedded in the key/Video already
+        if (updated) {
+            auto idx = index(m_cache[key].filePath());
+            emit dataChanged(idx, idx);
+        }
+    }
+
+    void updateTitle(const QString &key,
+                     const QString &title) {
+        if (!m_ready)
+            return;
+        if (!m_cache.contains(key) || title.isEmpty()) {
+            return;
+        }
+        const bool updated = m_cache[key].setTitle(title); // vendor is embedded in the key/Video already
+        if (updated) {
+            auto idx = index(m_cache[key].filePath());
+            emit dataChanged(idx, idx);
+        }
     }
 
     void updateChannelAvatar(const QString &channelKey,
@@ -2270,12 +2290,21 @@ void ThumbnailFetcher::onVideoPageRequestFinished()
                 if (match2.hasMatch())
                     channelAvatarURL = match2.captured(1);
 
+                QRegularExpression re3("<title>(.*?)</title>");
+                QString title;
+                QRegularExpressionMatch match3 = re3.match(sData);
+
+                if (match3.hasMatch())
+                    title =  match3.captured(1).replace(QRegularExpression(" - YouTube$"), "");
+
                 for (auto &m: qAsConst(m_models)) {
                     m->addChannel(channelId,
                                   Platform::toVendor(videoVendor(key)),
                                   channelName,
                                   channelAvatarURL);
                     m->updateChannelID(key, channelId);
+                    if (!title.isEmpty())
+                        m->updateTitle(key, title);
                 }
             } else {
                 ++m_channelIdFailures;

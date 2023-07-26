@@ -32,15 +32,6 @@ import yayc 1.0
 /*
   == Known issues ==
 
-  - webengineview onLinkHovered does not provide text.
-    The workaround used here is tricky as it requires hovering the link with the tooltip,
-    and as soon as the tooltip is shown, grab the text from the tooltip.
-    THe side effect is that if a video is added without making the respective tooltip pop first,
-    old tooltip text will be picked up. This will however be updated upon video opening.
-
-    Alternative solution: fetch the title in the background through a regular get request +
-    page scraping. This would likely help also add video dialogs.
-
   - QQ1.TreeView is terribly buggy.
     consider using https://code.qt.io/cgit/qt-extensions/qttreeview.git/about/ or
     another alternative. qttreeview needs to be checked against partial model updates
