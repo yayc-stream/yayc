@@ -108,6 +108,7 @@ bool isExec(const QString &fileName) {
 QString avatarUrl(QString originalAvatarUrl) {
     return originalAvatarUrl.replace(QLatin1String("=s48-"), QLatin1String("=s128-"));
 }
+const QRegExp allowedDirsPattern("^[^\\.].*"); // Skip entries starting with . , this skips .channels and every other hidden dir
 }
 
 class Platform : public QObject {
@@ -979,8 +980,86 @@ void EasylistLoader::run()
 
 
 class NoDirSortProxyModel : public QSortFilterProxyModel {
+    Q_OBJECT
+
+    QString m_searchTerm;
+    bool m_searchInTitles{true};
+    bool m_searchInChannelNames{true};
+
+    bool m_searchInStarred{true};
+    bool m_searchInUnstarred{true};
+    bool m_searchInOpened{true};
+    bool m_searchInUnopened{true};
+    bool m_searchInWatched{true};
+    bool m_searchInUnwatched{true};
+    bool m_searchInSaved{true};
+    bool m_searchInUnsaved{true};
+    bool m_searchInShorts{true};
+    QString m_workingDirRoot;
+
+    Q_PROPERTY(QString searchTerm READ searchTerm WRITE setSearchTerm NOTIFY searchTermChanged)
+    Q_PROPERTY(bool searchInTitles READ searchInTitles WRITE setSearchInTitles NOTIFY searchInTitlesChanged)
+    Q_PROPERTY(bool searchInChannelNames READ searchInChannelNames WRITE setSearchInChannelNames NOTIFY searchInChannelNamesChanged)
+
+    Q_PROPERTY(bool searchInStarred MEMBER m_searchInStarred NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnstarred MEMBER m_searchInUnstarred NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInOpened MEMBER m_searchInOpened NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnopened MEMBER m_searchInUnopened NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInWatched MEMBER m_searchInWatched NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnwatched MEMBER m_searchInUnwatched NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInSaved MEMBER m_searchInSaved NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInUnsaved MEMBER m_searchInUnsaved NOTIFY searchParametersChanged)
+    Q_PROPERTY(bool searchInShorts MEMBER m_searchInShorts NOTIFY searchParametersChanged)
+    Q_PROPERTY(QString workingDirRoot MEMBER m_workingDirRoot NOTIFY searchParametersChanged)
+
 public:
-    NoDirSortProxyModel() = default;
+    QString searchTerm() const {
+        return m_searchTerm;
+    }
+
+    void setSearchTerm(const QString &term) {
+        if (term == m_searchTerm)
+            return;
+
+        m_searchTerm = term;
+        updateSearchTerm();
+
+        emit searchTermChanged();
+    }
+
+    bool searchInTitles() const {
+        return m_searchInTitles;
+    }
+
+    void setSearchInTitles(bool enabled) {
+        if (enabled == m_searchInTitles)
+            return;
+
+        m_searchInTitles = enabled;
+        updateSearchTerm();
+        emit searchInTitlesChanged();
+    }
+
+    bool searchInChannelNames() const {
+        return m_searchInChannelNames;
+    }
+
+    void setSearchInChannelNames(bool enabled) {
+        if (enabled == m_searchInChannelNames)
+            return;
+
+        m_searchInChannelNames = enabled;
+        updateSearchTerm();
+
+        emit searchInChannelNamesChanged();
+    }
+
+
+    NoDirSortProxyModel() : QSortFilterProxyModel() {
+        connect(this, &NoDirSortProxyModel::searchParametersChanged, [&]() {
+                    updateSearchTerm();
+                });
+    }
     ~NoDirSortProxyModel() override {};
 
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override
@@ -1014,6 +1093,24 @@ public:
         // uses file modification date, i believe
         return QSortFilterProxyModel::lessThan(left, right);
     }
+
+    void updateSearchTerm() {
+        QString pattern;
+        if (!m_searchTerm.isEmpty())
+            pattern = "*" + m_searchTerm + "*";
+
+        setFilterRegExp(QRegExp(pattern, Qt::CaseInsensitive,
+                                              QRegExp::WildcardUnix));
+    }
+
+signals:
+    void searchTermChanged();
+    void searchInTitlesChanged();
+    void searchInChannelNamesChanged();
+    void searchParametersChanged();
+
+protected:
+    bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 };
 
 class ThumbnailImageProvider : public QQuickImageProvider
@@ -1040,6 +1137,7 @@ public:
                         const QSize &/*requestedSize*/) override
     {
         QMutexLocker locker(&m_mutex);
+
         if (m_images.contains(id))
             return m_images.value(id);
 
@@ -1147,12 +1245,14 @@ class FileSystemModel : public QFileSystemModel {
     QModelIndex m_rootPathIndex;
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
+
     QNetworkAccessManager m_nam;
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
 
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
+
 public:
     QVariant rootPathIndex() const {
         return QVariant::fromValue(m_rootPathIndex);
@@ -1161,6 +1261,7 @@ public:
     QVariant sortFilterProxyModel() const {
         return QVariant::fromValue(m_proxyModel.get());
     }
+
 
     explicit FileSystemModel(QString contextPropertyName,
                              bool bookmarks,
@@ -1180,7 +1281,7 @@ public:
         setFilter(QDir::AllEntries
                   | QDir::NoDotAndDotDot
                   | QDir::AllDirs
-                  // | QDir::Hidden
+                  //| QDir::Hidden
                   );
         sort(3);
         QScopedPointer<NoDirSortProxyModel> pm(new NoDirSortProxyModel);
@@ -1193,12 +1294,19 @@ public:
         ThumbnailFetcher::unregisterModel(*this);
     }
 
+    inline bool ready() const {
+        return m_ready;
+    }
+
     enum Roles  {
         SizeRole = Qt::UserRole + 4,
         DisplayableFilePermissionsRole = Qt::UserRole + 5,
         LastModifiedRole = Qt::UserRole + 6,
         UrlStringRole = Qt::UserRole + 7,
         ContentNameRole = Qt::UserRole + 8,
+        TitleRole = Qt::UserRole + 9,
+        ChannelNameRole = Qt::UserRole + 10,
+        ChannelIdRole = Qt::UserRole + 11,
     };
     Q_ENUM(Roles)
 
@@ -1237,7 +1345,7 @@ public:
             qFatal("Trying to set root directory to non-existent %s\n", newPath.toStdString().c_str());
             return {};
         }
-        m_ready = true;
+
         m_cache = cacheRoot(m_root);
         if (m_bookmarksModel) {
             m_root.mkdir(".channels");
@@ -1261,7 +1369,7 @@ public:
             m_proxyModel->setSourceModel(this);
 
             m_proxyModel->setDynamicSortFilter(true);
-            m_proxyModel->setFilterRegularExpression("^[^\\.].*"); // Skip entries starting with .
+            //m_proxyModel->setFilterRegularExpression("^[^\\.].*"); // Skip entries starting with . , this skips .channels and every other hidden dir
             m_proxyModel->setSortRole(LastModifiedRole);
             m_proxyModel->sort(3);
 
@@ -1271,6 +1379,11 @@ public:
             }
             engine->rootContext()->setContextProperty(m_contextPropertyName, this);
 
+//            updateSearchTerm();
+
+            if (!m_ready)
+                emit firstInitializationCompleted(m_root.path());
+            m_ready = true;
             emit sortFilterProxyModelChanged();
             emit rootPathIndexChanged();
             return m_rootPathIndex;
@@ -1329,15 +1442,19 @@ public:
             case ContentNameRole:
             case QFileSystemModel::FileNameRole:
             case Qt::DisplayRole: {
+                /*          QFileSystemModel:
+                            case 0: return d->displayName(index);
+                            case 1: return d->size(index);
+                            case 2: return d->type(index);
+                            case 3: return d->time(index);
+                */
                 switch (index.column()) {
                 case 0: {
                     if (!isDir(index)) {
                         const QString &key = itemKey(index);
-                        if (!m_cache.contains(key))
+                        if (!m_cache.contains(key)) {
                             return QFileSystemModel::data(index, role);
-//                        const auto &title = m_cache.value(key).title;
-//                        if (title.size())
-//                            return title;
+                        }
                         return key;
                     }
                     return QFileSystemModel::data(index, role);
@@ -1348,6 +1465,45 @@ public:
                 default:
                     return QFileSystemModel::data(index, role);
                 }
+            }
+            case TitleRole: {
+                if (!isDir(index)) {
+                    const QString &key = itemKey(index);
+                    if (!m_cache.contains(key)) {
+                        return {};
+                    }
+                    const auto &title = m_cache.value(key).title;
+                    if (title.size())
+                        return title;
+                } else {
+                    return QFileSystemModel::data(index, role);
+                }
+            }
+            case ChannelNameRole: {
+                if (!isDir(index)) {
+                    const QString &key = itemKey(index);
+                    if (!m_cache.contains(key)) {
+                        return {};
+                    }
+                    auto cid = m_cache.value(key).channelID;
+                    auto cVendor = m_cache.value(key).vendor;
+                    auto cKey = ChannelMetadata::key(cid, cVendor);
+                    if (m_channelCache.contains(cKey)) {
+                        return m_channelCache.value(cKey).name;
+                    }
+                    return {};
+                }
+                return {};
+            }
+            case ChannelIdRole: {
+                if (!isDir(index)) {
+                    const QString &key = itemKey(index);
+                    if (!m_cache.contains(key)) {
+                        return {};
+                    }
+                    return m_cache.value(key).channelID;
+                }
+                return {};
             }
             default:
                 break;
@@ -1504,13 +1660,20 @@ public slots:
         if (!m_ready)
             return 0;
         const QString &key = keyFromViewItem(item);
+        return duration(key);
+    }
+    qreal duration(const QString &key) const {
+        if (!m_ready)
+            return 0;
+
+
+        if (!key.size())
+            return 0.;
+
         if (!m_cache.contains(key)) {
             qWarning() << "FileSystemModel::duration: Key "<<key<<" not present!";
             return 0;
         }
-
-        if (!key.size())
-            return 0.;
 
         return m_cache.value(key).duration;
     }
@@ -1767,6 +1930,10 @@ signals:
     void filesAdded(const QVariantList & addedPaths);
     void rootPathIndexChanged();
     void sortFilterProxyModelChanged();
+    void searchTermChanged();
+    void searchInTitlesChanged();
+    void searchInChannelNamesChanged();
+    void firstInitializationCompleted(const QString &rootPath);
 
 private slots:
     void onChannelAvatarRequestFinished()
@@ -1825,7 +1992,9 @@ private:
     QString itemKey(const QModelIndex &index) const {
         if (!m_ready)
             return QLatin1String("");
-        return fileInfo(index).baseName();
+        const auto &fi = fileInfo(index);
+        const QString &baseName = fi.baseName();
+        return baseName;
     }
 
     void fetchAvatar(const QString &key, QString url, const bool persist) {
@@ -1851,6 +2020,71 @@ private:
 
 friend class ThumbnailFetcher;
 }; // FileSysyemModel
+
+bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
+{
+    QRegExp re = filterRegExp();
+
+    FileSystemModel *fsm = qobject_cast<FileSystemModel *>(sourceModel());
+
+    QModelIndex nameIndex = fsm->index(sourceRow, 0, sourceParent);
+    const bool isDir = fsm->hasChildren(nameIndex);
+
+    const QString key = fsm->data(nameIndex, FileSystemModel::FileNameRole).toString();
+
+    if (isDir) { // pass all directories (categories), filter out .* directories
+                 // otherwise, if parent is filtered out, children won't be processed
+        return key.contains(allowedDirsPattern);
+    }
+
+    QString title = fsm->data(nameIndex, FileSystemModel::TitleRole).toString();
+
+//    QLoggingCategory category("qmldebug");
+//    qCInfo(category) << "Analyzing "<< title << " k "<<key;
+
+    const bool starred = fsm->isStarred(key);
+    if ((starred && !m_searchInStarred) || (!starred && !m_searchInUnstarred))
+        return false;
+
+    const bool shortVideo = YaycUtilities::isShortVideo(key);
+    if (shortVideo && !m_searchInShorts)
+        return false;
+
+    const bool opened = !shortVideo && fsm->duration(key) > 0.;
+    if ((opened && !m_searchInOpened) || (!opened && !m_searchInUnopened))
+        return false;
+
+
+    const bool viewed = !shortVideo && fsm->isViewed(key);
+    if ((viewed && !m_searchInWatched) || (!viewed && !m_searchInUnwatched))
+        return false;
+
+    const bool hasWorkingDir = m_workingDirRoot.isEmpty() || fsm->hasWorkingDir(key, m_workingDirRoot);
+    if ((!hasWorkingDir && !m_searchInUnsaved) || (hasWorkingDir && !m_searchInSaved))
+        return false;
+
+    if (re.isEmpty())
+        return true;
+
+    const QString channelName =
+            fsm->data(nameIndex, FileSystemModel::ChannelNameRole).toString();
+
+    const QString channelId =
+            fsm->data(nameIndex, FileSystemModel::ChannelIdRole).toString();
+
+
+    bool searchInTitles = m_searchInTitles || (!m_searchInTitles && !m_searchInChannelNames);
+
+    bool res = false;
+    if (searchInTitles)
+        res |= title.contains(re);
+    if (m_searchInChannelNames) {
+        res |= channelName.contains(re);
+        res |= channelId.contains(re);
+    }
+
+    return res;
+}
 
 void ThumbnailFetcher::onThumbnailRequestFinished()
 {
@@ -1905,6 +2139,7 @@ int main(int argc, char *argv[])
     int currentExitCode = 0;
     QStringList args;
     {
+        auto appstartTS = QDateTime::currentDateTimeUtc();
         QCoreApplication::setOrganizationName("YAYC");
         QCoreApplication::setApplicationName("yayc");
 
@@ -1975,6 +2210,18 @@ int main(int argc, char *argv[])
 
         isPlasma = isPlasmaSession();
 
+        QObject::connect(fsmodel, &FileSystemModel::firstInitializationCompleted,
+                         [fsmodel, appstartTS, &settings](const QString &path) {
+            if (!fsmodel->ready()) {
+                if (!settings.contains("debugMode") || !settings.value("debugMode").toBool())
+                    return;
+                auto modelReadyTS = QDateTime::currentDateTimeUtc();
+                auto msecs = appstartTS.msecsTo(modelReadyTS);
+                QLoggingCategory category("qmldebug");
+                qCInfo(category) << "Starting time for "
+                                 << path<< " : " << msecs << " ms";
+            }
+        });
         engine.load(url);
 
         QTimer::singleShot(1000,[&engine, interceptor](){
