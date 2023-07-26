@@ -340,7 +340,7 @@ ApplicationWindow {
         if (typeof(root.lastVersionCheckDate) !== "undefined") {
             var diff = (now - root.lastVersionCheckDate); // Difference in milliseconds.
             var diffSeconds = parseInt(diff/1000);
-            var intervalSeconds = 3600 * 24 // don't check more often than once per day
+            var intervalSeconds = 3600 * 2 // don't check more often than once per 2h
             if (diffSeconds < intervalSeconds) {
                 return;
             }
@@ -350,35 +350,14 @@ ApplicationWindow {
         utilities.getDonateEtag()
     }
 
-    function compareAppVersion(version1,version2) { // true if 1 < 2
-        var result=false;
-
-        if(typeof version1!=='object'){ version1=version1.toString().split('.'); }
-        if(typeof version2!=='object'){ version2=version2.toString().split('.'); }
-
-        for(var i=0;i<(Math.max(version1.length,version2.length));i++){
-
-            if(version1[i]==undefined){ version1[i]=0; }
-            if(version2[i]==undefined){ version2[i]=0; }
-
-            if(Number(version1[i])<Number(version2[i])){
-                result=true;
-                break;
-            }
-            if(version1[i]!=version2[i]){
-                break;
-            }
-        }
-        return(result);
-    }
-
     function onLatestVersionFound(latestVersion) {
         var now = new Date()
         root.lastVersionCheckDate = now
         var previousRemoteVersion = root.lastestRemoteVersion
         root.lastestRemoteVersion = latestVersion
 
-        if (compareAppVersion(previousRemoteVersion, latestVersion)) { // if latest is greater
+        var res = utilities.compareSemver(previousRemoteVersion, latestVersion)
+        if (res === 1) { // if latest is greater
             // highlight settings
             root.firstRun = true
         }
@@ -2054,7 +2033,7 @@ ApplicationWindow {
 
                 Rectangle {
                     id: newReleaseContainer
-                    visible: root.lastestRemoteVersion !== appVersion
+                    visible: utilities.compareSemver(appVersion, root.lastestRemoteVersion) > 0
                     color: (maNewVersion.hovered)
                             ? Qt.rgba(1,1,1,0.1)
                             : "transparent"

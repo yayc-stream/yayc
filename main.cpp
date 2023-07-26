@@ -61,6 +61,7 @@ In addition to the above,
 #include <QAtomicInteger>
 #include <QMetaEnum>
 #include <QMetaObject>
+#include <QVersionNumber>
 #include <QtGlobal>
 
 #include "third_party/ad-block/ad_block_client.h"
@@ -341,6 +342,17 @@ public:
     }
 
     Q_INVOKABLE void fetchMissingThumbnails();
+
+    Q_INVOKABLE int compareSemver(const QString &version1, const QString &version2) {
+        QVersionNumber v1 = QVersionNumber::fromString(version1);
+        QVersionNumber v2 = QVersionNumber::fromString(version2);
+
+        if (v1 < v2)
+            return -1;
+        if (v2 > v1)
+            return 1;
+        return 0;
+    }
 
     static bool isShortVideo(const QString &fkey) {
         if (!fkey.size())
