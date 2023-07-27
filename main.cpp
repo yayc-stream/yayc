@@ -2140,8 +2140,8 @@ private:
         }
         if (avatarNeedsFetch)
             ThumbnailFetcher::fetchChannelAvatar(key, channelAvatarURL);
-
     }
+
     // this one needs the QModelIndex in FileSystemModel space!
     QString itemKey(const QModelIndex &index) const {
         if (!m_ready)
@@ -2409,7 +2409,6 @@ int main(int argc, char *argv[])
         qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
 #endif
         qputenv("QT_QUICK_CONTROLS_STYLE", QByteArrayLiteral("Material"));
-
 
         if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
             // https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites

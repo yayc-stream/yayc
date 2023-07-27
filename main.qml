@@ -781,6 +781,7 @@ ApplicationWindow {
                         isShorts = utilities.isYoutubeShortsUrl(url)
                         dataPuller.start()
                     } else {
+                        isShorts = false
                         zoomFactor = root.wevZoomFactor
                         dataPuller.stop()
                         key = ""
