@@ -261,6 +261,21 @@ public:
         return {}; // Error
     }
 
+    Q_INVOKABLE QString getVideoID(const QString &key,
+                                   const QString &sVendor,
+                                   bool isShorts) const {
+        const Platform::Vendor vendor = Platform::toVendor(sVendor);
+        if (vendor == Platform::YTB) {
+            if (isShorts) {
+                return QLatin1String("YTBs_") + key;
+            } else {
+                return QLatin1String("YTBv_") + key;
+            }
+        }
+        Q_UNREACHABLE();
+        return {}; // Error
+    }
+
     Q_INVOKABLE QString getChangelog() {
         static QString changelog;
         if (changelog.isEmpty()) {

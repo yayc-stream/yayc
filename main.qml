@@ -477,20 +477,27 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
             setTimeout(function() {  //function puller()
+                try {
+                    backend.channelURL = document.getElementById('text').firstChild.href;
+                    backend.channelName = document.getElementById('text').firstChild.text;
+                    backend.channelAvatar = document.getElementById('owner').firstElementChild.firstElementChild.firstElementChild.firstElementChild.src;
+                    var url = document.getElementsByTagName('ytd-watch-flexy')[0].getAttribute('video-id')
+                    backend.videoID = url;
+                    backend.shorts = false;
+                    backend.vendor = 'YTB';
 
-                backend.channelURL = document.getElementById('text').firstChild.href;
-                backend.channelName = document.getElementById('text').firstChild.text;
-                backend.channelAvatar = document.getElementById('owner').firstElementChild.firstElementChild.firstElementChild.firstElementChild.src;
+                    var ytplayer = document.getElementById('movie_player');
 
-                var ytplayer = document.getElementById('movie_player');
-
-                backend.videoTitle = ytplayer.getVideoData().title;
-                backend.videoDuration = ytplayer.getDuration();
-                backend.videoPosition = ytplayer.getCurrentTime();
-                backend.playbackRate = ytplayer.getPlaybackRate();
-                backend.playerState = ytplayer.getPlayerState();
-                backend.volume = ytplayer.getVolume();
-                backend.muted = ytplayer.isMuted();
+                    backend.videoTitle = ytplayer.getVideoData().title;
+                    backend.videoDuration = ytplayer.getDuration();
+                    backend.videoPosition = ytplayer.getCurrentTime();
+                    backend.playbackRate = ytplayer.getPlaybackRate();
+                    backend.playerState = ytplayer.getPlayerState();
+                    backend.volume = ytplayer.getVolume();
+                    backend.muted = ytplayer.isMuted();
+                } catch (e) {
+                    console.log(e);
+                }
             }, 100);
             //puller();
         "
@@ -507,21 +514,33 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
             setTimeout(function() {
-                var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0].querySelector('div[id=\"channel-info\"]')
-                backend.channelURL = activeShort.children[0].href
-                backend.channelName = activeShort.children[1].getElementsByTagName('yt-formatted-string')[0].textContent
-                backend.channelAvatar = activeShort.firstElementChild.firstElementChild.firstElementChild.src
+                try {
+                    var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
+                    var chanInfo = activeShort.querySelector('div[id=\"channel-info\"]')
+                    backend.channelURL = chanInfo.children[0].href
+                    backend.channelName = chanInfo.children[1].getElementsByTagName('yt-formatted-string')[0].textContent
+                    backend.channelAvatar = chanInfo.firstElementChild.firstElementChild.firstElementChild.src
 
-                var ytplayer = document.getElementById('player').getPlayer();
+                    //var url = activeShort.getElementsByClassName('player-container style-scope ytd-reel-video-renderer')[0].getAttribute('style')
+                    var url = activeShort.getElementsByClassName('ytp-title-link yt-uix-sessionlink')[0].getAttribute('href').split('/');
+                    url = url[url.length - 1]
+                    backend.videoID = url;
+                    backend.shorts = true;
+                    backend.vendor = 'YTB';
 
-                backend.videoTitle = document.title;
-                backend.videoDuration = ytplayer.getDuration();
-                backend.videoPosition = ytplayer.getCurrentTime();
-                backend.playbackRate = ytplayer.getPlaybackRate();
-                backend.playerState = ytplayer.getPlayerState();
-                backend.volume = ytplayer.getVolume();
-                backend.muted = ytplayer.isMuted();
-                //console.log(document.title);
+                    var ytplayer = document.getElementById('player').getPlayer();
+
+                    backend.videoTitle = document.title;
+                    backend.videoDuration = ytplayer.getDuration();
+                    backend.videoPosition = ytplayer.getCurrentTime();
+                    backend.playbackRate = ytplayer.getPlaybackRate();
+                    backend.playerState = ytplayer.getPlayerState();
+                    backend.volume = ytplayer.getVolume();
+                    backend.muted = ytplayer.isMuted();
+                    //console.log(document.title);
+                } catch (e) {
+                    console.log(e);
+                }
             }, 100);
         "
 
@@ -614,37 +633,46 @@ ApplicationWindow {
 
         property real videoPosition: 0
         property real videoDuration: 0
+        property string videoID
         property string videoTitle
         property string channelURL
         property string channelName
         property string channelAvatar
-        property string keyBefore
+        property string vendor
+
         property real playbackRate
         property int playerState
         property int volume
         property bool muted
+        property bool shorts
 
         onVolumeChanged: root.volume = volume
         onMutedChanged: root.muted = muted
 
         function getCurrentVideoURLWithPosition() {
-            if (root.addVideoEnabled)
+            if (webEngineView.isYoutubeVideo
+                    && webEngineView.key == key)
                 return utilities.urlWithPosition(webEngineView.url, timePuller.videoPosition)
             return webEngineView.url
         }
 
         onVideoPositionChanged: {
-            if (webEngineView.key != keyBefore) {
+            var isShorts = shorts;
+            var key = utilities.getVideoID(videoID, vendor, isShorts)
+//            console.log(" keY: ", key,
+//                        " shorts: ", isShorts,
+//                        " weKey: ", webEngineView.key,
+//                        " CHAN: ",channelURL, channelName, channelAvatar)
+            if (webEngineView.key !== key) {
                 root.addVideoEnabled = false
-                // console.log("timePuller data changed while URL changed")
                 return
             }
-            //console.log("CHAN: ",channelURL, channelName, channelAvatar)
+
             root.addVideoEnabled = true
 
-            if ((webEngineView.key !== "" && webEngineView.isShorts)
-                  && (videoTitle === "")) {
-                // silently ignore
+            if (webEngineView.key !== ""
+                  && videoTitle === "") {
+                // missing title, silently ignore
                 return;
             }
 
@@ -657,6 +685,10 @@ ApplicationWindow {
         }
 
         function update() {
+            var key = utilities.getVideoID(url)
+            if (key !== webEngineView.key)
+                return
+
             fileSystemModel.updateEntry(webEngineView.key,
                                         videoTitle,
                                         channelURL,
@@ -685,7 +717,11 @@ ApplicationWindow {
                 // Q_UNREACHABLE
                 return;
             }
-            if (webEngineView.key != keyBefore) {
+
+            var key = utilities.getVideoID(url)
+            var isShorts = utilities.isYoutubeShortsUrl(url)
+
+            if (webEngineView.key !== key) {
                 root.addVideoEnabled = false
                 return
             }
@@ -698,7 +734,7 @@ ApplicationWindow {
                                      videoDuration,
                                      videoPosition)
 
-            if (webEngineView.key !== "" && webEngineView.isShorts)
+            if (key !== "" && isShorts)
                 fileSystemModel.viewEntry(webEngineView.key, true);
             root.triggerVideoAdded()
         }
@@ -774,13 +810,14 @@ ApplicationWindow {
 
 
                 onUrlChanged: {
-                    root.addVideoEnabled = false
                     if (utilities.isYoutubeVideoUrl(url)) {
+                        root.addVideoEnabled = true
                         zoomFactor = root.wevZoomFactorVideo
                         key = utilities.getVideoID(url)
                         isShorts = utilities.isYoutubeShortsUrl(url)
-                        dataPuller.start()
+                        dataPuller.startPulling()
                     } else {
+                        root.addVideoEnabled = false
                         isShorts = false
                         zoomFactor = root.wevZoomFactor
                         dataPuller.stop()
@@ -804,15 +841,23 @@ ApplicationWindow {
 
                 Timer {
                     id: dataPuller
-                    interval: 3000;
+                    interval: 5000;
                     running: false;
                     repeat: true
-                    function pullTime() {
-                        interval = 3000
-                        // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
-                        timePuller.keyBefore = webEngineView.key
 
-                        if (webEngineView.key !== "" && webEngineView.isShorts) {
+                    function startPulling() {
+                        start()
+                    }
+
+                    function pullTime() {
+                        interval = 5000
+                        // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
+
+                        if (!webEngineView.isYoutubeVideo
+                                || webEngineView.key === "")
+                            return;
+
+                        if (webEngineView.isShorts) {
                             webEngineView.runJavaScript(internals.script_videoTimeShorts)
                         } else {
                             webEngineView.runJavaScript(internals.script_videoTime)
@@ -1196,7 +1241,7 @@ ApplicationWindow {
                 ToolButton {
                     id: buttonCopyLink
                     text: "Copy"
-                    enabled: root.addVideoEnabled
+                    enabled: true //root.addVideoEnabled
                     visible: true
                     TextEdit{
                         id: copyLinkClipboardProxy
@@ -1213,13 +1258,13 @@ ApplicationWindow {
 
                     hoverEnabled: true
                     ToolTip.visible: hovered
-                    ToolTip.text: "Copy Video URL to Clipboard"
+                    ToolTip.text: "Copy URL to Clipboard"
                     ToolTip.delay: 300
                 }
 
                 ToolButton {
                     id: buttonSpeed
-                    enabled: root.addVideoEnabled
+                    enabled: webEngineView.isYoutubeVideo
                     visible: true
                     checkable: true
 
@@ -1248,7 +1293,7 @@ ApplicationWindow {
 
                 ToolButton {
                     id: buttonPlayPause
-                    enabled: root.addVideoEnabled && (timePuller.playerState !== -1)
+                    enabled: webEngineView.isYoutubeVideo && (timePuller.playerState !== -1)
                     visible: true
                     checkable: false
 
@@ -1282,7 +1327,7 @@ ApplicationWindow {
 
                 Slider {
                     id: sliderVolume
-                    enabled: root.addVideoEnabled
+                    enabled: webEngineView.isYoutubeVideo
                     implicitWidth: 64
 
                     value: 0
