@@ -62,6 +62,7 @@ In addition to the above,
 #include <QMetaEnum>
 #include <QMetaObject>
 #include <QVersionNumber>
+#include <QtGui/QTextDocument>
 #include <QtGlobal>
 
 #include "third_party/ad-block/ad_block_client.h"
@@ -272,8 +273,9 @@ public:
                 return QLatin1String("YTBv_") + key;
             }
         }
-        Q_UNREACHABLE();
-        return {}; // Error
+        // Q_UNREACHABLE();
+        qWarning() << "getVideoID error: " << key <<  " " << sVendor << " " << isShorts;
+        return {}; // Error,
     }
 
     Q_INVOKABLE QString getChangelog() {
@@ -2285,7 +2287,7 @@ void ThumbnailFetcher::onVideoPageRequestFinished()
         QByteArray networkContent = reply->readAll();
         if (networkContent.size()) {
             // parse content,  update key with parsed channel id
-            QString sData = QString::fromLatin1(networkContent);
+            QString sData = QString::fromUtf8(networkContent);
             QRegularExpression re("<span itemprop=\"author\" itemscope itemtype=\"http://schema.org/Person\"><link itemprop=\"url\" href=\"http://www.youtube.com/(.+?)\"><link itemprop=\"name\" content=\"(.+?)\">");
             QRegularExpressionMatch match = re.match(sData);
             if (match.hasMatch()) {
@@ -2309,8 +2311,12 @@ void ThumbnailFetcher::onVideoPageRequestFinished()
                 QString title;
                 QRegularExpressionMatch match3 = re3.match(sData);
 
-                if (match3.hasMatch())
+                if (match3.hasMatch()) {
                     title =  match3.captured(1).replace(QRegularExpression(" - YouTube$"), "");
+                    QTextDocument td;
+                    td.setHtml(title);
+                    title = td.toPlainText();
+                }
 
                 for (auto &m: qAsConst(m_models)) {
                     m->addChannel(channelId,

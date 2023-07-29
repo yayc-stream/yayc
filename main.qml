@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -477,14 +477,9 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
             setTimeout(function() {  //function puller()
-                try {
                     backend.channelURL = document.getElementById('text').firstChild.href;
                     backend.channelName = document.getElementById('text').firstChild.text;
                     backend.channelAvatar = document.getElementById('owner').firstElementChild.firstElementChild.firstElementChild.firstElementChild.src;
-                    var url = document.getElementsByTagName('ytd-watch-flexy')[0].getAttribute('video-id')
-                    backend.videoID = url;
-                    backend.shorts = false;
-                    backend.vendor = 'YTB';
 
                     var ytplayer = document.getElementById('movie_player');
 
@@ -495,9 +490,11 @@ ApplicationWindow {
                     backend.playerState = ytplayer.getPlayerState();
                     backend.volume = ytplayer.getVolume();
                     backend.muted = ytplayer.isMuted();
-                } catch (e) {
-                    console.log(e);
-                }
+
+                    var url = document.getElementsByTagName('ytd-watch-flexy')[0].getAttribute('video-id')
+                    backend.videoID = url;
+                    backend.shorts = false;
+                    backend.vendor = 'YTB';
             }, 100);
             //puller();
         "
@@ -514,7 +511,7 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
             setTimeout(function() {
-                try {
+//                try {
                     var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
                     var chanInfo = activeShort.querySelector('div[id=\"channel-info\"]')
                     backend.channelURL = chanInfo.children[0].href
@@ -538,9 +535,9 @@ ApplicationWindow {
                     backend.volume = ytplayer.getVolume();
                     backend.muted = ytplayer.isMuted();
                     //console.log(document.title);
-                } catch (e) {
-                    console.log(e);
-                }
+//                } catch (e) {
+//                    console.log(e);
+//                }
             }, 100);
         "
 
@@ -650,20 +647,19 @@ ApplicationWindow {
         onMutedChanged: root.muted = muted
 
         function getCurrentVideoURLWithPosition() {
-            if (webEngineView.isYoutubeVideo
-                    && webEngineView.key == key)
+            if (webEngineView.isYoutubeVideo && videoID !== ""
+                    && webEngineView.key == utilities.getVideoID(videoID, vendor, shorts))
                 return utilities.urlWithPosition(webEngineView.url, timePuller.videoPosition)
             return webEngineView.url
         }
 
         onVideoPositionChanged: {
-            var isShorts = shorts;
-            var key = utilities.getVideoID(videoID, vendor, isShorts)
-//            console.log(" keY: ", key,
-//                        " shorts: ", isShorts,
+            var k = utilities.getVideoID(videoID, vendor, shorts)
+//            console.log(" keY: ", k,
+//                        " shorts: ", shorts,
 //                        " weKey: ", webEngineView.key,
 //                        " CHAN: ",channelURL, channelName, channelAvatar)
-            if (webEngineView.key !== key) {
+            if (webEngineView.key !== k) {
                 root.addVideoEnabled = false
                 return
             }
@@ -685,8 +681,8 @@ ApplicationWindow {
         }
 
         function update() {
-            var key = utilities.getVideoID(url)
-            if (key !== webEngineView.key)
+            var k = utilities.getVideoID(videoID, vendor, shorts)
+            if (k !== webEngineView.key)
                 return
 
             fileSystemModel.updateEntry(webEngineView.key,
@@ -718,10 +714,9 @@ ApplicationWindow {
                 return;
             }
 
-            var key = utilities.getVideoID(url)
-            var isShorts = utilities.isYoutubeShortsUrl(url)
+            var k = utilities.getVideoID(videoID, vendor, shorts)
 
-            if (webEngineView.key !== key) {
+            if (webEngineView.key !== k) {
                 root.addVideoEnabled = false
                 return
             }
@@ -734,7 +729,7 @@ ApplicationWindow {
                                      videoDuration,
                                      videoPosition)
 
-            if (key !== "" && isShorts)
+            if (k !== "" && shorts)
                 fileSystemModel.viewEntry(webEngineView.key, true);
             root.triggerVideoAdded()
         }
