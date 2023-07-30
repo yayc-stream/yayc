@@ -53,207 +53,12 @@ Rectangle {
                             : ((historyView) ?
                                 historyModel : fileSystemModel)
 
-    property Menu contextMenu: Menu {
-        cascade: true
-        property bool deleteCategoryItem: false
-        property bool deleteVideoItem: false
-        property var categoryIndex
-        property var videoIndex
-        property string key: ""
-        onOpened: {
-            // workaround for the submenu occasionally showing opened
-            extAppMenu.close()
-        }
-
-        function setCategoryIndex(idx) {
-            categoryIndex = idx
-            deleteCategoryItem = true
-            deleteVideoItem = false
-        }
-
-        function setVideoIndex(idx) {
-            videoIndex = idx
-            key = viewContainer.model.keyFromViewItem(idx)
-            deleteCategoryItem = false
-            deleteVideoItem = true
-        }
-
-        MenuItem {
-            text: "Add category"
-            enabled: !viewContainer.historyView
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                addCategoryDialog.open()
-            }
-            icon.source: "/icons/create_new_folder.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: "Add video"
-            enabled: !viewContainer.historyView
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                addVideoDialog.open()
-            }
-            icon.source: "/icons/add.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: "Delete category"
-            enabled: !viewContainer.historyView
-                     && viewContainer.contextMenu.deleteCategoryItem
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                if (viewContainer.historyView)
-                    return
-                viewContainer.model.deleteEntry(viewContainer.contextMenu.categoryIndex)
-            }
-            icon.source: "/icons/folder_delete.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: "Delete video" + ((viewContainer.historyView) ? " from History": "")
-            enabled: viewContainer.contextMenu.deleteVideoItem
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                viewContainer.model.deleteEntry(viewContainer.contextMenu.videoIndex)
-                root.triggerVideoAdded()
-            }
-            icon.source: "/icons/remove.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            TextEdit{
-                id: copyLinkClipboardProxy
-                visible: false
-            }
-            text: "Copy Link"
-            enabled: viewContainer.contextMenu.deleteVideoItem
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                copyLinkClipboardProxy.text = viewContainer.model.videoUrl(viewContainer.contextMenu.videoIndex)
-                copyLinkClipboardProxy.selectAll();
-                copyLinkClipboardProxy.copy()
-            }
-            icon.source: "/icons/content_copy.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: "Toggle Star"
-            enabled: !viewContainer.historyView
-                     && viewContainer.contextMenu.deleteVideoItem
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                if (viewContainer.historyView)
-                    return
-                var starred = viewContainer.model.isStarred(viewContainer.contextMenu.key)
-                viewContainer.model.starEntry(viewContainer.contextMenu.key, !starred)
-                buttonStarVideo.triggerStarred() // ToDo: check
-            }
-            icon.source: "/icons/"+(fileSystemModel.isStarred(viewContainer.contextMenu.key)
-                                    ? "star_fill.svg" : "star.svg")
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: "Toggle Viewed"
-            enabled: !viewContainer.historyView
-                     && viewContainer.contextMenu.deleteVideoItem
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                if (viewContainer.historyView)
-                    return
-                var viewed = viewContainer.model.isViewed(viewContainer.contextMenu.key)
-                viewContainer.model.viewEntry(viewContainer.contextMenu.key, !viewed)
-            }
-            icon.source: "/icons/"+(fileSystemModel.isViewed(viewContainer.contextMenu.key)
-                                    ? "check_circle_fill.svg" : "check_circle.svg")
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: (view.selectedKey !== viewContainer.contextMenu.key)
-                  ? "Cut"
-                  : "Un-Cut"
-            enabled:  !viewContainer.historyView
-                      && viewContainer.contextMenu.deleteVideoItem
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                if (view.selectedKey !== viewContainer.contextMenu.key) {
-                    view.selectedKey = viewContainer.contextMenu.key
-                } else {
-                    view.selectedKey = ""
-                }
-            }
-            icon.source: "/icons/content_cut.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: "Paste"
-            enabled: !viewContainer.historyView
-                     && viewContainer.contextMenu.deleteCategoryItem
-                     && (view.selectedKey !== "")
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                if (viewContainer.historyView)
-                    return
-                var key = view.selectedKey
-                view.selectedKey = ""
-                var res = viewContainer.model.moveVideo(key, viewContainer.contextMenu.categoryIndex)
-            }
-            icon.source: "/icons/content_paste.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        MenuItem {
-            text: "Open containing folder"
-            enabled: viewContainer.contextMenu.deleteVideoItem
-                     && root.extWorkingDirExists
-                     && viewContainer.model.hasWorkingDir(
-                             viewContainer.contextMenu.videoIndex,
-                             root.extWorkingDirPath)
-            visible: true
-            height: enabled ? implicitHeight : 0
-            onClicked: {
-                viewContainer.model.openInBrowser(
-                    viewContainer.contextMenu.videoIndex,
-                    root.extWorkingDirPath)
-            }
-            icon.source: "/icons/open_in_browser.svg"
-            display: MenuItem.TextBesideIcon
-        }
-        // ToDo: add Menu for tagging
-        Menu {
-            id: extAppMenu
-            title: "Launch in external app"
-            enabled: viewContainer.contextMenu.deleteVideoItem
-                     && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
-            visible: enabled
-            height: enabled ? implicitHeight : 0
-
-            Repeater {
-                model: root.externalCommands
-                MenuItem {
-                    text: root.externalCommands[index].name
-                    enabled: viewContainer.contextMenu.deleteVideoItem
-                             && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
-                    visible: true
-                    height: enabled ? implicitHeight : 0
-                    onClicked: {
-                        // ToDo: use only one model if processes should be tracked
-                        viewContainer.model.openInExternalApp(
-                              viewContainer.contextMenu.videoIndex,
-                              root.externalCommands[index].command,
-                              root.extWorkingDirPath)
-                    }
-                    icon.source: "/icons/extension.svg"
-                    display: MenuItem.TextBesideIcon
-                }
-            }
+    property Menu contextMenu: BookmarkContextMenu {
+        isHistoryView: viewContainer.historyView
+        model: viewContainer.model
+        parentView: view
+        onClosed: {
+            view.contextedKey = ""
         }
     }
 
@@ -687,8 +492,7 @@ Rectangle {
         alternatingRowColors: false
         backgroundVisible: false
         property string selectedKey: ""
-
-
+        property string contextedKey: ""
 
         QC1.TableViewColumn {
             title: "Name"
@@ -723,7 +527,7 @@ Rectangle {
                 height: Math.round(defaultLineHeight * 1.1)
                 border.color: (ma.drag.active)
                               ? "red"
-                              : (!styleData.hasChildren && view.selectedKey === key)
+                              : (!styleData.hasChildren && ((view.selectedKey === key) || (view.contextedKey === key)))
                                 ? "maroon"
                                 : (da.hovered
                                    ? "green"
@@ -879,8 +683,9 @@ Rectangle {
                     }
                     text: styleData.hasChildren ? styleData.value : title
                     elide: Text.ElideRight
-                    color: (!styleData.hasChildren && !treeViewDelegate.shorts &&
-                            (treeViewDelegate.duration === 0.0))
+                    color: (!styleData.hasChildren
+                            // && !treeViewDelegate.shorts
+                            && treeViewDelegate.duration === 0.0)
                            ? properties.disabledTextColor
                            : textColor
                     renderType: Text.QtRendering

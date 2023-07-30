@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -32,15 +32,6 @@ import yayc 1.0
 /*
   == Known issues ==
 
-  - webengineview onLinkHovered does not provide text.
-    The workaround used here is tricky as it requires hovering the link with the tooltip,
-    and as soon as the tooltip is shown, grab the text from the tooltip.
-    THe side effect is that if a video is added without making the respective tooltip pop first,
-    old tooltip text will be picked up. This will however be updated upon video opening.
-
-    Alternative solution: fetch the title in the background through a regular get request +
-    page scraping. This would likely help also add video dialogs.
-
   - QQ1.TreeView is terribly buggy.
     consider using https://code.qt.io/cgit/qt-extensions/qttreeview.git/about/ or
     another alternative. qttreeview needs to be checked against partial model updates
@@ -59,6 +50,8 @@ ApplicationWindow {
 
     property int addedVideoTrigger: 0
     function triggerVideoAdded() { addedVideoTrigger += 1 }
+    property int workingDirTrigger: 0
+    function triggerWorkingDir() { workingDirTrigger += 1 }
     property url url: "https://youtube.com"
     property bool filesystemModelReady: false
 
@@ -102,21 +95,6 @@ ApplicationWindow {
             utilities.fetchMissingThumbnails()
         }
     }
-
-    //    Shortcut {
-    //        sequence: "Ctrl+E"
-    //        onActivated: {
-    //            bookmarksContainer.expandAll()
-    //        }
-    //    }
-
-    //    Shortcut {
-    //        sequence: "Ctrl+C"
-    //        onActivated: {
-    //            bookmarksContainer.collapse()
-    //        }
-    //    }
-
 
     onClosing: {
         close.accepted = false
@@ -177,7 +155,11 @@ ApplicationWindow {
     property string customScript
     property bool darkMode: true
     property bool debugMode: false
-    property real wevZoomFactor: 1.0
+    property bool removeStorageOnDelete: false
+    property real wevZoomFactor
+    property real wevZoomFactorVideo
+    property alias volume: sliderVolume.value
+    property bool muted: false
 
     property var externalCommands: []
     function pushEmptyCommand() {
@@ -201,6 +183,16 @@ ApplicationWindow {
             pushEmptyCommand()
     }
 
+    property bool settingsLoaded: false
+    Timer {
+        id: timerSettings
+        interval: 2000
+        running: false
+        repeat: false
+        onTriggered: {
+            root.settingsLoaded = true
+        }
+    }
     Settings {
         id: settings
         property alias lolAccepted: root.limitationOfLiabilityAccepted
@@ -220,10 +212,20 @@ ApplicationWindow {
         property alias darkMode: root.darkMode
         property alias debugMode: root.debugMode
         property alias wevZoomFactor: root.wevZoomFactor
+        property alias wevZoomFactorVideo: root.wevZoomFactorVideo
+        property alias removeStorageOnDelete: root.removeStorageOnDelete
+        property alias userSpecifiedVolume: sliderVolume.userValue
         property var splitView
 
         Component.onCompleted: {
             disclaimerContainer.visible = Qt.binding(function() { return !settings.lolAccepted })
+            webEngineView.zoomFactor =  Qt.binding(function() {
+                var res = (webEngineView.isYoutubeVideo)
+                                ? root.wevZoomFactorVideo
+                                : root.wevZoomFactor
+                return (res) ? res : 1.0
+            })
+            timerSettings.start()
         }
     }
 
@@ -273,6 +275,8 @@ ApplicationWindow {
         if (root.externalCommands.length == 0) {
             root.pushEmptyCommand()
         }
+        triggerWorkingDir()
+        triggerVideoAdded()
     }
     Component.onDestruction: {
         settings.splitView = splitView.saveState()
@@ -295,6 +299,16 @@ ApplicationWindow {
     onProfilePathChanged: {
         webEngineView.reload()
         settings.sync()
+    }
+
+    Timer {
+        id: zoomFactorSyncer
+        repeat: true
+        running: true
+        interval: 1000 * 5
+        onTriggered: {
+            syncZoomFactor()
+        }
     }
 
     Timer {
@@ -322,7 +336,7 @@ ApplicationWindow {
         if (typeof(root.lastVersionCheckDate) !== "undefined") {
             var diff = (now - root.lastVersionCheckDate); // Difference in milliseconds.
             var diffSeconds = parseInt(diff/1000);
-            var intervalSeconds = 3600 * 24 // don't check more often than once per day
+            var intervalSeconds = 3600 * 2 // don't check more often than once per 2h
             if (diffSeconds < intervalSeconds) {
                 return;
             }
@@ -332,35 +346,14 @@ ApplicationWindow {
         utilities.getDonateEtag()
     }
 
-    function compareAppVersion(version1,version2) { // true if 1 < 2
-        var result=false;
-
-        if(typeof version1!=='object'){ version1=version1.toString().split('.'); }
-        if(typeof version2!=='object'){ version2=version2.toString().split('.'); }
-
-        for(var i=0;i<(Math.max(version1.length,version2.length));i++){
-
-            if(version1[i]==undefined){ version1[i]=0; }
-            if(version2[i]==undefined){ version2[i]=0; }
-
-            if(Number(version1[i])<Number(version2[i])){
-                result=true;
-                break;
-            }
-            if(version1[i]!=version2[i]){
-                break;
-            }
-        }
-        return(result);
-    }
-
     function onLatestVersionFound(latestVersion) {
         var now = new Date()
         root.lastVersionCheckDate = now
         var previousRemoteVersion = root.lastestRemoteVersion
         root.lastestRemoteVersion = latestVersion
 
-        if (compareAppVersion(previousRemoteVersion, latestVersion)) { // if latest is greater
+        var res = utilities.compareSemver(previousRemoteVersion, latestVersion)
+        if (res === 1) { // if latest is greater
             // highlight settings
             root.firstRun = true
         }
@@ -381,10 +374,19 @@ ApplicationWindow {
     }
 
     function syncAll() {
-        root.wevZoomFactor = webEngineView.zoomFactor
+        syncZoomFactor()
         fileSystemModel.sync()
         historyModel.sync();
         settings.sync()
+    }
+
+    function syncZoomFactor() {
+        if (!root.settingsLoaded)
+            return
+        if (webEngineView.isYoutubeVideo)
+            root.wevZoomFactorVideo = webEngineView.zoomFactor
+        else
+            root.wevZoomFactor = webEngineView.zoomFactor
     }
 
     function deUrlizePath(path) {
@@ -400,6 +402,12 @@ ApplicationWindow {
         if (!utilities.isYoutubeVideoUrl(webEngineView.url))
             return false;
         return fileSystemModel.isVideoBookmarked(key)
+    }
+
+    function isWorkingDirPresent(key, trigger) {
+        return root.extWorkingDirExists
+               && fileSystemModel.hasWorkingDir(key,
+                                                root.extWorkingDirPath)
     }
 
     property string lastHoveredLink
@@ -462,22 +470,42 @@ ApplicationWindow {
     QtObject{
         id: internals
 
+        function getPlayer(isShorts) {
+            var res = ""
+            if (isShorts) {
+                res += "var ytplayer = document.getElementById('player').getPlayer();
+"
+            } else {
+                res += "var ytplayer = document.getElementById('movie_player');
+"
+            }
+            return res
+        }
+
         property string script_videoTime: "
             var backend;
             new QWebChannel(qt.webChannelTransport, function (channel) {
                 backend = channel.objects.backend;
             });
             setTimeout(function() {  //function puller()
+                    backend.channelURL = document.getElementById('text').firstChild.href;
+                    backend.channelName = document.getElementById('text').firstChild.text;
+                    backend.channelAvatar = document.getElementById('owner').firstElementChild.firstElementChild.firstElementChild.firstElementChild.src;
 
-                backend.channelURL = document.getElementById('text').firstChild.href;
-                backend.channelName = document.getElementById('text').firstChild.text;
-                backend.channelAvatar = document.getElementById('owner').firstElementChild.firstElementChild.firstElementChild.firstElementChild.src;
+                    var ytplayer = document.getElementById('movie_player');
 
-                ytplayer = document.getElementById('movie_player');
+                    backend.videoTitle = ytplayer.getVideoData().title;
+                    backend.videoDuration = ytplayer.getDuration();
+                    backend.videoPosition = ytplayer.getCurrentTime();
+                    backend.playbackRate = ytplayer.getPlaybackRate();
+                    backend.playerState = ytplayer.getPlayerState();
+                    backend.volume = ytplayer.getVolume();
+                    backend.muted = ytplayer.isMuted();
 
-                backend.videoTitle = ytplayer.getVideoData().title;
-                backend.videoDuration = ytplayer.getDuration();
-                backend.videoPosition = ytplayer.getCurrentTime();
+                    var url = document.getElementsByTagName('ytd-watch-flexy')[0].getAttribute('video-id')
+                    backend.videoID = url;
+                    backend.shorts = false;
+                    backend.vendor = 'YTB';
             }, 100);
             //puller();
         "
@@ -488,23 +516,121 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
         "
-        property string script_videoTitleShorts: "
+        property string script_videoTimeShorts: "
             var backend;
             new QWebChannel(qt.webChannelTransport, function (channel) {
                 backend = channel.objects.backend;
             });
             setTimeout(function() {
-                var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0].querySelector('div[id=\"channel-info\"]')
-                backend.channelURL = activeShort.children[0].href
-                backend.channelName = activeShort.children[1].getElementsByTagName('yt-formatted-string')[0].textContent
-                backend.channelAvatar = activeShort.firstElementChild.firstElementChild.firstElementChild.src
+//                try {
+                    var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
+                    var chanInfo = activeShort.querySelector('div[id=\"channel-info\"]')
+                    backend.channelURL = chanInfo.children[0].href
+                    backend.channelName = chanInfo.children[1].getElementsByTagName('yt-formatted-string')[0].textContent
+                    backend.channelAvatar = chanInfo.firstElementChild.firstElementChild.firstElementChild.src
 
-                backend.videoTitle = document.title;
-                backend.videoDuration = 0;
-                backend.videoPosition = 0;
-                //console.log(document.title);
+                    //var url = activeShort.getElementsByClassName('player-container style-scope ytd-reel-video-renderer')[0].getAttribute('style')
+                    var url = activeShort.getElementsByClassName('ytp-title-link yt-uix-sessionlink')[0].getAttribute('href').split('/');
+                    url = url[url.length - 1]
+                    backend.videoID = url;
+                    backend.shorts = true;
+                    backend.vendor = 'YTB';
+
+                    var ytplayer = document.getElementById('player').getPlayer();
+
+                    backend.videoTitle = document.title;
+                    backend.videoDuration = ytplayer.getDuration();
+                    backend.videoPosition = ytplayer.getCurrentTime();
+                    backend.playbackRate = ytplayer.getPlaybackRate();
+                    backend.playerState = ytplayer.getPlayerState();
+                    backend.volume = ytplayer.getVolume();
+                    backend.muted = ytplayer.isMuted();
+                    //console.log(document.title);
+//                } catch (e) {
+//                    console.log(e);
+//                }
             }, 100);
         "
+
+        function getPlaybackRateSetterScript(rate, isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.setPlaybackRate(" + rate + ");
+        }, 100);
+"
+            return res;
+        }
+
+        function getVolumeSetterScript(volume, isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.setVolume(" + volume + ");
+        }, 100);
+"
+            return res;
+        }
+
+        function getMutedSetterScript(muted, isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts)
+
+            if (muted) {
+                res += "                 ytplayer.mute();
+"
+            } else {
+                res += "                 ytplayer.unMute();
+"
+            }
+
+            res +=
+"       }, 100);
+"
+            return res;
+        }
+
+        property var videoSpeeds: [
+            "0.25",
+            "0.50",
+            "0.75",
+            "1.00",
+            "1.25",
+            "1.50",
+            "1.75",
+            "2.00",
+        ]
+
+        function getPlayVideoScript(isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.playVideo();
+        }, 100);
+"
+            return res;
+        }
+
+        function getPlayNextVideoScript(isShorts) {
+            var res = "
+            setTimeout(function() {
+    " + getPlayer(isShorts) +
+"                 ytplayer.playNextVideo();
+        }, 100);
+"
+            return res;
+        }
+
+        function getPauseVideoScript(isShorts) {
+            var res = "
+            setTimeout(function() {
+" + getPlayer(isShorts) +
+"                 ytplayer.pauseVideo();
+        }, 100);
+"
+            return res;
+        }
     }
 
     QtObject {
@@ -515,49 +641,61 @@ ApplicationWindow {
 
         property real videoPosition: 0
         property real videoDuration: 0
+        property string videoID
         property string videoTitle
         property string channelURL
         property string channelName
         property string channelAvatar
-        property string keyBefore
+        property string vendor
+
+        property real playbackRate
+        property int playerState
+        property int volume
+        property bool muted
+        property bool shorts
+
+        onVolumeChanged: root.volume = volume
+        onMutedChanged: root.muted = muted
 
         function getCurrentVideoURLWithPosition() {
-            if (root.addVideoEnabled)
+            if (webEngineView.isYoutubeVideo && videoID !== ""
+                    && webEngineView.key == utilities.getVideoID(videoID, vendor, shorts))
                 return utilities.urlWithPosition(webEngineView.url, timePuller.videoPosition)
             return webEngineView.url
         }
 
         onVideoPositionChanged: {
-            if (webEngineView.key != keyBefore) {
+            var k = utilities.getVideoID(videoID, vendor, shorts)
+//            console.log(" keY: ", k,
+//                        " shorts: ", shorts,
+//                        " weKey: ", webEngineView.key,
+//                        " CHAN: ",channelURL, channelName, channelAvatar)
+            if (webEngineView.key !== k) {
                 root.addVideoEnabled = false
-                // console.log("timePuller data changed while URL changed")
                 return
             }
-            //console.log("CHAN: ",channelURL, channelName, channelAvatar)
+
             root.addVideoEnabled = true
-            // it's not a short, url didn't change, position changed
+
+            if (webEngineView.key !== ""
+                  && videoTitle === "") {
+                // missing title, silently ignore
+                return;
+            }
+
+            // url didn't change, position changed
             update()
         }
 
-        onVideoTitleChanged: {
-            if (webEngineView.key != keyBefore) {
-                root.addVideoEnabled = false
-                // console.log("timePuller data changed while URL changed")
-                return
-            }
-            root.addVideoEnabled = true
-            if (!utilities.isYoutubeShortsUrl(webEngineView.url)) {
-                // silently ignore
-                return;
-            }
-            if (videoTitle === "")
-                return;
+        onPlaybackRateChanged: {
 
-            // it's a short, url didn't change, and title is not null
-            updateShort()
         }
 
         function update() {
+            var k = utilities.getVideoID(videoID, vendor, shorts)
+            if (k !== webEngineView.key)
+                return
+
             fileSystemModel.updateEntry(webEngineView.key,
                                         videoTitle,
                                         channelURL,
@@ -581,49 +719,29 @@ ApplicationWindow {
                                       videoPosition)
             }
         }
-        function updateShort() {
-            fileSystemModel.updateEntry(webEngineView.key,
-                                        videoTitle,
-                                        channelURL,
-                                        channelAvatar,
-                                        channelName)
-            if (!historyModel.updateEntry(webEngineView.key,
-                                          videoTitle,
-                                          channelURL,
-                                          channelAvatar,
-                                          channelName)) {
-                historyModel.addEntry(webEngineView.key,
-                                      videoTitle,
-                                      channelURL,
-                                      channelAvatar,
-                                      channelName)
-            }
-        }
         function addCurrentVideo() {
             if (!utilities.isYoutubeVideoUrl(webEngineView.url)) {
                 // Q_UNREACHABLE
                 return;
             }
-            if (webEngineView.key != keyBefore) {
+
+            var k = utilities.getVideoID(videoID, vendor, shorts)
+
+            if (webEngineView.key !== k) {
                 root.addVideoEnabled = false
                 return
             }
 
-            if (utilities.isYoutubeShortsUrl(webEngineView.url)) {
-                fileSystemModel.addEntry(webEngineView.key,
-                                         videoTitle,
-                                         channelURL,
-                                         channelAvatar,
-                                         channelName)
-            } else {
-                fileSystemModel.addEntry(webEngineView.key,
-                                         videoTitle,
-                                         channelURL,
-                                         channelAvatar,
-                                         channelName,
-                                         videoDuration,
-                                         videoPosition)
-            }
+            fileSystemModel.addEntry(webEngineView.key,
+                                     videoTitle,
+                                     channelURL,
+                                     channelAvatar,
+                                     channelName,
+                                     videoDuration,
+                                     videoPosition)
+
+            if (k !== "" && shorts)
+                fileSystemModel.viewEntry(webEngineView.key, true);
             root.triggerVideoAdded()
         }
     } // timePuller
@@ -668,9 +786,11 @@ ApplicationWindow {
                 id: webEngineView
                 url: root.url
                 property string key
-
-                zoomFactor: root.wevZoomFactor
-
+                property bool isShorts: false
+                property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
+                property bool keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
+                                                                    root.extWorkingDirPath,
+                                                                    root.workingDirTrigger)
                 enabled: true
                 visible: enabled
                 SplitView.minimumWidth: 200
@@ -693,19 +813,17 @@ ApplicationWindow {
                     dnsPrefetchEnabled: true
                 }
 
-
                 onUrlChanged: {
-                    root.addVideoEnabled = false
                     if (utilities.isYoutubeVideoUrl(url)) {
+                        root.addVideoEnabled = true
+                        zoomFactor = root.wevZoomFactorVideo
                         key = utilities.getVideoID(url)
-                        if (utilities.isYoutubeShortsUrl(url)) {
-                            fileSystemModel.viewEntry(key, true);
-                            dataPuller.interval = 5000;
-                        } else {
-                            dataPuller.interval = 5000;
-                        }
-                        dataPuller.start()
+                        isShorts = utilities.isYoutubeShortsUrl(url)
+                        dataPuller.startPulling()
                     } else {
+                        root.addVideoEnabled = false
+                        isShorts = false
+                        zoomFactor = root.wevZoomFactor
                         dataPuller.stop()
                         key = ""
                     }
@@ -727,16 +845,24 @@ ApplicationWindow {
 
                 Timer {
                     id: dataPuller
-                    interval: 10000;
+                    interval: 5000;
                     running: false;
                     repeat: true
-                    function pullTime() {
-                        interval = 10000
-                        // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
-                        timePuller.keyBefore = webEngineView.key
 
-                        if (utilities.isYoutubeShortsUrl(webEngineView.url)) {
-                            webEngineView.runJavaScript(internals.script_videoTitleShorts)
+                    function startPulling() {
+                        start()
+                    }
+
+                    function pullTime() {
+                        interval = 5000
+                        // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
+
+                        if (!webEngineView.isYoutubeVideo
+                                || webEngineView.key === "")
+                            return;
+
+                        if (webEngineView.isShorts) {
+                            webEngineView.runJavaScript(internals.script_videoTimeShorts)
                         } else {
                             webEngineView.runJavaScript(internals.script_videoTime)
                         }
@@ -753,7 +879,12 @@ ApplicationWindow {
                         enabled: linkHovered && !currentVideoAdded
 
                         property bool linkHovered: typeof(root.lastHoveredLink) !== "undefined" && root.lastHoveredLink !== ""
+                        property bool storagePresent: linkHovered && fileSystemModel.isVideoBookmarked(utilities.getVideoID(root.lastHoveredLink))
                         property bool currentVideoAdded: linkHovered && fileSystemModel.isVideoBookmarked(utilities.getVideoID(root.lastHoveredLink))
+                        property bool workingDirPresent: currentVideoAdded
+                                                         && root.extWorkingDirExists
+                                                         && fileSystemModel.hasWorkingDir(utilities.getVideoID(root.lastHoveredLink),
+                                                                                          root.extWorkingDirPath)
                         icon {
                             source: "/icons/add.svg"
                             color: (currentVideoAdded) // ToDo: deduplicate
@@ -763,6 +894,21 @@ ApplicationWindow {
                                    : (enabled)
                                      ? "white"
                                      : properties.disabledTextColor
+                        }
+
+                        Image {
+                            visible: parent.workingDirPresent
+                            anchors {
+                                left: parent.left
+                                top: parent.top
+                                bottom: parent.bottom
+                                leftMargin: 12
+                                topMargin: 12
+                                bottomMargin: 4
+                            }
+
+                            source: "qrc:/images/workingdirpresent.png"
+                            opacity: .7
                         }
 
                         onClicked: {
@@ -833,6 +979,15 @@ ApplicationWindow {
     } // mainContainer
 
     header: ToolBar {
+        id: toolBar
+        property Menu contextMenu: BookmarkContextMenu {
+            isHistoryView: false
+            model: fileSystemModel
+            parentView: null
+            x: buttonAddVideo.x
+            y: buttonAddVideo.y + buttonAddVideo.height
+        }
+
         ColumnLayout {
             anchors.fill: parent
             RowLayout {
@@ -1024,8 +1179,17 @@ ApplicationWindow {
                     onClicked: {
                         timePuller.addCurrentVideo()
                     }
+                    onPressAndHold: {
+                        if (currentVideoAdded)
+                            toolBar.contextMenu.setKey(webEngineView.key)
+                            toolBar.contextMenu.open()
+                    }
+
                     property bool currentVideoAdded: isCurrentVideoAdded(webEngineView.key,
                                                                          root.addedVideoTrigger)
+                    property bool workingDirPresent: currentVideoAdded
+                                                     && webEngineView.keyHasWorkingDir
+
                     icon {
                         source: "/icons/add.svg"
                         color: (currentVideoAdded)
@@ -1035,6 +1199,21 @@ ApplicationWindow {
                                : (enabled)
                                  ? "white"
                                  : properties.disabledTextColor
+                    }
+
+                    Image {
+                        visible: parent.workingDirPresent
+                        anchors {
+                            fill: parent
+
+                            rightMargin: 12
+                            topMargin: 12
+                            bottomMargin: 4
+                            leftMargin: 4
+                        }
+
+                        source: "qrc:/images/workingdirpresent.png"
+                        opacity: .5
                     }
                     display: AbstractButton.IconOnly
 
@@ -1081,7 +1260,7 @@ ApplicationWindow {
                 ToolButton {
                     id: buttonCopyLink
                     text: "Copy"
-                    enabled: root.addVideoEnabled
+                    enabled: true //root.addVideoEnabled
                     visible: true
                     TextEdit{
                         id: copyLinkClipboardProxy
@@ -1098,8 +1277,109 @@ ApplicationWindow {
 
                     hoverEnabled: true
                     ToolTip.visible: hovered
-                    ToolTip.text: "Copy Video URL to Clipboard"
+                    ToolTip.text: "Copy URL to Clipboard"
                     ToolTip.delay: 300
+                }
+
+                ToolButton {
+                    id: buttonSpeed
+                    enabled: webEngineView.isYoutubeVideo
+                    visible: true
+                    checkable: true
+
+                    onCheckedChanged: {
+                        if (checked) {
+                            ToolTip.toolTip.close()
+                            playbackRateMenu.open()
+                        } else {
+                            playbackRateMenu.close()
+                        }
+                    }
+
+                    icon.source: "/icons/speed.svg"
+
+                    display: (text !== "1.00")
+                             ? AbstractButton.TextUnderIcon
+                             : AbstractButton.IconOnly
+                    text: (timePuller.playbackRate) ? timePuller.playbackRate.toFixed(2) : "1.00"
+                    spacing: -6
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Set playback rate"
+                    ToolTip.delay: 300
+                }
+
+                ToolButton {
+                    id: buttonPlayPause
+                    enabled: webEngineView.isYoutubeVideo && (timePuller.playerState !== -1)
+                    visible: true
+                    checkable: false
+
+                    onClicked: {
+                        var scriptToRun
+                        if (timePuller.playerState === 1 && webEngineView.key !== "")
+                            scriptToRun = internals.getPauseVideoScript(webEngineView.isShorts)
+// Br0ken, try https://stackoverflow.com/a/58581660/962856
+//                        else if (timePuller.playerState === -1)
+//                            scriptToRun = internals.getPlayNextVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
+                        else
+                            scriptToRun = internals.getPlayVideoScript(webEngineView.isShorts)
+
+                        console.log(timePuller.playerState, scriptToRun)
+                        webEngineView.runJavaScript(scriptToRun)
+                    }
+
+                    icon.source: (timePuller.playerState === 1)
+                                    ? "/icons/pause.svg"
+                                    : "/icons/play_arrow.svg"
+
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: (timePuller.playerState === 1)
+                                    ? "Pause video"
+                                    : "Play video"
+                    ToolTip.delay: 300
+                }
+
+                MouseArea {
+                    height: sliderVolume.height
+                    width: sliderVolume.implicitWidth
+                    hoverEnabled: true
+                    property bool hovered: false
+                    onEntered: hovered = true
+                    onExited: hovered = false
+                    Slider {
+                        id: sliderVolume
+                        enabled: webEngineView.isYoutubeVideo
+                        implicitWidth: 100
+                        anchors.centerIn: parent
+
+                        value: 0
+                        from: 0
+                        stepSize: 1
+                        to: 100
+                        snapMode: Slider.SnapAlways
+                        property real userValue: -1
+
+                        onValueChanged: {
+                            var newVolume = (userValue >= 0) ? userValue : value
+                            var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(webEngineView.url))
+                            webEngineView.runJavaScript(scriptToRun)
+                        }
+
+                        onMoved: {
+                            userValue = value
+                        }
+
+                        ToolTip {
+                            parent: sliderVolume.handle
+                            visible: sliderVolume.pressed || sliderVolume.parent.hovered
+                            text: sliderVolume.value.toFixed(0)
+                        }
+                    }
                 }
 
                 ToolButton {
@@ -1157,6 +1437,49 @@ ApplicationWindow {
             }
         }
     } // header
+
+    Menu {
+        id: playbackRateMenu
+        y: 0
+        x: buttonSpeed.x + buttonSpeed.width - width
+        width: 48
+        visible: false
+
+        Repeater {
+            model: internals.videoSpeeds
+
+
+            ToolButton {
+
+                height: playbackRateMenu.width
+                width: height
+                enabled: true
+                checkable: false
+                checked: timePuller.playbackRate.toFixed(2) === text
+
+                z: playbackRateMenu.z + 5
+
+                text: internals.videoSpeeds[index]
+
+                display: AbstractButton.TextOnly
+
+                onClicked: {
+                    buttonSpeed.checked = false
+                    var scriptToRun = internals.getPlaybackRateSetterScript(
+                                text, utilities.isYoutubeShortsUrl(webEngineView.url)
+                             )
+//                    console.log(scriptToRun)
+                    webEngineView.runJavaScript(scriptToRun)
+                }
+
+                hoverEnabled: true
+                ToolTip.visible: hovered
+                ToolTip.text: "Set playback rate to " + text
+                ToolTip.delay: 300
+
+            }
+        }
+    }
 
     Dialog {
         id: settingsMenu
@@ -1750,6 +2073,21 @@ ApplicationWindow {
                     ToolTip.delay: 300
                     ToolTip.text: "Edit the custom script that is run after loading a video page"
                 }
+                CheckBox {
+                    id: deleteStorageCheck
+                    visible: root.debugMode
+                    checked: root.removeStorageOnDelete
+                    text: qsTr("Delete storage")
+                    onCheckedChanged: {
+                        root.removeStorageOnDelete = checked
+                    }
+
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
+                }
             }
 
 
@@ -1766,7 +2104,7 @@ ApplicationWindow {
 
                 Rectangle {
                     id: newReleaseContainer
-                    visible: root.lastestRemoteVersion !== appVersion
+                    visible: utilities.compareSemver(appVersion, root.lastestRemoteVersion) > 0
                     color: (maNewVersion.hovered)
                             ? Qt.rgba(1,1,1,0.1)
                             : "transparent"
@@ -2504,7 +2842,7 @@ ApplicationWindow {
                 console.log("Wrong URL fed!")
                 return;
             }
-            if (requestInterceputilitiestor.isYoutubeShortsUrl(u)) {
+            if (utilities.isYoutubeShortsUrl(u)) {
                 fileSystemModel.addEntry(utilities.getVideoID(u),
                                          "", // title
                                          "", // channel URL
