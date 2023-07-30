@@ -214,6 +214,7 @@ ApplicationWindow {
         property alias wevZoomFactor: root.wevZoomFactor
         property alias wevZoomFactorVideo: root.wevZoomFactorVideo
         property alias removeStorageOnDelete: root.removeStorageOnDelete
+        property alias volume: root.volume
         property alias userSpecifiedVolume: sliderVolume.userValue
         property var splitView
 
@@ -277,6 +278,8 @@ ApplicationWindow {
         }
         triggerWorkingDir()
         triggerVideoAdded()
+        if (sliderVolume.value !== sliderVolume.userValue)
+            sliderVolume.value = sliderVolume.userValue
     }
     Component.onDestruction: {
         settings.splitView = splitView.saveState()
@@ -1366,6 +1369,7 @@ ApplicationWindow {
 
                         onValueChanged: {
                             var newVolume = (userValue >= 0) ? userValue : value
+
                             var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(webEngineView.url))
                             webEngineView.runJavaScript(scriptToRun)
                         }
