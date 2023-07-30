@@ -10,10 +10,10 @@ CONFIG += qtquickcompiler
 CONFIG(release): DEFINES += QT_NO_DEBUG_OUTPUT
 
 SOURCES += \
-        main.cpp
+        src/main.cpp
 
-qml.files = $$files($$PWD/*.qml)
-qml.base = $$PWD/
+qml.files = $$files($$PWD/src/*.qml)
+qml.base = $$PWD/src/
 qml.prefix = /
 
 RESOURCES += qml
@@ -65,28 +65,14 @@ APPVERSION = "$$cat($$PWD/APPVERSION)"
 
 DEFINES += "APPVERSION=\"$$APPVERSION\""
 
-SOURCES +=  third_party/ad-block/ad_block_client.cc \
-            third_party/ad-block/no_fingerprint_domain.cc \
-            third_party/ad-block/filter.cc \
-            third_party/ad-block/protocol.cc \
-            third_party/ad-block/context_domain.cc \
-            third_party/ad-block/cosmetic_filter.cc \
-            third_party/bloom-filter-cpp/BloomFilter.cpp \
-            third_party/hashset-cpp/hash_set.cc \
-            third_party/hashset-cpp/hashFn.cc
+SOURCES +=  src/third_party/ad-block/ad_block_client.cc \
+            src/third_party/ad-block/no_fingerprint_domain.cc \
+            src/third_party/ad-block/filter.cc \
+            src/third_party/ad-block/protocol.cc \
+            src/third_party/ad-block/context_domain.cc \
+            src/third_party/ad-block/cosmetic_filter.cc \
+            src/third_party/bloom-filter-cpp/BloomFilter.cpp \
+            src/third_party/hashset-cpp/hash_set.cc \
+            src/third_party/hashset-cpp/hashFn.cc
 
-HEADERS = third_party/ad-block/ad_block_client.h
-
-# Additional import path used to resolve QML modules in Qt Creator's code model
-QML_IMPORT_PATH =
-
-# Additional import path used to resolve QML modules just for Qt Quick Designer
-QML_DESIGNER_IMPORT_PATH =
-
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
-
-DISTFILES += \
-
+HEADERS = src/third_party/ad-block/ad_block_client.h

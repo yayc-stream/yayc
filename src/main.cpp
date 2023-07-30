@@ -1650,17 +1650,34 @@ public slots:
         if (!key.size() || !m_cache.contains(key))
             return;
 
+        return openInBrowser(key, extWorkingDirRoot);
+    }
+
+    void openInBrowser(const QString &key, const QString &extWorkingDirRoot) {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
+            return ;
+
         return YaycUtilities::openInBrowser(key, extWorkingDirRoot);
     }
 
     // ToDo: move to utilities
     void openInExternalApp(QModelIndex item
                            , const QString &extCommand
-                           , const QString &extWorkingDirRoot) { // ToDo: refactor this, use qfuture, track ongoing processes
+                           , const QString &extWorkingDirRoot) {
         if (!m_ready)
             return ;
         const QString &key = keyFromViewItem(item);
         if (!key.size() || !m_cache.contains(key))
+            return ;
+
+        return openInExternalApp(key, extCommand, extWorkingDirRoot);
+    }
+
+    // ToDo: refactor this, use qfuture, track ongoing processes, visualize them, allow to cancel, ++
+    void openInExternalApp(const QString &key
+                           , const QString &extCommand
+                           , const QString &extWorkingDirRoot) {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
             return ;
 
         QDir d(extWorkingDirRoot);
@@ -1722,36 +1739,38 @@ public slots:
             return res;
         } else {
             const QString &key = itemKey(item);
-            if (!m_cache.contains(key)) {
-                qWarning() << "Not present in cache: " << key;
-                return false;
-            }
-
-            auto entry = m_cache.take(key);
-            res = entry.eraseFile();
-
-            if (deleteStorage_)
-                deleteStorage(item, extWorkingDirRoot);
-
-            return res;
+            return deleteEntry(key, extWorkingDirRoot, deleteStorage_);
         }
     }
+
+    bool deleteEntry(const QString &key
+                     , const QString &extWorkingDirRoot
+                     , bool deleteStorage_) {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
+            return false;
+
+        if (deleteStorage_)
+            deleteStorage(key, extWorkingDirRoot);
+
+        auto entry = m_cache.take(key);
+        return entry.eraseFile();
+    }
+
     void deleteStorage(QModelIndex item
                      , const QString &extWorkingDirRoot) {
         if (!m_ready)
             return;
-        item = m_proxyModel->mapToSource(item);
+        const QString &key = keyFromViewItem(item);
+        if (!key.size() || !m_cache.contains(key))
+            return ;
 
-        if (!filePath(item).size()) {
-            qWarning() << "invalid input";
-            return;
-        }
+        deleteStorage(key, extWorkingDirRoot);
+    }
 
-        const QString &key = itemKey(item);
-        if (!m_cache.contains(key)) {
-            qWarning() << "Not present in cache: " << key;
+    void deleteStorage(const QString &key
+                     , const QString &extWorkingDirRoot) {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
             return;
-        }
 
         if (!extWorkingDirRoot.isEmpty()) {
             // delete storage data if any
@@ -1767,6 +1786,7 @@ public slots:
             }
         }
     }
+
     void sync() {
         for (auto &e: m_cache) {
             e.saveFile();

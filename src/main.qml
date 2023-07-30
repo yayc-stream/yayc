@@ -50,6 +50,8 @@ ApplicationWindow {
 
     property int addedVideoTrigger: 0
     function triggerVideoAdded() { addedVideoTrigger += 1 }
+    property int workingDirTrigger: 0
+    function triggerWorkingDir() { workingDirTrigger += 1 }
     property url url: "https://youtube.com"
     property bool filesystemModelReady: false
 
@@ -212,6 +214,7 @@ ApplicationWindow {
         property alias wevZoomFactor: root.wevZoomFactor
         property alias wevZoomFactorVideo: root.wevZoomFactorVideo
         property alias removeStorageOnDelete: root.removeStorageOnDelete
+        property alias userSpecifiedVolume: sliderVolume.userValue
         property var splitView
 
         Component.onCompleted: {
@@ -272,6 +275,8 @@ ApplicationWindow {
         if (root.externalCommands.length == 0) {
             root.pushEmptyCommand()
         }
+        triggerWorkingDir()
+        triggerVideoAdded()
     }
     Component.onDestruction: {
         settings.splitView = splitView.saveState()
@@ -397,6 +402,12 @@ ApplicationWindow {
         if (!utilities.isYoutubeVideoUrl(webEngineView.url))
             return false;
         return fileSystemModel.isVideoBookmarked(key)
+    }
+
+    function isWorkingDirPresent(key, trigger) {
+        return root.extWorkingDirExists
+               && fileSystemModel.hasWorkingDir(key,
+                                                root.extWorkingDirPath)
     }
 
     property string lastHoveredLink
@@ -777,10 +788,9 @@ ApplicationWindow {
                 property string key
                 property bool isShorts: false
                 property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
-                property bool keyHasWorkingDir: root.extWorkingDirExists
-                    && fileSystemModel.hasWorkingDir(webEngineView.key,
-                                                     root.extWorkingDirPath) // fixMe: make it trigger when active
-
+                property bool keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
+                                                                    root.extWorkingDirPath,
+                                                                    root.workingDirTrigger)
                 enabled: true
                 visible: enabled
                 SplitView.minimumWidth: 200
@@ -802,7 +812,6 @@ ApplicationWindow {
                     autoLoadImages: true
                     dnsPrefetchEnabled: true
                 }
-
 
                 onUrlChanged: {
                     if (utilities.isYoutubeVideoUrl(url)) {
@@ -970,6 +979,15 @@ ApplicationWindow {
     } // mainContainer
 
     header: ToolBar {
+        id: toolBar
+        property Menu contextMenu: BookmarkContextMenu {
+            isHistoryView: false
+            model: fileSystemModel
+            parentView: null
+            x: buttonAddVideo.x
+            y: buttonAddVideo.y + buttonAddVideo.height
+        }
+
         ColumnLayout {
             anchors.fill: parent
             RowLayout {
@@ -1161,6 +1179,12 @@ ApplicationWindow {
                     onClicked: {
                         timePuller.addCurrentVideo()
                     }
+                    onPressAndHold: {
+                        if (currentVideoAdded)
+                            toolBar.contextMenu.setKey(webEngineView.key)
+                            toolBar.contextMenu.open()
+                    }
+
                     property bool currentVideoAdded: isCurrentVideoAdded(webEngineView.key,
                                                                          root.addedVideoTrigger)
                     property bool workingDirPresent: currentVideoAdded
@@ -1320,26 +1344,41 @@ ApplicationWindow {
                     ToolTip.delay: 300
                 }
 
-                Slider {
-                    id: sliderVolume
-                    enabled: webEngineView.isYoutubeVideo
-                    implicitWidth: 64
+                MouseArea {
+                    height: sliderVolume.height
+                    width: sliderVolume.implicitWidth
+                    hoverEnabled: true
+                    property bool hovered: false
+                    onEntered: hovered = true
+                    onExited: hovered = false
+                    Slider {
+                        id: sliderVolume
+                        enabled: webEngineView.isYoutubeVideo
+                        implicitWidth: 100
+                        anchors.centerIn: parent
 
-                    value: 0
-                    from: 0
-                    stepSize: 1
-                    to: 100
-                    snapMode: Slider.SnapAlways
+                        value: 0
+                        from: 0
+                        stepSize: 1
+                        to: 100
+                        snapMode: Slider.SnapAlways
+                        property real userValue: -1
 
-                    onValueChanged: {
-                        var scriptToRun = internals.getVolumeSetterScript(value, utilities.isYoutubeShortsUrl(webEngineView.url))
-                        webEngineView.runJavaScript(scriptToRun)
-                    }
+                        onValueChanged: {
+                            var newVolume = (userValue >= 0) ? userValue : value
+                            var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(webEngineView.url))
+                            webEngineView.runJavaScript(scriptToRun)
+                        }
 
-                    ToolTip {
-                        parent: sliderVolume.handle
-                        visible: sliderVolume.pressed
-                        text: sliderVolume.value.toFixed(0)
+                        onMoved: {
+                            userValue = value
+                        }
+
+                        ToolTip {
+                            parent: sliderVolume.handle
+                            visible: sliderVolume.pressed || sliderVolume.parent.hovered
+                            text: sliderVolume.value.toFixed(0)
+                        }
                     }
                 }
 
