@@ -476,7 +476,10 @@ ApplicationWindow {
         function getPlayer(isShorts) {
             var res = ""
             if (isShorts) {
-                res += "var ytplayer = document.getElementById('player').getPlayer();
+//                res += "var ytplayer = document.getElementById('player').getPlayer();
+                res += "
+    var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
+    var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer();
 "
             } else {
                 res += "var ytplayer = document.getElementById('movie_player');
@@ -1367,11 +1370,20 @@ ApplicationWindow {
                         snapMode: Slider.SnapAlways
                         property real userValue: -1
 
-                        onValueChanged: {
+                        function setVolume() {
                             var newVolume = (userValue >= 0) ? userValue : value
 
                             var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(webEngineView.url))
+                            console.log("RUNNING\n",scriptToRun)
                             webEngineView.runJavaScript(scriptToRun)
+                        }
+
+                        onUserValueChanged: {
+                            setVolume()
+                        }
+
+                        onValueChanged: {
+                            setVolume()
                         }
 
                         onMoved: {
