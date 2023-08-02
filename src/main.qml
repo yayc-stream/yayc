@@ -542,7 +542,7 @@ ApplicationWindow {
                     backend.shorts = true;
                     backend.vendor = 'YTB';
 
-                    var ytplayer = document.getElementById('player').getPlayer();
+                    var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer();
 
                     backend.videoTitle = document.title;
                     backend.videoDuration = ytplayer.getDuration();
