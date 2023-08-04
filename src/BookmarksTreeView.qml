@@ -566,6 +566,8 @@ Rectangle {
                 property bool shorts: (!styleData.hasChildren)
                                       ? utilities.isYoutubeShortsUrl(videoUrl)
                                       : false
+                property string creationDate: (styleData.hasChildren) ? ""
+                                              : viewContainer.model.creationDate(key)
 
                 onStarredChanged: {
                 }
@@ -588,7 +590,8 @@ Rectangle {
 
                 ToolTip {
                     visible: ma.containsMouse && !styleData.hasChildren
-                    text: treeViewDelegate.title
+                    text: treeViewDelegate.title + "\n"
+                          + "Created " + treeViewDelegate.creationDate
                     delay: 300
                     font {
                         family: mainFont.name

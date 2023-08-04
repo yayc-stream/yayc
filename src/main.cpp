@@ -75,6 +75,7 @@ const QString videoExtension{"yayc"};
 const QString channelExtension{"yaycc"};
 const QString shortsVideoPattern{"https://youtube.com/shorts/"}; // ToDo: use www and rework removeWww()
 const QString standardVideoPattern{"https://youtube.com/watch?v="};
+const QString youtubeHomePattern{"https://youtube.com"};
 const QString repositoryURL{"https://github.com/yayc-stream/yayc"};
 const QString latestReleaseVersionURL{"https://raw.githubusercontent.com/yayc-stream/yayc/master/APPVERSION"};
 const QString donateURL{"https://raw.githubusercontent.com/yayc-stream/yayc/master/DONATE"};
@@ -224,6 +225,16 @@ public:
 
     static bool isYoutubeStandardUrl(const QString &url) {
         return url.startsWith(standardVideoPattern);
+    }
+
+    Q_INVOKABLE static bool isYoutubeHomepage(QUrl url) {
+        url = removeWww(url);
+        const QString surl = url.toString();
+        return isYoutubeHomepage(surl);
+    }
+
+    static bool isYoutubeHomepage(const QString &url) {
+        return (url.size() <= (youtubeHomePattern.size() + 1)) && url.startsWith(youtubeHomePattern);
     }
 
     Q_INVOKABLE static bool isYoutubeShortsUrl(QUrl url) {
@@ -1408,6 +1419,7 @@ public:
         TitleRole = Qt::UserRole + 9,
         ChannelNameRole = Qt::UserRole + 10,
         ChannelIdRole = Qt::UserRole + 11,
+        CreatedRole = Qt::UserRole + 12,
     };
     Q_ENUM(Roles)
 
@@ -1519,6 +1531,15 @@ public:
         return m_cache.contains(key);
     }
 
+    Q_INVOKABLE QString creationDate(const QString &key) const {
+        if (!m_ready)
+            return QLatin1String("");
+        if (!key.size() || !m_cache.contains(key))
+            return QLatin1String("");
+
+        return m_cache.value(key).creationDate.toString(QStringLiteral("yyyy.MM.dd hh:mm"));
+    }
+
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override
     {
         if (index.isValid() && role >= Qt::UserRole) {
@@ -1529,6 +1550,17 @@ public:
                 return QVariant(permissionString(fileInfo(index)));
             case LastModifiedRole:
                 return QVariant(fileInfo(index).lastModified().toString(QStringLiteral("yyyyMMddhhmmss")));
+            case CreatedRole: {
+                if (isDir(index)) {
+                    return {};
+                }
+                const QString &key = itemKey(index);
+                if (!m_cache.contains(key)) {
+                    qWarning() << "key not found "<<key << " "  << fileInfo(index).baseName();
+                    return {};
+                }
+                return m_cache.value(key).creationDate.toString(QStringLiteral("yyyy.MM.dd hh:mm"));
+            }
             case UrlStringRole: {
                 if (isDir(index)) {
                     return {};
@@ -1618,6 +1650,7 @@ public:
          result.insert(SizeRole, QByteArrayLiteral("size"));
          result.insert(DisplayableFilePermissionsRole, QByteArrayLiteral("displayableFilePermissions"));
          result.insert(LastModifiedRole, QByteArrayLiteral("lastModified"));
+         result.insert(CreatedRole, QByteArrayLiteral("created"));
          result.insert(ContentNameRole, QByteArrayLiteral("contentName"));
          return result;
     }
@@ -2464,10 +2497,10 @@ int main(int argc, char *argv[])
 
         qInfo("Starting YAYC v%s ...", appVersion().data());
 #ifdef QT_NO_DEBUG_OUTPUT
-        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
-                                                        "qmldebug=true\n"
-                                                        "*.fatal=true\n"
-                                                        ));
+//        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
+//                                                        "qmldebug=true\n"
+//                                                        "*.fatal=true\n"
+//                                                        ));
 #endif
 
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

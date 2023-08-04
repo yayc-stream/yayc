@@ -160,6 +160,7 @@ ApplicationWindow {
     property real wevZoomFactorVideo
     property alias volume: sliderVolume.value
     property bool muted: false
+    property bool guideToggled: buttonToggleGuide.checked
 
     property var externalCommands: []
     function pushEmptyCommand() {
@@ -216,6 +217,7 @@ ApplicationWindow {
         property alias removeStorageOnDelete: root.removeStorageOnDelete
         property alias volume: root.volume
         property alias userSpecifiedVolume: sliderVolume.userValue
+        property alias guidePaneToggled: root.guideToggled
         property var splitView
 
         Component.onCompleted: {
@@ -522,6 +524,31 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
         "
+
+        property string script_homePageStatusFetcher: "
+            var backend;
+            new QWebChannel(qt.webChannelTransport, function (channel) {
+                backend = channel.objects.backend;
+            });
+            setTimeout(function() {
+                backend.guideButtonChecked = document.querySelectorAll(
+                    'button[id=\"button\"][class=\"style-scope yt-icon-button\"][aria-label=\"Guide\"]')[0].getAttribute(\"aria-pressed\")
+            }, 100);
+        "
+
+        property string script_clickGuide: "
+            var backend;
+            new QWebChannel(qt.webChannelTransport, function (channel) {
+                backend = channel.objects.backend;
+            });
+            setTimeout(function() {
+                var btn = document.querySelectorAll(
+                    'button[id=\"button\"][class=\"style-scope yt-icon-button\"][aria-label=\"Guide\"]')[0]
+                btn.click()
+                backend.guideButtonChecked = btn.getAttribute(\"aria-pressed\")
+            }, 100);
+"
+
         property string script_videoTimeShorts: "
             var backend;
             new QWebChannel(qt.webChannelTransport, function (channel) {
@@ -639,6 +666,7 @@ ApplicationWindow {
         }
     }
 
+    property bool guideButtonCheckedClientSet: false
     QtObject {
         id: timePuller
 
@@ -659,6 +687,30 @@ ApplicationWindow {
         property int volume
         property bool muted
         property bool shorts
+        property bool guideButtonChecked
+
+        function clickGuideButton() {
+            if (webEngineView.isYoutubeHome) {
+                webEngineView.runJavaScript(internals.script_clickGuide)
+            }
+        }
+
+        function pullHomeData() {
+            if (webEngineView.isYoutubeHome) {
+                webEngineView.runJavaScript(internals.script_homePageStatusFetcher)
+            }
+        }
+
+        onGuideButtonCheckedChanged: {
+            if (root.guideButtonCheckedClientSet) {
+                guideButtonCheckedClientSet = false
+                return
+            }
+
+            if (guideButtonChecked === buttonToggleGuide.checked)
+                return;
+            clickGuideButton();
+        }
 
         onVolumeChanged: root.volume = volume
         onMutedChanged: root.muted = muted
@@ -793,6 +845,7 @@ ApplicationWindow {
                 url: root.url
                 property string key
                 property bool isShorts: false
+                property bool isYoutubeHome: utilities.isYoutubeHomepage(url)
                 property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
                 property bool keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
                                                                     root.extWorkingDirPath,
@@ -832,6 +885,17 @@ ApplicationWindow {
                         zoomFactor = root.wevZoomFactor
                         dataPuller.stop()
                         key = ""
+                    }
+                }
+
+                onLoadingChanged: {
+                    if (loadRequest.status === WebEngineView.LoadSucceededStatus
+                        || loadRequest.status ===  WebEngineView.LoadStoppedStatus) {
+                        if (webEngineView.isYoutubeHome) {
+                            timePuller.pullHomeData()
+                        }
+                    } else {
+                        // loading or errored
                     }
                 }
 
@@ -1284,6 +1348,27 @@ ApplicationWindow {
                     hoverEnabled: true
                     ToolTip.visible: hovered
                     ToolTip.text: "Copy URL to Clipboard"
+                    ToolTip.delay: 300
+                }
+
+                ToolButton {
+                    id: buttonToggleGuide
+                    text: "Toggle Guide panel"
+                    enabled: webEngineView.isYoutubeHome
+                    visible: true
+                    checkable: true
+                    checked: false
+
+                    onCheckedChanged: {
+                        timePuller.clickGuideButton()
+                    }
+
+                    icon.source: "/icons/menu.svg"
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Toggle Guide panel"
                     ToolTip.delay: 300
                 }
 
