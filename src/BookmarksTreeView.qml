@@ -591,7 +591,7 @@ Rectangle {
                 ToolTip {
                     visible: ma.containsMouse && !styleData.hasChildren
                     text: treeViewDelegate.title + "\n"
-                          + "Created " + treeViewDelegate.creationDate
+                          + "Added " + treeViewDelegate.creationDate
                     delay: 300
                     font {
                         family: mainFont.name
