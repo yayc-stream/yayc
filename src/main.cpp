@@ -596,6 +596,7 @@ struct VideoMetadata
     VideoMetadata(const QString &k, const QDir &p)
         : key(k), parent(p) {
         vendor = Platform::toVendor(videoVendor(key));
+        creationDate = QDateTime::currentDateTimeUtc();
     }
 
     bool dirty{false};
@@ -2104,7 +2105,7 @@ public slots:
         }
         // ToDo: handle more platforms!
         m_cache[key].update(title, position, duration);
-        m_cache[key].creationDate = QDateTime::currentDateTimeUtc();
+        //m_cache[key].creationDate = QDateTime::currentDateTimeUtc();
 
         if (channelURL.isEmpty()) {
             ThumbnailFetcher::fetchChannel(key);
