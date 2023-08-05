@@ -531,8 +531,10 @@ ApplicationWindow {
                 backend = channel.objects.backend;
             });
             setTimeout(function() {
-                backend.guideButtonChecked = document.querySelectorAll(
-                    'button[id=\"button\"][class=\"style-scope yt-icon-button\"][aria-label=\"Guide\"]')[0].getAttribute(\"aria-pressed\")
+                var btn = document.querySelectorAll(
+                    'button[id=\"button\"][class=\"style-scope yt-icon-button\"][aria-label=\"Guide\"]')[0]
+
+                backend.guideButtonChecked = btn.getAttribute(\"aria-pressed\")
             }, 100);
         "
 
@@ -666,6 +668,19 @@ ApplicationWindow {
         }
     }
 
+    Timer {
+        id: guideToggleSingleShot
+        repeat: false
+        running: false
+        interval: 2750 // webEngineView is not emitting loadingChanged
+                       // when clicking on the youtube logo to go back to the homepage
+                       // However, onUrlChanged is also too soon, as the page is not laoded
+        onTriggered: {
+            timePuller.pullHomeData()
+        }
+    }
+
+
     property bool guideButtonCheckedClientSet: false
     QtObject {
         id: timePuller
@@ -690,13 +705,13 @@ ApplicationWindow {
         property bool guideButtonChecked
 
         function clickGuideButton() {
-            if (webEngineView.isYoutubeHome) {
+            if (webEngineView.isYoutubeHome || webEngineView.isYoutubeChannel) {
                 webEngineView.runJavaScript(internals.script_clickGuide)
             }
         }
 
         function pullHomeData() {
-            if (webEngineView.isYoutubeHome) {
+            if (webEngineView.isYoutubeHome || webEngineView.isYoutubeChannel){
                 webEngineView.runJavaScript(internals.script_homePageStatusFetcher)
             }
         }
@@ -707,8 +722,9 @@ ApplicationWindow {
                 return
             }
 
-            if (guideButtonChecked === buttonToggleGuide.checked)
+            if (guideButtonChecked === buttonToggleGuide.checked) {
                 return;
+            }
             clickGuideButton();
         }
 
@@ -724,10 +740,6 @@ ApplicationWindow {
 
         onVideoPositionChanged: {
             var k = utilities.getVideoID(videoID, vendor, shorts)
-//            console.log(" keY: ", k,
-//                        " shorts: ", shorts,
-//                        " weKey: ", webEngineView.key,
-//                        " CHAN: ",channelURL, channelName, channelAvatar)
             if (webEngineView.key !== k) {
                 root.addVideoEnabled = false
                 return
@@ -845,6 +857,7 @@ ApplicationWindow {
                 url: root.url
                 property string key
                 property bool isShorts: false
+                property bool isYoutubeChannel: utilities.isYoutubeChannelPage(url)
                 property bool isYoutubeHome: utilities.isYoutubeHomepage(url)
                 property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
                 property bool keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
@@ -879,20 +892,26 @@ ApplicationWindow {
                         key = utilities.getVideoID(url)
                         isShorts = utilities.isYoutubeShortsUrl(url)
                         dataPuller.startPulling()
-                    } else {
-                        root.addVideoEnabled = false
-                        isShorts = false
-                        zoomFactor = root.wevZoomFactor
-                        dataPuller.stop()
-                        key = ""
+                        return;
+                    } else if (utilities.isYoutubeHomepage(url)
+                               || utilities.isYoutubeChannelPage(url)) {
+                        guideToggleSingleShot.start()
                     }
+
+                    root.addVideoEnabled = false
+                    isShorts = false
+                    zoomFactor = root.wevZoomFactor
+                    dataPuller.stop()
+                    key = ""
                 }
 
                 onLoadingChanged: {
                     if (loadRequest.status === WebEngineView.LoadSucceededStatus
                         || loadRequest.status ===  WebEngineView.LoadStoppedStatus) {
-                        if (webEngineView.isYoutubeHome) {
-                            timePuller.pullHomeData()
+
+                        if (webEngineView.isYoutubeHome
+                                || webEngineView.isYoutubeChannel) {
+                            guideToggleSingleShot.start()
                         }
                     } else {
                         // loading or errored
@@ -1411,13 +1430,13 @@ ApplicationWindow {
                         var scriptToRun
                         if (timePuller.playerState === 1 && webEngineView.key !== "")
                             scriptToRun = internals.getPauseVideoScript(webEngineView.isShorts)
-// Br0ken, try https://stackoverflow.com/a/58581660/962856
+// Br0ken, try https://stackoverflow.com/a/58581660/962856, because .click() also doesn't work
 //                        else if (timePuller.playerState === -1)
 //                            scriptToRun = internals.getPlayNextVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
                         else
                             scriptToRun = internals.getPlayVideoScript(webEngineView.isShorts)
 
-                        console.log(timePuller.playerState, scriptToRun)
+//                        console.log(timePuller.playerState, scriptToRun)
                         webEngineView.runJavaScript(scriptToRun)
                     }
 
@@ -1459,7 +1478,6 @@ ApplicationWindow {
                             var newVolume = (userValue >= 0) ? userValue : value
 
                             var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(webEngineView.url))
-                            console.log("RUNNING\n",scriptToRun)
                             webEngineView.runJavaScript(scriptToRun)
                         }
 

@@ -76,6 +76,7 @@ const QString channelExtension{"yaycc"};
 const QString shortsVideoPattern{"https://youtube.com/shorts/"}; // ToDo: use www and rework removeWww()
 const QString standardVideoPattern{"https://youtube.com/watch?v="};
 const QString youtubeHomePattern{"https://youtube.com"};
+const QString youtubeChannelPattern{"https://youtube.com/@"};
 const QString repositoryURL{"https://github.com/yayc-stream/yayc"};
 const QString latestReleaseVersionURL{"https://raw.githubusercontent.com/yayc-stream/yayc/master/APPVERSION"};
 const QString donateURL{"https://raw.githubusercontent.com/yayc-stream/yayc/master/DONATE"};
@@ -225,6 +226,16 @@ public:
 
     static bool isYoutubeStandardUrl(const QString &url) {
         return url.startsWith(standardVideoPattern);
+    }
+
+    Q_INVOKABLE static bool isYoutubeChannelPage(QUrl url) {
+        url = removeWww(url);
+        const QString surl = url.toString();
+        return isYoutubeChannelPage(surl);
+    }
+
+    static bool isYoutubeChannelPage(const QString &url) {
+        return url.startsWith(youtubeHomePattern);
     }
 
     Q_INVOKABLE static bool isYoutubeHomepage(QUrl url) {
