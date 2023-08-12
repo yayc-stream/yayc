@@ -849,9 +849,9 @@ Rectangle {
         verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
         //__listView.cacheBuffer: 2000
 
-        __listView.onContentYChanged: {
-            console.log("CY: ",__listView.contentY, __listView.contentHeight)
-        }
+//        __listView.onContentYChanged: {
+//            console.log("CY: ",__listView.contentY, __listView.contentHeight)
+//        }
 
         Rectangle {
             id: scrollBar // touch-friendly scrollbar
@@ -903,9 +903,9 @@ Rectangle {
                             minimumY: 0
                             maximumY: view.height - scrollHandle.height
                         }
-                        drag.onMaximumYChanged: {
-                            console.log("MaxY ", drag.maximumY)
-                        }
+//                        drag.onMaximumYChanged: {
+//                            console.log("MaxY ", drag.maximumY)
+//                        }
                     }
                 }
             }
