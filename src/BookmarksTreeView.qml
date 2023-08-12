@@ -879,9 +879,13 @@ Rectangle {
                         left: parent.left
                         right: parent.right
                     }
-                    height: Math.max(view.height * (view.height / view.__listView.contentHeight)
-                                     ,24 )
-                    y: (view.__listView.contentY / view.__listView.contentHeight) * view.height
+                    height:  Math.max(
+                                view.height * (view.height / view.__listView.contentHeight)
+                                     ,16 )
+                    y: Math.max(0, Math.min( (view.__listView.contentY
+                        / (view.__listView.contentHeight - view.height))
+                                , 1.0))
+                       * (view.height - scrollHandle.height)
 
                     onYChanged: {
                         if (!scrollHandleMA.drag.active)
