@@ -199,7 +199,8 @@ public:
         }
         if (vendor == Platform::YTB) {
             if (url.indexOf(QLatin1String("&t=")) >= 0
-                    || position == 0)
+                    || position == 0
+                    || isYoutubeShortsUrl(url))
                 return url;
             auto id = getVideoID(url);
             if (id.isEmpty())
