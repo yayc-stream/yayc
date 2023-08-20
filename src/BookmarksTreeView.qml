@@ -847,14 +847,10 @@ Rectangle {
         }
 
         verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
-        //__listView.cacheBuffer: 2000
-
-//        __listView.onContentYChanged: {
-//            console.log("CY: ",__listView.contentY, __listView.contentHeight)
-//        }
 
         Rectangle {
             id: scrollBar // touch-friendly scrollbar
+            visible: scrollHandle.height < view.height - 1
             color: "white"
             opacity: 0.2
             anchors {
@@ -903,15 +899,13 @@ Rectangle {
                             minimumY: 0
                             maximumY: view.height - scrollHandle.height
                         }
-//                        drag.onMaximumYChanged: {
-//                            console.log("MaxY ", drag.maximumY)
-//                        }
                     }
                 }
             }
         }
         Rectangle {
             id: visualHandle
+            visible: scrollBar.visible
             anchors.left: scrollBar.left
             y: scrollHandle.y
             width: scrollHandle.width
