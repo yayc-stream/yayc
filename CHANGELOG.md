@@ -1,3 +1,24 @@
+## YAYC v1.2.0 (2023.08) -- Chase
+
+### ✨ New Features
+
+- Browsing history support.
+- Search support -- both in history and bookmarks.
+- Some video controls now wrapped: playback speed, play/pause, audio volume, and
+  the toggle for the Guide pane.
+- Menu item to delete storage data for a video, if present.
+- Add video button in toolbar now also provides access to context menu for the video, if added.
+- The scrollbar on Bookmarks and History views is now touch friendly and works on tablets and without a physical keyboard attached.
+- various minor UI improvements, including a splash screen to hide possibly long loading time.
+
+### 🐞 Bug fixes
+
+- Videos added via context menu on links now correctly fetch video titles without
+  the need for updating the tooltip first
+- Last opened video now saved/restored keeping track of progress
+- Progress of shorts videos now also tracked
+
+
 ## YAYC v1.1.0 (2023.06) -- Luna
 
 ### ✨ New Features
