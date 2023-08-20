@@ -69,6 +69,7 @@ In addition to the above,
 
 namespace  {
 bool isPlasma{false};
+QDateTime appstartTS;
 constexpr const int EXIT_CODE_REBOOT = -123456789;
 constexpr const int EXIT_CODE_ERASE_SETTINGS = -123456788;
 const QString videoExtension{"yayc"};
@@ -212,6 +213,16 @@ public:
         }
         return {};
     }
+
+    Q_INVOKABLE void yDebug(const QString &s) {
+        auto modelReadyTS = QDateTime::currentDateTimeUtc();
+        auto msecs = appstartTS.msecsTo(modelReadyTS);
+        QLoggingCategory category("qmldebug");
+        QSettings settings;
+        qCInfo(category) << QString::number(msecs / 1000.0, 'f', 1) << ": " << s;
+    }
+
+    Q_INVOKABLE void addRequestInterceptor(QObject *webEngineView);
 
     Q_INVOKABLE static bool isYoutubeVideoUrl(QUrl url) {
         url = removeWww(url);
@@ -2482,12 +2493,24 @@ void YaycUtilities::fetchMissingThumbnails()
     ThumbnailFetcher::fetchMissing();
 }
 
+void YaycUtilities::addRequestInterceptor(QObject *webEngineView) {
+   QQmlEngine *engine = qmlEngine(webEngineView);
+   if (!engine)
+       qFatal("NULL engine for view");
+   QQuickWebEngineProfile *profile = qvariant_cast<QQuickWebEngineProfile *>(webEngineView->property("profile"));
+   if (!profile)
+       qFatal("NULL profile for view");
+
+   RequestInterceptor *interceptor = new RequestInterceptor(engine);
+   profile->setUrlRequestInterceptor(interceptor);
+}
+
 int main(int argc, char *argv[])
 {
     int currentExitCode = 0;
     QStringList args;
     {
-        auto appstartTS = QDateTime::currentDateTimeUtc();
+        appstartTS = QDateTime::currentDateTimeUtc();
         QCoreApplication::setOrganizationName("YAYC");
         QCoreApplication::setApplicationName("yayc");
 
@@ -2496,6 +2519,7 @@ int main(int argc, char *argv[])
         qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
 #endif
         qputenv("QT_QUICK_CONTROLS_STYLE", QByteArrayLiteral("Material"));
+        qputenv("QT_STYLE_OVERRIDE", QByteArrayLiteral("Material"));
 
         if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
             // https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
@@ -2547,18 +2571,16 @@ int main(int argc, char *argv[])
                                                     "FileSystemModel", "Cannot create a FileSystemModel instance.");
 
 
-        RequestInterceptor *interceptor = new RequestInterceptor(&engine);
         YaycUtilities *utilities = new YaycUtilities(&engine);
 
         engine.rootContext()->setContextProperty("utilities", utilities);
-        engine.rootContext()->setContextProperty("requestInterceptor", interceptor);
         engine.rootContext()->setContextProperty("appVersion", QString(appVersion()) );
         engine.rootContext()->setContextProperty("repositoryURL", repositoryURL );
 
         isPlasma = isPlasmaSession();
 
         QObject::connect(fsmodel, &FileSystemModel::firstInitializationCompleted,
-                         [fsmodel, appstartTS, &settings](const QString &path) {
+                         [fsmodel, &settings](const QString &path) {
             if (!fsmodel->ready()) {
                 if (!settings.contains("debugMode") || !settings.value("debugMode").toBool())
                     return;
@@ -2570,14 +2592,6 @@ int main(int argc, char *argv[])
             }
         });
         engine.load(url);
-
-        QTimer::singleShot(1000,[&engine, interceptor](){
-            QObject *view = engine.rootObjects().first()->findChild<QObject *>("webEngineView");
-            QQuickWebEngineProfile *profile = qvariant_cast<QQuickWebEngineProfile *>(view->property("profile"));
-
-            profile->setUrlRequestInterceptor(interceptor);
-        });
-
         currentExitCode = app.exec();
     }
     if ( currentExitCode <=  EXIT_CODE_ERASE_SETTINGS) {

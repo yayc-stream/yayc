@@ -916,7 +916,7 @@ Rectangle {
             y: scrollHandle.y
             width: scrollHandle.width
             height: scrollHandle.height
-            color: white
+            color: "white"
             opacity: .5
         }
 

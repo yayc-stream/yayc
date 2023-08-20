@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -29,58 +29,40 @@ import Qt.labs.platform 1.1 as QLP
 import QtGraphicalEffects 1.0
 import yayc 1.0
 
-ApplicationWindow {
-    id: win
-    height: Screen.height;
-    width: Screen.width
-    visible: true
-    title: qsTr("YAYC")
+Rectangle {
+    id: splash
+    color: "black"
+    opacity: 0.0
+    visible: false
 
-    onClosing: {
-        close.accepted = false
-        win.minimizeToTray()
+    Timer {
+        id: opacityTimer
+        running: false
+        repeat: false
+        interval: 1000
+        onTriggered: splash.opacity = 1
     }
 
-    Shortcut {
-        sequence: StandardKey.Quit
-        onActivated: {
-            if (mainYaycLoader.loaded())
-                mainYaycLoader.item.quit()
-            else
-                Qt.quit()
-        }
+    Component.onCompleted: opacityTimer.start()
+
+    Image {
+        id: yaycLogo
+        source: "/images/yayc-inlined.png"
+        anchors.centerIn: parent
+        fillMode: Image.PreserveAspectFit
+        height: 128
+        mipmap: true
+        smooth: true
     }
-
-    Shortcut {
-        sequence: "Ctrl+H"
-        onActivated: {
-            if (mainYaycLoader.loaded())
-                mainYaycLoader.item.minimizeToTray()
-            else
-                win.hide()
+    ProgressBar {
+        id: progressBar
+        anchors {
+            left: yaycLogo.left
+            right: yaycLogo.right
+            top: yaycLogo.bottom
+            topMargin: 8
         }
-    }
 
-    Loader {
-        id: mainYaycLoader
-        anchors.fill: parent
-        active: false
-        source: "/MainYayc.qml"
-        asynchronous: true
-        onLoaded: {
-            item.visible = true;
-            mainSplashLoader.source = "";
-        }
-    }
-
-    Loader {
-        id: mainSplashLoader
-        anchors.fill: parent
-        source: "/MainSplash.qml"
-
-        onLoaded: {
-            item.visible = true
-            mainYaycLoader.active = true;
-        }
+        indeterminate: true
     }
 }
