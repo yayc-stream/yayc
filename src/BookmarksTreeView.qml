@@ -589,7 +589,10 @@ Rectangle {
                 }
 
                 ToolTip {
-                    visible: ma.containsMouse && !styleData.hasChildren
+                    visible: !scrollBarMA.containsMouse
+                             && ma.containsMouse
+                             && !styleData.hasChildren
+
                     text: treeViewDelegate.title + "\n"
                           + "Added " + treeViewDelegate.creationDate
                     delay: 300
@@ -815,11 +818,11 @@ Rectangle {
                     color: properties.selectionColor
                 }
             }
-            scrollBarBackground: Rectangle {
-                implicitWidth: 20
-                implicitHeight: 30
-                color: properties.paneBackgroundColor
-            }
+//            scrollBarBackground: Rectangle {
+//                implicitWidth: 20
+//                implicitHeight: 30
+//                color: properties.paneBackgroundColor
+//            }
             decrementControl: Image {
                 width: 20
                 source: "qrc:/images/arrow.png"
@@ -842,5 +845,80 @@ Rectangle {
                 webEngineView.url = url;
             }
         }
+
+        verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
+        //__listView.cacheBuffer: 2000
+
+//        __listView.onContentYChanged: {
+//            console.log("CY: ",__listView.contentY, __listView.contentHeight)
+//        }
+
+        Rectangle {
+            id: scrollBar // touch-friendly scrollbar
+            color: "white"
+            opacity: 0.2
+            anchors {
+                bottom: parent.bottom
+                top: parent.top
+                right: parent.right
+            }
+            width: 36
+            MouseArea {
+                id: scrollBarMA
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                hoverEnabled: true
+                onClicked:  {
+                    event.accepted = true
+                }
+                Rectangle {
+                    id: scrollHandle
+                    color: "white"
+                    opacity: 0.01
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                    }
+                    height:  Math.max(
+                                view.height * (view.height / view.__listView.contentHeight)
+                                     ,16 )
+                    y: Math.max(0, Math.min( (view.__listView.contentY
+                        / (view.__listView.contentHeight - view.height))
+                                , 1.0))
+                       * (view.height - scrollHandle.height)
+
+                    onYChanged: {
+                        if (!scrollHandleMA.drag.active)
+                            return
+                        view.__listView.contentY = y / (view.height - scrollHandle.height)
+                                                   * (view.__listView.contentHeight - view.height)
+                    }
+
+                    MouseArea {
+                        id: scrollHandleMA
+                        anchors.fill: parent
+                        drag {
+                            target: scrollHandle
+                            axis: Drag.YAxis
+                            minimumY: 0
+                            maximumY: view.height - scrollHandle.height
+                        }
+//                        drag.onMaximumYChanged: {
+//                            console.log("MaxY ", drag.maximumY)
+//                        }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            id: visualHandle
+            anchors.left: scrollBar.left
+            y: scrollHandle.y
+            width: scrollHandle.width
+            height: scrollHandle.height
+            color: white
+            opacity: .5
+        }
+
     } // QC1.TreeView
 }
