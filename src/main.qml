@@ -35,6 +35,7 @@ ApplicationWindow {
     width: Screen.width
     visible: true
     title: qsTr("YAYC")
+    property bool hidden: false
 
     onClosing: {
         close.accepted = false
@@ -59,6 +60,10 @@ ApplicationWindow {
             else
                 win.hide()
         }
+    }
+
+    onVisibilityChanged: {
+        win.hidden = (visibility == Window.Hidden || visibility == Window.Minimized)
     }
 
     Loader {

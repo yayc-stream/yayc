@@ -48,11 +48,17 @@ Item {
     property int workingDirTrigger: 0
     function triggerWorkingDir() { workingDirTrigger += 1 }
     property url url: "https://youtube.com"
+    property url previousUrl
     property bool filesystemModelReady: false
+    property bool windowHidden: win.hidden
 
     function quit() {
         // the setting is an alias for reloading purposes
-        settings.lastUrl = timePuller.getCurrentVideoURLWithPosition()
+        if (root.windowHidden && root.blankWhenHidden && previousUrl !== "") {
+            settings.lastUrl = previousUrl // ToDo: try to save/restore position too
+        } else {
+            settings.lastUrl = timePuller.getCurrentVideoURLWithPosition()
+        }
         syncAll()
         Qt.quit()
     }
@@ -75,6 +81,20 @@ Item {
         sequence: "Ctrl+F"
         onActivated: {
             utilities.fetchMissingThumbnails()
+        }
+    }
+
+    onWindowHiddenChanged: {
+        if (!root.blankWhenHidden || webEngineView.isYoutubeVideo)
+            return
+        if (windowHidden) {
+            // store && change
+            previousUrl = url
+            url = "about:blank"
+        } else {
+            // restore
+            url = previousUrl
+            previousUrl = ""
         }
     }
 
@@ -133,6 +153,7 @@ Item {
     property bool darkMode: true
     property bool debugMode: false
     property bool removeStorageOnDelete: false
+    property bool blankWhenHidden: false
     property real wevZoomFactor
     property real wevZoomFactorVideo
     property alias volume: sliderVolume.value
@@ -192,6 +213,7 @@ Item {
         property alias wevZoomFactor: root.wevZoomFactor
         property alias wevZoomFactorVideo: root.wevZoomFactorVideo
         property alias removeStorageOnDelete: root.removeStorageOnDelete
+        property alias blankWhenHidden: root.blankWhenHidden
         property alias volume: root.volume
         property alias userSpecifiedVolume: sliderVolume.userValue
         property alias guidePaneToggled: root.guideToggled
@@ -914,7 +936,7 @@ Item {
                     WebEngineScript {
                         injectionPoint: WebEngineScript.Deferred
                         worldId: WebEngineScript.MainWorld
-                        sourceCode: root.customScript
+                        sourceCode: webEngineView.isYoutubeVideo ? root.customScript : ""
                     }
                 ]
 
@@ -2198,6 +2220,21 @@ Item {
                     ToolTip.visible: hovered
                     ToolTip.delay: 300
                     ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
+                }
+                CheckBox {
+                    id: blankWhenHiddenCheck
+                    visible: root.debugMode
+                    checked: root.blankWhenHidden
+                    text: qsTr("Blank when invisible")
+                    onCheckedChanged: {
+                        root.blankWhenHidden = checked
+                    }
+
+                    hoverEnabled: true
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 300
+                    ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
                 }
             }
 
