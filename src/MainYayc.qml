@@ -936,7 +936,7 @@ Item {
                     WebEngineScript {
                         injectionPoint: WebEngineScript.Deferred
                         worldId: WebEngineScript.MainWorld
-                        sourceCode: webEngineView.isYoutubeVideo ? root.customScript : ""
+                        sourceCode: root.customScript
                     }
                 ]
 
