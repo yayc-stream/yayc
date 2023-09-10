@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -47,7 +47,7 @@ Item {
     function triggerVideoAdded() { addedVideoTrigger += 1 }
     property int workingDirTrigger: 0
     function triggerWorkingDir() { workingDirTrigger += 1 }
-    property url url: "https://youtube.com"
+    property alias url: webEngineView.url
     property url previousUrl
     property bool filesystemModelReady: false
     property bool windowHidden: win.hidden
@@ -202,7 +202,7 @@ Item {
         property alias easyListPath: root.easyListPath
         property alias extWorkingDirPath: root.extWorkingDirPath
         property alias externalCommands: root.externalCommands
-        property alias lastUrl: webEngineView.url
+        property alias lastUrl: root.url
         property alias lastestRemoteVersion: root.lastestRemoteVersion
         property alias lastVersionCheckDate: root.lastVersionCheckDate
         property alias donateUrl: root.donateUrl
@@ -403,7 +403,7 @@ Item {
     }
 
     function isCurrentVideoAdded(key, trigger) {
-        if (!utilities.isYoutubeVideoUrl(webEngineView.url))
+        if (!utilities.isYoutubeVideoUrl(root.url))
             return false;
         return fileSystemModel.isVideoBookmarked(key)
     }
@@ -733,8 +733,8 @@ Item {
         function getCurrentVideoURLWithPosition() {
             if (webEngineView.isYoutubeVideo && videoID !== ""
                     && webEngineView.key == utilities.getVideoID(videoID, vendor, shorts))
-                return utilities.urlWithPosition(webEngineView.url, timePuller.videoPosition)
-            return webEngineView.url
+                return utilities.urlWithPosition(root.url, timePuller.videoPosition)
+            return root.url
         }
 
         onVideoPositionChanged: {
@@ -789,7 +789,7 @@ Item {
             }
         }
         function addCurrentVideo() {
-            if (!utilities.isYoutubeVideoUrl(webEngineView.url)) {
+            if (!utilities.isYoutubeVideoUrl(root.url)) {
                 // Q_UNREACHABLE
                 return;
             }
@@ -859,7 +859,7 @@ Item {
 
             WebEngineView {
                 id: webEngineView
-                url: root.url
+                url: "https://youtube.com"
                 property string key
                 property bool isShorts: false
                 property bool isYoutubeChannel: utilities.isYoutubeChannelPage(url)
@@ -1265,13 +1265,13 @@ Item {
                 TextField {
                     Layout.fillWidth: true
 
-                    text: webEngineView.url
+                    text: root.url
                     selectByMouse: true
                     onEditingFinished: {}
                     onAccepted: {
-                        if (text == webEngineView.url)
+                        if (text == root.url)
                             return
-                        webEngineView.url = text
+                        root.url = text
                     }
                 }
                 ToolButton {
@@ -1370,7 +1370,7 @@ Item {
                         visible: false
                     }
                     onClicked: {
-                        copyLinkClipboardProxy.text = webEngineView.url
+                        copyLinkClipboardProxy.text = root.url
                         copyLinkClipboardProxy.selectAll();
                         copyLinkClipboardProxy.copy()
                         copyLinkClipboardProxy.text = ""
@@ -1446,7 +1446,7 @@ Item {
                             scriptToRun = internals.getPauseVideoScript(webEngineView.isShorts)
 // Br0ken, try https://stackoverflow.com/a/58581660/962856, because .click() also doesn't work
 //                        else if (timePuller.playerState === -1)
-//                            scriptToRun = internals.getPlayNextVideoScript(utilities.isYoutubeShortsUrl(webEngineView.url))
+//                            scriptToRun = internals.getPlayNextVideoScript(utilities.isYoutubeShortsUrl(root.url))
                         else
                             scriptToRun = internals.getPlayVideoScript(webEngineView.isShorts)
 
@@ -1491,7 +1491,7 @@ Item {
                         function setVolume() {
                             var newVolume = (userValue >= 0) ? userValue : value
 
-                            var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(webEngineView.url))
+                            var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(root.url))
                             webEngineView.runJavaScript(scriptToRun)
                         }
 
@@ -1599,7 +1599,7 @@ Item {
                 onClicked: {
                     buttonSpeed.checked = false
                     var scriptToRun = internals.getPlaybackRateSetterScript(
-                                text, utilities.isYoutubeShortsUrl(webEngineView.url)
+                                text, utilities.isYoutubeShortsUrl(root.url)
                              )
 //                    console.log(scriptToRun)
                     webEngineView.runJavaScript(scriptToRun)
