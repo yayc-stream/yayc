@@ -1478,7 +1478,7 @@ Item {
                     Slider {
                         id: sliderVolume
                         enabled: webEngineView.isYoutubeVideo
-                        implicitWidth: 100
+                        implicitWidth: 130
                         anchors.centerIn: parent
 
                         value: 0
