@@ -37,6 +37,13 @@ ApplicationWindow {
     title: qsTr("YAYC")
     property bool hidden: false
 
+    function minimizeToTray() {
+        if (mainYaycLoader.loaded())
+            mainYaycLoader.item.minimizeToTray()
+        else
+            win.hide()
+    }
+
     onClosing: {
         close.accepted = false
         win.minimizeToTray()
@@ -54,12 +61,7 @@ ApplicationWindow {
 
     Shortcut {
         sequence: "Ctrl+H"
-        onActivated: {
-            if (mainYaycLoader.loaded())
-                mainYaycLoader.item.minimizeToTray()
-            else
-                win.hide()
-        }
+        onActivated: win.minimizeToTray()
     }
 
     onVisibilityChanged: {
