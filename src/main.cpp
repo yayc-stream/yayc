@@ -20,8 +20,9 @@ In addition to the above,
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QtQml>
-#include <QtWebEngine/qtwebengineglobal.h>
-#include <QtWebEngine/qquickwebengineprofile.h>
+#include <QtWebEngineCore/qtwebenginecoreglobal.h>
+#include <QtWebEngineQuick/qtwebenginequickglobal.h>
+#include <QtWebEngineQuick/qquickwebengineprofile.h>
 #include <QtWebEngineCore/qwebengineurlrequestinterceptor.h>
 #include <QTimer>
 #include <QHash>
@@ -64,6 +65,9 @@ In addition to the above,
 #include <QVersionNumber>
 #include <QtGui/QTextDocument>
 #include <QtGlobal>
+#include <QRegExp>
+#include <QRegularExpression>
+#include <QStringRef>
 
 #include "third_party/ad-block/ad_block_client.h"
 
@@ -118,7 +122,7 @@ bool isExec(const QString &fileName) {
 QString avatarUrl(QString originalAvatarUrl) {
     return originalAvatarUrl.replace(QLatin1String("=s48-"), QLatin1String("=s128-"));
 }
-const QRegExp allowedDirsPattern("^[^\\.].*"); // Skip entries starting with . , this skips .channels and every other hidden dir
+const QRegularExpression allowedDirsPattern("^[^\\.].*"); // Skip entries starting with . , this skips .channels and every other hidden dir
 }
 
 class Platform : public QObject {
@@ -180,6 +184,7 @@ public:
                                                     : "" );
             } else return {};
         }
+        return {};
     }
 };
 
@@ -281,12 +286,12 @@ public:
         }
         if (vendor == Platform::YTB) {
             if (isYoutubeStandardUrl(surl)) {
-                const QStringRef stripped = surl.midRef(standardVideoPattern.size());
-                const int idx = stripped.indexOf("&");
+                const QStringView stripped =  QStringView{surl}.mid(standardVideoPattern.size());
+                const int idx = stripped.indexOf('&');
                 return "YTBv_" + stripped.mid(0, idx).toString();
             } else if (isYoutubeShortsUrl(surl)) {
-                const QStringRef stripped = surl.midRef(shortsVideoPattern.size());
-                const int idx = stripped.indexOf("?");
+                const QStringView stripped = QStringView{surl}.mid(shortsVideoPattern.size());
+                const int idx = stripped.indexOf('?');
                 return "YTBs_" + stripped.mid(0, idx).toString();
             } else {
                 return {};
@@ -1181,10 +1186,10 @@ public:
     void updateSearchTerm() {
         QString pattern;
         if (!m_searchTerm.isEmpty())
-            pattern = "*" + m_searchTerm + "*";
+            pattern = ".*" + m_searchTerm + ".*";
 
-        setFilterRegExp(QRegExp(pattern, Qt::CaseInsensitive,
-                                              QRegExp::WildcardUnix));
+        setFilterRegularExpression(QRegularExpression(pattern,
+                                                      QRegularExpression::CaseInsensitiveOption));
     }
 
 signals:
@@ -1330,7 +1335,8 @@ private:
         req.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36");
         req.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
                          QNetworkRequest::AlwaysNetwork);
-        req.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+        req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                         QNetworkRequest::UserVerifiedRedirectPolicy);
         req.setRawHeader("COOKIE" , "CONSENT=YES+42" );
         auto *reply = m_nam.get(req);
         if (!reply) {
@@ -1339,6 +1345,8 @@ private:
         }
         QObject::connect(reply, &QNetworkReply::finished,
                          this, &ThumbnailFetcher::onVideoPageRequestFinished);
+        QObject::connect(reply, &QNetworkReply::redirected,
+                         reply, &QNetworkReply::redirectAllowed);
         reply->setProperty("key", key);
     }
 
@@ -1547,6 +1555,12 @@ public:
         if (!key.size() || !m_cache.contains(key))
             return QLatin1String("");
 
+        return title(key);
+    }
+
+    Q_INVOKABLE QString title(const QString &key) const {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
+           return QLatin1String("");
         return m_cache.value(key).title;
     }
 
@@ -1685,19 +1699,18 @@ public slots:
 
     QVariant videoUrl(QModelIndex item) {
         if (!m_ready)
-            return QVariant();
-        item = m_proxyModel->mapToSource(item);
+            return QLatin1String("");
+        const QString &key = keyFromViewItem(item);
+        if (!key.size() || !m_cache.contains(key))
+            return QLatin1String("");
 
-        if (!filePath(item).size()) {
-            qWarning() << "invalid input";
-            return QVariant();
-        }
-        if (isDir(item)) {
-            qWarning() << "No URL for categories";
-            return QVariant();
-        }
+        return videoUrl(key);
+    }
 
-        return data(item, UrlStringRole);
+    QVariant videoUrl(const QString &key) {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
+            return QLatin1String("");
+        return m_cache.value(key).url();
     }
 
     void openInBrowser(QModelIndex item, const QString &extWorkingDirRoot) {
@@ -1895,6 +1908,11 @@ public slots:
         if (!m_ready)
             return false;
         const QString &key = keyFromViewItem(item);
+        return isShortVideo(key);
+    }
+    bool isShortVideo(const QString &key) const {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
+            return false;
         return YaycUtilities::isShortVideo(key);
     }
     bool isViewed(const QModelIndex &item) const {
@@ -1904,9 +1922,7 @@ public slots:
         return isViewed(key);
     }
     bool isViewed(const QString &key) const {
-        if (!m_ready)
-            return false;
-        if (!key.size() || !m_cache.contains(key))
+        if (!m_ready || !key.size() || !m_cache.contains(key))
             return false;
         return m_cache.value(key).viewed;
     }
@@ -1968,7 +1984,7 @@ public slots:
         starEntry(key, starred);
     }
     void starEntry(const QString &key, bool starred) {
-        if (!key.size() || !m_cache.contains(key))
+        if (!m_ready || !key.size() || !m_cache.contains(key))
             return;
 
         m_cache[key].setStarred(starred);
@@ -1978,8 +1994,15 @@ public slots:
     QString videoIconUrl(const QModelIndex &item) const {
         if (!m_ready)
             return QLatin1String("");
-        const bool shortVideo = isShortVideo(item);
-        const bool viewed = isViewed(item);
+        const QString &key = keyFromViewItem(item);
+        return videoIconUrl(key);
+    }
+
+    QString videoIconUrl(const QString &key) const {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
+            return QLatin1String("");
+        const bool shortVideo = isShortVideo(key);
+        const bool viewed = isViewed(key);
         if (shortVideo) {
             if (viewed)
                 return QLatin1String("qrc:/images/shortChecked.png");
@@ -1990,6 +2013,7 @@ public slots:
         }
         return QLatin1String("qrc:/images/video.png");
     }
+
     bool moveVideo(const QString &key, QModelIndex destinationDir) {
         if (!m_ready)
             return false;
@@ -2254,7 +2278,7 @@ friend class ThumbnailFetcher;
 
 bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    QRegExp re = filterRegExp();
+    QRegularExpression re = filterRegularExpression();
 
     FileSystemModel *fsm = qobject_cast<FileSystemModel *>(sourceModel());
 
@@ -2294,7 +2318,7 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
     if ((!hasWorkingDir && !m_searchInUnsaved) || (hasWorkingDir && !m_searchInSaved))
         return false;
 
-    if (re.isEmpty())
+    if (re.pattern().isEmpty())
         return true;
 
     const QString channelName =
@@ -2503,6 +2527,7 @@ void YaycUtilities::addRequestInterceptor(QObject *webEngineView) {
 
    RequestInterceptor *interceptor = new RequestInterceptor(engine);
    profile->setUrlRequestInterceptor(interceptor);
+   engine->rootContext()->setContextProperty("requestInterceptor", interceptor); // for the file dialog
 }
 
 int main(int argc, char *argv[])
@@ -2533,14 +2558,14 @@ int main(int argc, char *argv[])
 
         qInfo("Starting YAYC v%s ...", appVersion().data());
 #ifdef QT_NO_DEBUG_OUTPUT
-        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
-                                                        "qmldebug=true\n"
-                                                        "*.fatal=true\n"
-                                                        ));
+//        QLoggingCategory::setFilterRules(QStringLiteral("*=false\n"
+//                                                        "qmldebug=true\n"
+//                                                        "*.fatal=true\n"
+//                                                        ));
 #endif
 
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-        QtWebEngine::initialize();
+        QtWebEngineQuick::initialize();
 
         QGuiApplication app(argc, argv);
         app.setWindowIcon(QIcon(":/images/yayc-alt.png"));

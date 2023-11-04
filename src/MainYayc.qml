@@ -13,29 +13,18 @@ In addition to the above,
 
 */
 
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
-import QtQuick.Dialogs 1.3 as QQD
-import QtWebEngine 1.11
-import QtQuick.Controls 1.4 as QC1
-import QtQuick.Controls.Styles 1.4 as QC1S
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.2
-import QtWebChannel 1.15
-import Qt.labs.settings 1.1
-import Qt.labs.platform 1.1 as QLP
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs as QQD
+import QtWebEngine
+import QtQuick.Layouts
+import QtQml.Models
+import QtWebChannel
+import Qt.labs.settings
+import Qt.labs.platform as QLP
+import Qt5Compat.GraphicalEffects
 import yayc 1.0
-
-/*
-  == Known issues ==
-
-  - QQ1.TreeView is terribly buggy.
-    consider using https://code.qt.io/cgit/qt-extensions/qttreeview.git/about/ or
-    another alternative. qttreeview needs to be checked against partial model updates
-*/
 
 Item {
     id: root
@@ -880,6 +869,20 @@ Item {
                 objectName: "webEngineView"
                 Component.onCompleted: {
                     utilities.addRequestInterceptor(this)
+
+                    userScripts.collection = [
+                        {
+                            injectionPoint: WebEngineScript.Deferred,
+                            name: "QWebChannel",
+                            worldId: WebEngineScript.MainWorld,
+                            sourceUrl: "qrc:/qtwebchannel/qwebchannel.js"
+                        },
+                        {
+                            injectionPoint: WebEngineScript.Deferred,
+                            worldId: WebEngineScript.MainWorld,
+                            sourceCode: root.customScript
+                        }
+                    ]
                 }
 
                 webChannel: web_channel
@@ -925,20 +928,6 @@ Item {
                         // loading or errored
                     }
                 }
-
-                userScripts: [
-                    WebEngineScript {
-                        injectionPoint: WebEngineScript.Deferred
-                        name: "QWebChannel"
-                        worldId: WebEngineScript.MainWorld
-                        sourceUrl: "qrc:/qtwebchannel/qwebchannel.js"
-                    },
-                    WebEngineScript {
-                        injectionPoint: WebEngineScript.Deferred
-                        worldId: WebEngineScript.MainWorld
-                        sourceCode: root.customScript
-                    }
-                ]
 
                 Timer {
                     id: dataPuller
@@ -1552,19 +1541,20 @@ Item {
 
                         layer.enabled: true
                         layer.mipmap: true
-                        layer.effect: ShaderEffect {
-                            fragmentShader: "
-                                uniform lowp sampler2D source; // this item
-                                uniform lowp float qt_Opacity; // inherited opacity of this item
-                                varying highp vec2 qt_TexCoord0;
-                                void main() {
-                                    lowp vec4 p = texture2D(source, qt_TexCoord0);
-                                    if (p.a < .1)
-                                        gl_FragColor = vec4(0, 0, 0, 0);
-                                    else
-                                        gl_FragColor = vec4(1, 0.9, 0, p.a);
-                                }"
-                        }
+                        // TODO: fix this -- QTBUG-87402
+//                        layer.effect: ShaderEffect {
+//                            fragmentShader: "
+//                                uniform lowp sampler2D source; // this item
+//                                uniform lowp float qt_Opacity; // inherited opacity of this item
+//                                varying highp vec2 qt_TexCoord0;
+//                                void main() {
+//                                    lowp vec4 p = texture2D(source, qt_TexCoord0);
+//                                    if (p.a < .1)
+//                                        gl_FragColor = vec4(0, 0, 0, 0);
+//                                    else
+//                                        gl_FragColor = vec4(1, 0.9, 0, p.a);
+//                                }"
+//                        }
                     }
                 }
             }
@@ -3047,32 +3037,26 @@ Item {
         }
     } // addVideoDialog
 
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogVideos
-        nameFilters: []
         title: "Please choose a directory to store videos"
-        selectExisting: true
-        selectFolder: true
 
         onAccepted: {
             fileDialogVideos.close()
-            var path = String(fileDialogVideos.fileUrl)
+            var path = String(fileDialogVideos.selectedFolder)
             root.youtubePath = root.deUrlizePath(path)
         }
         onRejected: {
         }
     }
 
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogHistory
-        nameFilters: []
         title: "Please choose a directory to store history"
-        selectExisting: true
-        selectFolder: true
 
         onAccepted: {
             fileDialogHistory.close()
-            var path = String(fileDialogHistory.fileUrl)
+            var path = String(fileDialogHistory.selectedFolder)
             root.historyPath = root.deUrlizePath(path)
         }
         onRejected: {
@@ -3083,8 +3067,7 @@ Item {
         id: fileDialogEasylist
         nameFilters: []
         title: "Please choose easylist.txt"
-        selectExisting: true
-        selectFolder: false
+        options: QQD.FileDialog.ReadOnly
 
         onAccepted: {
             fileDialogEasylist.close()
@@ -3096,30 +3079,26 @@ Item {
         }
     }
 
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogExtWorkingDir
-        nameFilters: []
         title: "Please choose a working directory to run the external application"
-        selectExisting: true
-        selectFolder: true
+
         onAccepted: {
             fileDialogExtWorkingDir.close()
-            var path = String(fileDialogExtWorkingDir.fileUrl)
+            var path = String(fileDialogExtWorkingDir.selectedFolder)
             root.extWorkingDirPath = root.deUrlizePath(path)
         }
         onRejected: {
         }
     }
 
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogProfile
-        nameFilters: []
         title: "Please choose a directory for your Google profile"
-        selectExisting: true
-        selectFolder: true
+
         onAccepted: {
             fileDialogProfile.close()
-            var path = String(fileDialogProfile.fileUrl)
+            var path = String(fileDialogProfile.selectedFolder)
             root.profilePath = root.deUrlizePath(path)
         }
         onRejected: {

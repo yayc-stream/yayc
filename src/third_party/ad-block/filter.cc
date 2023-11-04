@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <iostream>
+//#include <iostream>
 #include <set>
 #include <string>
 #ifdef ENABLE_REGEX
@@ -327,7 +327,7 @@ void Filter::parseOption(const char *input, int len) {
     *pFilterOption = static_cast<FilterOption>(*pFilterOption | FOUnknown);
     std::string option(pStart, len);
     if (unknownOptions.find(option) == unknownOptions.end()) {
-      std::cout << "Unrecognized filter option: " << option << std::endl;
+      //std::cout << "Unrecognized filter option: " << option << std::endl;
       unknownOptions.insert(option);
     }
   }

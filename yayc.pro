@@ -1,6 +1,8 @@
-QT += quick core gui network widgets quickcontrols2
+QT += quick core gui network widgets
+QT += quickcontrols2
 QT += webchannel qml
-QT += webengine
+QT += webenginecore webenginewidgets webenginequick webenginequickdelegatesqml
+QT += core5compat
 
 CONFIG += c++11
 CONFIG += qtquickcompiler

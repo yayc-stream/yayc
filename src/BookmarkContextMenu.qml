@@ -13,20 +13,17 @@ In addition to the above,
 
 */
 
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
-import QtQuick.Dialogs 1.3 as QQD
-import QtWebEngine 1.11
-import QtQuick.Controls 1.4 as QC1
-import QtQuick.Controls.Styles 1.4 as QC1S
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.2
-import QtWebChannel 1.15
-import Qt.labs.settings 1.1
-import Qt.labs.platform 1.1 as QLP
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs as QQD
+import QtWebEngine
+import QtQuick.Layouts
+import QtQml.Models
+import QtWebChannel
+import Qt.labs.settings
+import Qt.labs.platform as QLP
+import Qt5Compat.GraphicalEffects
 import yayc 1.0
 
 Menu {
