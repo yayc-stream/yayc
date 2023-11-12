@@ -91,7 +91,7 @@ void YaycUtilities::addRequestInterceptor(QObject *webEngineView)
 
     RequestInterceptor *interceptor = new RequestInterceptor(engine);
     profile->setUrlRequestInterceptor(interceptor);
-    engine->rootContext()->setContextProperty("requestInterceptor", interceptor);
+    engine->rootContext()->setContextProperty("requestInterceptor", interceptor); // for the file dialog
 }
 
 bool YaycUtilities::isYoutubeVideoUrl(QUrl url)
