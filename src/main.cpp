@@ -2503,6 +2503,7 @@ void YaycUtilities::addRequestInterceptor(QObject *webEngineView) {
 
    RequestInterceptor *interceptor = new RequestInterceptor(engine);
    profile->setUrlRequestInterceptor(interceptor);
+   engine->rootContext()->setContextProperty("requestInterceptor", interceptor); // for the file dialog
 }
 
 int main(int argc, char *argv[])
