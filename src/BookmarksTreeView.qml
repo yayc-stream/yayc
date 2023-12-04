@@ -13,20 +13,21 @@ In addition to the above,
 
 */
 
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
-import QtQuick.Dialogs 1.3 as QQD
-import QtWebEngine 1.11
-import QtQuick.Controls 1.4 as QC1
-import QtQuick.Controls.Styles 1.4 as QC1S
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.2
-import QtWebChannel 1.15
-import Qt.labs.settings 1.1
-import Qt.labs.platform 1.1 as QLP
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs as QQD
+import QtWebEngine
+
+//import QtQuick.Controls 1.4 as QC1
+//import QtQuick.Controls.Styles 1.4 as QC1S
+
+import QtQuick.Layouts
+import QtQml.Models
+import QtWebChannel
+import Qt.labs.settings
+import Qt.labs.platform as QLP
+import Qt5Compat.GraphicalEffects
 import yayc 1.0
 
 Rectangle {
@@ -469,7 +470,7 @@ Rectangle {
 //        }
 //    }
 
-    QC1.TreeView {
+    TreeView {
         id: view
 
         anchors {
@@ -485,368 +486,305 @@ Rectangle {
                ? viewContainer.model.sortFilterProxyModel : undefined
         rootIndex: (viewContainer.model !== undefined)
                    ? viewContainer.model.rootPathIndex : undefined
-        selectionMode: 0
+        selectionMode: TableView.SingleSelection
 
         focus: true
-        headerVisible: false
-        alternatingRowColors: false
-        backgroundVisible: false
+
+        alternatingRows: false
+//        backgroundVisible: false
         property string selectedKey: ""
         property string contextedKey: ""
 
-        QC1.TableViewColumn {
-            title: "Name"
-            role: "fileName"
-            resizable: true
-        }
+//        QC1.TableViewColumn {
+//            title: "Name"
+//            role: "fileName"
+//            resizable: true
+//        }
 
-        style: QC1S.TreeViewStyle {
-            textColor: properties.textColor
-            highlightedTextColor: properties.textColor
-            backgroundColor: properties.paneBackgroundColor
-            alternateBackgroundColor: properties.paneBackgroundColor
-            branchDelegate: Item {
-                width: 16
-                height: 16
-                Image {
-                    visible: styleData.column === 0 && styleData.hasChildren
-                    anchors.fill: parent
-                    anchors.verticalCenterOffset: 2
-                    source: "qrc:/images/arrow.png"
-                    transform: Rotation {
-                        origin.x: width / 2
-                        origin.y: height / 2
-                        angle: styleData.isExpanded ? 0 : -90
-                    }
-                }
-            }
+        delegate: Rectangle {
+            // Assigned to by TreeView:
+            id: treeViewDelegate
 
-            itemDelegate: Rectangle {
-                id: treeViewDelegate
-                readonly property int defaultLineHeight: 26 // turns out to be 26/28 on standard desktop, in absence of uncommon characters
-                height: Math.round(defaultLineHeight * 1.1)
-                border.color: (ma.drag.active)
-                              ? "red"
-                              : (!styleData.hasChildren && ((view.selectedKey === key) || (view.contextedKey === key)))
-                                ? "maroon"
-                                : (da.hovered
-                                   ? "green"
-                                   : "transparent")
-                border.width: 2
-                color: (styleData.hasChildren)
-                       ? properties.categoryBgColor
-                       : properties.fileBgColor
-                property var qmodelindex: styleData.index
-                property string key: (!styleData.hasChildren)
-                                     ? styleData.value //fileSystemModel.keyFromViewItem(qmodelindex)
-                                     : ""
+            required property TreeView treeView
+            required property bool isTreeNode
+            required property bool expanded
+            required property int hasChildren
+            required property int depth
 
-                property real duration: (!styleData.hasChildren)
-                                        ? viewContainer.model.duration(qmodelindex)
-                                        : 0
-                property real progress: (!styleData.hasChildren)
-                                        ? viewContainer.model.progress(key)
-                                        : 0
-                property string title: viewContainer.model.title(qmodelindex) // with key it doesn't update, somehow
-                property bool playing: (!styleData.hasChildren)
-                                       ? (webEngineView.key === key)
-                                       : false
-                property string videoUrl: (!styleData.hasChildren)
-                                          ? viewContainer.model.videoUrl(qmodelindex)
+
+            readonly property real indent: 20
+            readonly property real padding: 5
+            readonly property int defaultLineHeight: 26 // turns out to be 26/28 on standard desktop, in absence of uncommon characters
+
+            height: Math.round(defaultLineHeight * 1.1)
+            border.color: (ma.drag.active)
+                          ? "red"
+                          : (!treeViewDelegate.hasChildren
+                                && ((view.selectedKey === key)
+                                    || (view.contextedKey === key)))
+                            ? "maroon"
+                            : (da.hovered
+                               ? "green"
+                               : "transparent")
+            border.width: 2
+            color: (treeViewDelegate.hasChildren)
+                   ? properties.categoryBgColor
+                   : properties.fileBgColor
+
+            property var qmodelindex: undefined
+            property bool initialized: qmodelindex !== undefined
+            Component.onCompleted: qmodelindex = view.index(row, column)
+
+            property string key: (!treeViewDelegate.hasChildren && initialized)
+                                 ? fileSystemModel.keyFromViewItem(qmodelindex)
+                                 : ""
+
+            property real duration: (!treeViewDelegate.hasChildren && initialized)
+                                    ? viewContainer.model.duration(key)
+                                    : 0
+            property real progress: (!treeViewDelegate.hasChildren)
+                                    ? viewContainer.model.progress(key)
+                                    : 0
+            property string title: viewContainer.model.title(key) // with key it doesn't update, somehow
+            property bool playing: (!treeViewDelegate.hasChildren)
+                                   ? (webEngineView.key === key)
+                                   : false
+            property string videoUrl: (!treeViewDelegate.hasChildren)
+                                      ? viewContainer.model.videoUrl(key)
+                                      : ""
+            property string videoIconUrl: (!treeViewDelegate.hasChildren)
+                                          ? viewContainer.model.videoIconUrl(key)
                                           : ""
-                property string videoIconUrl: (!styleData.hasChildren)
-                                              ? viewContainer.model.videoIconUrl(qmodelindex)
-                                              : ""
-                property bool starred: (!styleData.hasChildren)
-                                       ? viewContainer.model.isStarred(qmodelindex)
-                                       : false
-                property bool hasWorkingDir: (!styleData.hasChildren && root.extWorkingDirExists)
-                                       ? viewContainer.model.hasWorkingDir(key, root.extWorkingDirPath)
-                                       : false
-                property bool shorts: (!styleData.hasChildren)
-                                      ? utilities.isYoutubeShortsUrl(videoUrl)
-                                      : false
-                property string creationDate: (styleData.hasChildren) ? ""
-                                              : viewContainer.model.creationDate(key)
+            property bool starred: (!treeViewDelegate.hasChildren)
+                                   ? viewContainer.model.isStarred(key)
+                                   : false
+            property bool hasWorkingDir: (!treeViewDelegate.hasChildren && root.extWorkingDirExists)
+                                   ? viewContainer.model.hasWorkingDir(key, root.extWorkingDirPath)
+                                   : false
+            property bool shorts: (!treeViewDelegate.hasChildren)
+                                  ? utilities.isYoutubeShortsUrl(videoUrl)
+                                  : false
+            property string creationDate: (treeViewDelegate.hasChildren) ? ""
+                                          : viewContainer.model.creationDate(key)
 
-                onStarredChanged: {
+            onQmodelindexChanged: treeViewDelegate.updateProgress()
+            onVisibleChanged: treeViewDelegate.updateProgress()
+
+            function updateProgress() {
+                if (!viewContainer.historyView
+                        && !treeViewDelegate.hasChildren
+                        && key) {
+                    progress = viewContainer.model.progress(key)
+                }
+            }
+
+            ToolTip {
+                visible: !scrollBarMA.containsMouse
+                         && ma.containsMouse
+                         && !treeViewDelegate.hasChildren
+
+                text: treeViewDelegate.title + "\n"
+                      + "Added " + treeViewDelegate.creationDate
+                delay: 300
+                font {
+                    family: mainFont.name
                 }
 
-                onQmodelindexChanged: {
-                    treeViewDelegate.updateProgress()
+                Image {
+                    id: tooltipThumbnail
+                    visible: parent.visible
+                    source : (visible && treeViewDelegate.key !== "")
+                             ? "image://videothumbnail/" + treeViewDelegate.key
+                             : ""
+                    asynchronous: true
+                    anchors.left: parent.right
+                    anchors.leftMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                    height: 128
                 }
+            }
 
-                function updateProgress() {
-                    if (!viewContainer.historyView
-                            && !styleData.hasChildren
-                            && key) {
-                        progress = viewContainer.model.progress(key)
-                    }
-                }
+            Drag.active: ma.drag.active
+            Drag.dragType: Drag.Automatic
+            Drag.imageSource : "qrc:/images/save.png"
 
-                onVisibleChanged: {
-                    treeViewDelegate.updateProgress()
-                }
-
-                ToolTip {
-                    visible: !scrollBarMA.containsMouse
-                             && ma.containsMouse
-                             && !styleData.hasChildren
-
-                    text: treeViewDelegate.title + "\n"
-                          + "Added " + treeViewDelegate.creationDate
-                    delay: 300
-                    font {
-                        family: mainFont.name
-                    }
-
+            Row {
+                anchors.fill: parent
+                Item {
+                    id: branchIndicator
+                    property int size: (treeViewDelegate.hasChildren) ? 16 : 0
+                    width: size
+                    height: size
                     Image {
-                        id: tooltipThumbnail
-                        visible: parent.visible
-                        source : (visible && treeViewDelegate.key !== "") ? "image://videothumbnail/" + treeViewDelegate.key : ""
-                        asynchronous: true
-                        anchors.left: parent.right
-                        anchors.leftMargin: 10
+                        visible: column === 0 && treeViewDelegate.hasChildren
+                        anchors.fill: parent
+                        anchors.verticalCenterOffset: 2
+                        source: "qrc:/images/arrow.png"
+                        transform: Rotation {
+                            origin.x: width / 2
+                            origin.y: height / 2
+                            angle: treeViewDelegate.expanded ? 0 : -90
+                        }
+                    }
+                }
+                Row {
+                    height: parent.height
+                    spacing: 2
+                    Image {
+                        visible: !treeViewDelegate.hasChildren
                         anchors.verticalCenter: parent.verticalCenter
+                        source: treeViewDelegate.videoIconUrl
                         fillMode: Image.PreserveAspectFit
-                        height: 128
-                    }
-                }
 
-                Drag.active: ma.drag.active
-                Drag.dragType: Drag.Automatic
-                Drag.imageSource : "qrc:/images/save.png"
-
-                Image {
-                    visible: !styleData.hasChildren
-                    anchors {
-                        left: parent.left
-                        leftMargin: 2
-                        top: parent.top
-                        topMargin: 2
-                        bottom: parent.bottom
-                        bottomMargin: 2
-                    }
-                    source: treeViewDelegate.videoIconUrl
-
-                    fillMode: Image.PreserveAspectFit
-
-                    Image {
-                        visible: treeViewDelegate.starred
-                        anchors.fill: parent
-                        source: "qrc:/images/starred.png"
-                    }
-                    Image {
-                        visible: treeViewDelegate.hasWorkingDir
-                        anchors.fill: parent
-                        source: "qrc:/images/workingdirpresent.png"
-                    }
-                }
-                Image {
-                    visible: styleData.hasChildren
-                    anchors {
-                        left: parent.left
-                        leftMargin: 2
-                        top: parent.top
-                        topMargin: 4
-                        bottom: parent.bottom
-                        bottomMargin: 4
-                    }
-                    source: "qrc:/images/folder-128.png"
-                    fillMode: Image.PreserveAspectFit
-                }
-
-                Rectangle {
-                    id: progressBar
-                    visible: !styleData.hasChildren
-                    height: (treeViewDelegate.playing) ? 3 : 1
-                    property int totalWidth : parent.width - itemText.x
-                    property real progress: (styleData.hasChildren)
-                                            ? 0
-                                            : treeViewDelegate.progress
-
-                    anchors {
-                        left: itemText.left
-                        bottom: parent.bottom
-                        bottomMargin: 1
-                        right: parent.right
-                        rightMargin: (1. - progress) * totalWidth
-                    }
-                    color: (treeViewDelegate.playing)
-                           ? "green"
-                           : "red"
-                }
-
-                Text {
-                    id: itemText
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: styleData.textAlignment
-
-                    anchors {
-                        fill: parent
-                        leftMargin: horizontalAlignment === Text.AlignLeft ? 24 : 1
-                        rightMargin: horizontalAlignment === Text.AlignRight ? 8 : 1
-                    }
-                    text: styleData.hasChildren ? styleData.value : title
-                    elide: Text.ElideRight
-                    color: (!styleData.hasChildren
-                            // && !treeViewDelegate.shorts
-                            && treeViewDelegate.duration === 0.0)
-                           ? properties.disabledTextColor
-                           : textColor
-                    renderType: Text.QtRendering
-                    font {
-                        pixelSize: properties.fsP1
-                        family: mainFont.name
-                    }
-                }
-                DropArea {
-                    id: da
-                    anchors.fill: parent
-                    enabled: !viewContainer.historyView
-                             && styleData.hasChildren
-                             && !ma.drag.active
-                    visible: enabled
-                    property bool hovered: false
-                    onEntered: {
-                        if (viewContainer.historyView)
-                            return
-                        hovered = true
-                    }
-                    onExited: {
-                        if (viewContainer.historyView)
-                            return
-                        hovered = false
-                    }
-                    onDropped:
-                    {
-                        if (viewContainer.historyView)
-                            return
-
-                        hovered = false
-                        if (typeof(drag.source.key) !== "undefined") { // moving category
-                            viewContainer.model.moveEntry(drag.source.qmodelindex, treeViewDelegate.qmodelindex)
-                        } else {
-                            viewContainer.model.moveVideo(drag.source.key, treeViewDelegate.qmodelindex)
+                        Image {
+                            visible: treeViewDelegate.starred
+                            anchors.fill: parent
+                            source: "qrc:/images/starred.png"
                         }
-                    }
-                }
-                MouseArea {
-                    id: ma
-                    anchors.fill: parent
-                    enabled: true // !styleData.hasChildren allow categories to be moved
-                    visible: enabled
-                    drag.target: (!viewContainer.historyView)
-                                   ? dummy
-                                   : undefined
-                    drag.smoothed: false // Disable smoothed so that the Item pixel from where we started the drag remains under the mouse cursor
-                    acceptedButtons: Qt.RightButton | Qt.LeftButton
-                    hoverEnabled: true
-
-                    function contextualAction() {
-                        if (styleData.hasChildren) {
-                            viewContainer.contextMenu.setCategoryIndex(treeViewDelegate.qmodelindex)
-                            viewContainer.contextMenu.popup()
-                        } else {
-                            viewContainer.contextMenu.setVideoIndex(treeViewDelegate.qmodelindex)
-                            viewContainer.contextMenu.popup()
+                        Image {
+                            visible: treeViewDelegate.hasWorkingDir
+                            anchors.fill: parent
+                            source: "qrc:/images/workingdirpresent.png"
                         }
-                    }
-                    cursorShape: (styleData.hasChildren)
-                                 ? Qt.ArrowCursor
-                                 : Qt.PointingHandCursor
-                    onClicked: {
-                        if (mouse.button === Qt.RightButton) {
-                            contextualAction()
-                        } else if (mouse.button === Qt.LeftButton) {
-                            if (styleData.hasChildren) {
-                                return
+                    } // Video Indicator
+                    Image {
+                        visible: treeViewDelegate.hasChildren
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: "qrc:/images/folder-128.png"
+                        fillMode: Image.PreserveAspectFit
+                    } // Category Indicator
+
+
+                    Text {
+                        id: itemText
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignLeft
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: treeViewDelegate.hasChildren ? display : title
+                        elide: Text.ElideRight
+                        color: (!treeViewDelegate.hasChildren
+                                // && !treeViewDelegate.shorts
+                                && treeViewDelegate.duration === 0.0)
+                               ? properties.disabledTextColor
+                               : properties.textColor
+                        renderType: Text.QtRendering
+                        font {
+                            pixelSize: properties.fsP1
+                            family: mainFont.name
+                        }
+
+                        Rectangle {
+                            id: progressBar
+                            visible: !treeViewDelegate.hasChildren
+                            height: (treeViewDelegate.playing) ? 3 : 1
+                            property int totalWidth : parent.width // - itemText.x
+                            property real progress: (treeViewDelegate.hasChildren)
+                                                    ? 0
+                                                    : treeViewDelegate.progress
+
+                            anchors {
+                                left: itemText.left
+                                bottom: parent.bottom
+                                bottomMargin: 1
+                                right: parent.right
+                                rightMargin: (1. - progress) * totalWidth
                             }
-                            var url = treeViewDelegate.videoUrl
-                            webEngineView.url = url;
+                            color: (treeViewDelegate.playing)
+                                   ? "green"
+                                   : "red"
                         }
+                    } // Delegate text
+                } // ContentItem Row
+            } // Delegate Row
+            DropArea {
+                id: da
+                anchors.fill: parent
+                enabled: !viewContainer.historyView
+                         && treeViewDelegate.hasChildren
+                         && !ma.drag.active
+                visible: enabled
+                property bool hovered: false
+                onEntered: {
+                    if (viewContainer.historyView)
+                        return
+                    hovered = true
+                }
+                onExited: {
+                    if (viewContainer.historyView)
+                        return
+                    hovered = false
+                }
+                onDropped:
+                {
+                    if (viewContainer.historyView)
+                        return
+
+                    hovered = false
+                    if (typeof(drag.source.key) !== "undefined") { // moving category
+                        viewContainer.model.moveEntry(drag.source.qmodelindex, treeViewDelegate.qmodelindex)
+                    } else {
+                        viewContainer.model.moveVideo(drag.source.key, treeViewDelegate.qmodelindex)
                     }
-                    pressAndHoldInterval: 1000
-                    onPressAndHold: {
+                }
+            } // DropArea da
+            MouseArea {
+                id: ma
+                anchors.fill: parent // treeViewDelegate
+                enabled: true // !styleData.hasChildren allow categories to be moved
+                visible: enabled
+                drag.target: (!viewContainer.historyView)
+                               ? dummy
+                               : undefined
+                drag.smoothed: false // Disable smoothed so that the Item pixel from where we started the drag remains under the mouse cursor
+                acceptedButtons: Qt.RightButton | Qt.LeftButton
+                hoverEnabled: true
+
+                function contextualAction() {
+                    if (treeViewDelegate.hasChildren) {
+                        viewContainer.contextMenu.setCategoryIndex(treeViewDelegate.qmodelindex)
+                        viewContainer.contextMenu.popup()
+                    } else {
+                        viewContainer.contextMenu.setVideoIndex(treeViewDelegate.qmodelindex)
+                        viewContainer.contextMenu.popup()
+                    }
+                }
+                cursorShape: (treeViewDelegate.hasChildren)
+                             ? Qt.ArrowCursor
+                             : Qt.PointingHandCursor
+                onClicked: {
+                    if (mouse.button === Qt.RightButton) {
                         contextualAction()
-                    }
-
-                    onPressed: {
-
-                    }
-
-                    onReleased: {
-
-                    }
-                    onDoubleClicked: {
-                        if (styleData.hasChildren) {
-                            if (view.isExpanded(treeViewDelegate.qmodelindex))
-                                view.collapse(treeViewDelegate.qmodelindex)
-                            else
-                                view.expand(treeViewDelegate.qmodelindex)
+                    } else if (mouse.button === Qt.LeftButton) {
+                        if (treeViewDelegate.hasChildren) {
+                            return
                         }
+                        var url = treeViewDelegate.videoUrl
+                        webEngineView.url = url;
                     }
                 }
-            }
+                pressAndHoldInterval: 1000
+                onPressAndHold: contextualAction()
+                onDoubleClicked: {
+                    if (treeViewDelegate.hasChildren) {
+                        if (view.isExpanded(treeViewDelegate.qmodelindex))
+                            view.collapse(treeViewDelegate.qmodelindex)
+                        else
+                            view.expand(treeViewDelegate.qmodelindex)
+                    }
+                }
+            } // MouseArea ma
+        } // Delegate Root (Rectangle)
 
-            headerDelegate: Rectangle {
-                height: Math.round(textItem.implicitHeight * 1.2)
-                color: "black"
-                border.color: properties.viewBorderColor
-                Text {
-                    id: textItem
-                    anchors.fill: parent
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: styleData.textAlignment
-                    anchors.leftMargin: horizontalAlignment === Text.AlignLeft ? 12 : 1
-                    anchors.rightMargin: horizontalAlignment === Text.AlignRight ? 8 : 1
-                    text: styleData.hasChildren ? styleData.value : title
-                    elide: Text.ElideRight
-                    color: textColor
-                    renderType: Text.QtRendering
-                }
-            }
-            handle: Rectangle {
-                implicitWidth: 20
-                implicitHeight: 30
-                color: "transparent"
-                Rectangle {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    implicitWidth: 14
-                    anchors.bottom: parent.bottom
-                    anchors.top: parent.top
-                    color: properties.selectionColor
-                }
-            }
-//            scrollBarBackground: Rectangle {
-//                implicitWidth: 20
-//                implicitHeight: 30
-//                color: properties.paneBackgroundColor
+
+//        onActivated : {
+//            if (!styleData.hasChildren) {
+//                var url = viewContainer.model.videoUrl(index)
+//                webEngineView.url = url;
 //            }
-            decrementControl: Image {
-                width: 20
-                source: "qrc:/images/arrow.png"
-                transform: Rotation {
-                    origin.x: width / 2
-                    origin.y: height / 2
-                    angle: 180
-                }
-            }
-            incrementControl: Image {
-                width: 20
-                source: "qrc:/images/arrow.png"
-            }
-        }
+//        }
 
-
-        onActivated : {
-            if (!styleData.hasChildren) {
-                var url = viewContainer.model.videoUrl(index)
-                webEngineView.url = url;
-            }
-        }
-
-        verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
+        //verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
 
         Rectangle {
             id: scrollBar // touch-friendly scrollbar
@@ -875,19 +813,18 @@ Rectangle {
                         left: parent.left
                         right: parent.right
                     }
+                    property int scrollableHeight: (view.height - scrollHandle.height)
+                    property int scrollableContentHeight: (view.contentHeight - view.height)
                     height:  Math.max(
-                                view.height * (view.height / view.__listView.contentHeight)
-                                     ,16 )
-                    y: Math.max(0, Math.min( (view.__listView.contentY
-                        / (view.__listView.contentHeight - view.height))
-                                , 1.0))
-                       * (view.height - scrollHandle.height)
+                                view.height * (view.height / view.contentHeight)
+                                ,16 )
+                    y: Math.max(0, Math.min( (view.contentY / scrollableContentHeight), 1.0))
+                       * scrollableHeight
 
                     onYChanged: {
                         if (!scrollHandleMA.drag.active)
                             return
-                        view.__listView.contentY = y / (view.height - scrollHandle.height)
-                                                   * (view.__listView.contentHeight - view.height)
+                        view.contentY = (y / scrollableHeight) * scrollableContentHeight
                     }
 
                     MouseArea {
