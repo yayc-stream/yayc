@@ -1454,6 +1454,11 @@ public:
 #endif
         }
 
+        if (m_ready
+            && rootPath() == newPath
+            && m_rootPathIndex.isValid())
+            return m_rootPathIndex;
+
         QQmlApplicationEngine *engine = qobject_cast<QQmlApplicationEngine*>(parent());
         if (!engine) {
             qFatal("Unable to retrieve QQmlApplicationEngine");
