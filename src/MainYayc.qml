@@ -32,9 +32,7 @@ import yayc 1.0
 /*
   == Known issues ==
 
-  - QQ1.TreeView is terribly buggy.
-    consider using https://code.qt.io/cgit/qt-extensions/qttreeview.git/about/ or
-    another alternative. qttreeview needs to be checked against partial model updates
+  - QC1.TreeView is terribly buggy. Consider reimplementing it
 */
 
 Item {
@@ -81,6 +79,13 @@ Item {
         sequence: "Ctrl+F"
         onActivated: {
             utilities.fetchMissingThumbnails()
+        }
+    }
+
+    Shortcut {
+        sequence: "F5"
+        onActivated: {
+            resetFilesystemModels()
         }
     }
 
@@ -264,13 +269,12 @@ Item {
         utilities.latestVersion.connect(onLatestVersionFound)
         utilities.donateETag.connect(onDonateETag)
         utilities.donateUrl.connect(onDonateUrl)
-        fileSystemModel.directoryLoaded.connect(onFSmodelDirectoryLoaded)
-        fileSystemModel.filesAdded.connect(onFSModelFilesAdded)
-        if (youtubePath !== "")
-            fileSystemModel.setRoot(youtubePath)
-        if (historyPath !== "") {
-            historyModel.setRoot(historyPath)
-        }
+
+        // Re-enable (maybe) after fixing the connections after deletion/re-instantiation of these models
+        // fileSystemModel.directoryLoaded.connect(onFSmodelDirectoryLoaded)
+        // fileSystemModel.filesAdded.connect(onFSModelFilesAdded)
+
+        win.interfaceLoaded.connect(resetFilesystemModels)
         if (easyListPath !== "")
             requestInterceptor.setEasyListPath(easyListPath)
         splitView.restoreState(settings.splitView)
@@ -288,14 +292,14 @@ Item {
 
     onYoutubePathChanged: { // this might be triggering double setRoot. move it into fileDialog?
         settings.sync()
-        if (youtubePath !== "") {
+        if (youtubePath !== "" && win.isInterfaceLoaded) {
             fileSystemModel.setRoot(youtubePath)
         }
     }
 
     onHistoryPathChanged: {
         settings.sync()
-        if (historyPath !== "") {
+        if (historyPath !== "" && win.isInterfaceLoaded) {
             historyModel.setRoot(historyPath)
         }
     }
@@ -375,6 +379,31 @@ Item {
             return;
         root.donateUrl = latestDonateUrl
         root.firstRun = true
+    }
+
+    function resetFilesystemModels() {
+        console.log("resetFilesystemModels")
+        clearFilesystemModels()
+        Qt.callLater(setFilesystemModels)
+    }
+
+    function clearFilesystemModels() {
+        console.log("clearFilesystemModels")
+        bookmarksContainer.clearModel()
+        historyContainer.clearModel()
+        fileSystemModel.setRoot("")
+        historyModel.setRoot("")
+    }
+
+    function setFilesystemModels() {
+        console.log("setFilesystemModels ", youtubePath,  historyPath)
+        if (youtubePath !== "")
+            fileSystemModel.setRoot(youtubePath)
+        if (historyPath !== "") {
+            historyModel.setRoot(historyPath)
+        }
+        bookmarksContainer.setModel()
+        historyContainer.setModel()
     }
 
     function syncAll() {

@@ -53,6 +53,16 @@ Rectangle {
                             : ((historyView) ?
                                 historyModel : fileSystemModel)
 
+    function clearModel() {
+        viewContainer.model = null
+    }
+
+    function setModel() {
+        viewContainer.model = (historyView === undefined) ? undefined
+                                    : ((historyView) ?
+                                        historyModel : fileSystemModel)
+    }
+
     property Menu contextMenu: BookmarkContextMenu {
         isHistoryView: viewContainer.historyView
         model: viewContainer.model
@@ -481,10 +491,10 @@ Rectangle {
             bottom: parent.bottom
         }
 
-        model: (viewContainer.model !== undefined)
-               ? viewContainer.model.sortFilterProxyModel : undefined
-        rootIndex: (viewContainer.model !== undefined)
-                   ? viewContainer.model.rootPathIndex : undefined
+        model: (viewContainer.model !== null)
+               ? viewContainer.model.sortFilterProxyModel : null
+        rootIndex: (viewContainer.model !== null)
+                   ? viewContainer.model.rootPathIndex : fileSystemModel.nullIndex
         selectionMode: 0
 
         focus: true

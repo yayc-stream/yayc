@@ -1381,12 +1381,14 @@ class FileSystemModel : public QFileSystemModel {
     QModelIndex m_rootPathIndex;
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
+    QModelIndex m_nullIndex;
 
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
 
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
+    Q_PROPERTY(QVariant nullIndex MEMBER m_nullIndex CONSTANT)
 
 public:
     QVariant rootPathIndex() const {
@@ -1420,7 +1422,8 @@ public:
                   );
         sort(3);
         QScopedPointer<NoDirSortProxyModel> pm(new NoDirSortProxyModel);
-        pm->setObjectName("ProxyModel");
+        auto pmName = m_contextPropertyName + "_ProxyModel";
+        pm->setObjectName(pmName.toStdString().c_str());
         m_proxyModel.swap(pm);
         ThumbnailFetcher::registerModel(*this);
     }
@@ -1446,7 +1449,7 @@ public:
     };
     Q_ENUM(Roles)
 
-    Q_INVOKABLE QModelIndex setRoot(QString newPath) {
+    Q_INVOKABLE QModelIndex setRoot(QString newPath, FileSystemModel *oldModel = nullptr) {
         if (newPath.startsWith("file://")) {
             newPath = newPath.mid(7);
 #if defined(Q_OS_WINDOWS)
@@ -1471,13 +1474,20 @@ public:
             FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName,
                                                            m_bookmarksModel,
                                                            engine);
-
-            this->deleteLater();
-            return fsmodel->setRoot(newPath);
+            // Do not delete this later here, make it delete by the nested call, after
+            // the context property has been updated with the new model object
+            return fsmodel->setRoot(newPath, this);
         }
 
         setIconProvider(&m_emptyIconProvider);
-        if (newPath.isEmpty()) { // clearing the model
+        if (newPath.isEmpty()) { // clear the model
+            m_ready = true;
+            // TODO: deduplicate, through an object destructor?
+            engine->rootContext()->setContextProperty(m_contextPropertyName, this);
+            if (oldModel)
+                oldModel->deleteLater();
+            emit sortFilterProxyModelChanged();
+            emit rootPathIndexChanged();
             return {};
         }
         // validate newPath
@@ -1519,6 +1529,8 @@ public:
                 qFatal("Failure mapping FileSystemModel root path index to proxy model");
             }
             engine->rootContext()->setContextProperty(m_contextPropertyName, this);
+            if (oldModel)
+                oldModel->deleteLater();
 
 //            updateSearchTerm();
 
@@ -1776,8 +1788,8 @@ public slots:
     }
 
     bool deleteEntry(QModelIndex item
-                     , const QString &extWorkingDirRoot
-                     , bool deleteStorage_) {
+                     , const QString &extWorkingDirRoot = "" // only for videos, not categories
+                     , bool deleteStorage_ = false) {        // same
         if (!m_ready)
             return false;
         item = m_proxyModel->mapToSource(item);
@@ -1788,10 +1800,10 @@ public slots:
         }
         bool res = false;
         if (isDir(item)) {
-            // do not allow to delete non-empty directories
+            // do not allow to delete non-empty directories // FixMe: remove entries from cache!
             QDir d(filePath(item));
 
-            if (d.isEmpty()) { // FixMe: remove entries from cache!
+            if (d.isEmpty()) {
                 res = d.removeRecursively();
                 remove(item);
             } else {

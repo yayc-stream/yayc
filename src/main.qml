@@ -36,6 +36,10 @@ ApplicationWindow {
     visible: true
     title: qsTr("YAYC")
     property bool hidden: false
+    signal interfaceLoaded()
+    property bool isInterfaceLoaded: false
+
+    onInterfaceLoaded: win.isInterfaceLoaded = true
 
     function minimizeToTray() {
         if (mainYaycLoader.loaded())
@@ -77,6 +81,7 @@ ApplicationWindow {
         onLoaded: {
             item.visible = true;
             mainSplashLoader.source = "";
+            timerInterfaceLoaded.start()
         }
     }
 
@@ -89,5 +94,13 @@ ApplicationWindow {
             item.visible = true
             mainYaycLoader.active = true;
         }
+    }
+
+    Timer {
+        id: timerInterfaceLoaded
+        interval: 100
+        running: false
+        repeat: false
+        onTriggered: win.interfaceLoaded()
     }
 }
