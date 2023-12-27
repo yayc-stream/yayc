@@ -78,6 +78,14 @@ Item {
         }
     }
 
+
+    Shortcut {
+        sequence: "F5"
+        onActivated: {
+            resetFilesystemModels()
+        }
+    }
+
     onWindowHiddenChanged: {
         if (!root.blankWhenHidden || webEngineView.isYoutubeVideo)
             return
@@ -276,13 +284,12 @@ Item {
         utilities.latestVersion.connect(onLatestVersionFound)
         utilities.donateETag.connect(onDonateETag)
         utilities.donateUrl.connect(onDonateUrl)
-        fileSystemModel.directoryLoaded.connect(onFSmodelDirectoryLoaded)
-        fileSystemModel.filesAdded.connect(onFSModelFilesAdded)
-        if (youtubePath !== "")
-            fileSystemModel.setRoot(youtubePath)
-        if (historyPath !== "") {
-            historyModel.setRoot(historyPath)
-        }
+
+        // Re-enable (maybe) after fixing the connections after deletion/re-instantiation of these models
+        // fileSystemModel.directoryLoaded.connect(onFSmodelDirectoryLoaded)
+        // fileSystemModel.filesAdded.connect(onFSModelFilesAdded)
+        win.interfaceLoaded.connect(resetFilesystemModels)
+
         splitView.restoreState(settings.splitView)
         if (root.externalCommands.length == 0) {
             root.pushEmptyCommand()
@@ -298,14 +305,14 @@ Item {
 
     onYoutubePathChanged: { // this might be triggering double setRoot. move it into fileDialog?
         settings.sync()
-        if (youtubePath !== "") {
+        if (youtubePath !== "" && win.isInterfaceLoaded) {
             fileSystemModel.setRoot(youtubePath)
         }
     }
 
     onHistoryPathChanged: {
         settings.sync()
-        if (historyPath !== "") {
+        if (historyPath !== "" && win.isInterfaceLoaded) {
             historyModel.setRoot(historyPath)
         }
     }
@@ -371,6 +378,32 @@ Item {
             // highlight settings
             root.firstRun = true
         }
+    }
+
+
+    function resetFilesystemModels() {
+        console.log("resetFilesystemModels")
+        clearFilesystemModels()
+        Qt.callLater(setFilesystemModels)
+    }
+
+    function clearFilesystemModels() {
+        console.log("clearFilesystemModels")
+        bookmarksContainer.clearModel()
+        historyContainer.clearModel()
+        fileSystemModel.setRoot("")
+        historyModel.setRoot("")
+    }
+
+    function setFilesystemModels() {
+        console.log("setFilesystemModels ", youtubePath,  historyPath)
+        if (youtubePath !== "")
+            fileSystemModel.setRoot(youtubePath)
+        if (historyPath !== "") {
+            historyModel.setRoot(historyPath)
+        }
+        bookmarksContainer.setModel()
+        historyContainer.setModel()
     }
 
     function onDonateETag(latestETag) {

@@ -47,12 +47,14 @@ class FileSystemModel : public QFileSystemModel {
     QModelIndex m_rootPathIndex;
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
+    QModelIndex m_nullIndex;
 
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
 
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
+    Q_PROPERTY(QVariant nullIndex MEMBER m_nullIndex CONSTANT)
 
 public:
     QVariant rootPathIndex() const;
@@ -79,7 +81,7 @@ public:
     };
     Q_ENUM(Roles)
 
-    Q_INVOKABLE QModelIndex setRoot(QString newPath);
+    Q_INVOKABLE QModelIndex setRoot(QString newPath, FileSystemModel *oldModel);
     Q_INVOKABLE QString key(const QModelIndex &item) const;
     Q_INVOKABLE QString title(const QModelIndex &item) const;
     Q_INVOKABLE QString title(const QString &key) const;
@@ -98,7 +100,9 @@ public slots:
     void openInExternalApp(QModelIndex item, const QString &extCommand, const QString &extWorkingDirRoot);
     void openInExternalApp(const QString &key, const QString &extCommand, const QString &extWorkingDirRoot);
     bool deleteEntry(QModelIndex item, const QString &extWorkingDirRoot, bool deleteStorage_);
-    bool deleteEntry(const QString &key, const QString &extWorkingDirRoot, bool deleteStorage_);
+    bool deleteEntry(const QString &key
+                     ,const QString &extWorkingDirRoot = "" // only for videos, not categories
+                     ,bool deleteStorage_ = false); // same
     void deleteStorage(QModelIndex item, const QString &extWorkingDirRoot);
     void deleteStorage(const QString &key, const QString &extWorkingDirRoot);
     void sync();

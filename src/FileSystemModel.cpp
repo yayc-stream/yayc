@@ -168,7 +168,8 @@ FileSystemModel::FileSystemModel(QString contextPropertyName,
     setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::AllDirs);
     sort(3);
     QScopedPointer<NoDirSortProxyModel> pm(new NoDirSortProxyModel);
-    pm->setObjectName("ProxyModel");
+    auto pmName = m_contextPropertyName + "_ProxyModel";
+    pm->setObjectName(pmName.toStdString().c_str());
     m_proxyModel.swap(pm);
     ThumbnailFetcher::registerModel(*this);
 }
@@ -177,7 +178,7 @@ FileSystemModel::~FileSystemModel() {
     ThumbnailFetcher::unregisterModel(*this);
 }
 
-QModelIndex FileSystemModel::setRoot(QString newPath) {
+QModelIndex FileSystemModel::setRoot(QString newPath, FileSystemModel *oldModel = nullptr) {
     if (newPath.startsWith("file://")) {
         newPath = newPath.mid(7);
 #if defined(Q_OS_WINDOWS)
@@ -196,12 +197,20 @@ QModelIndex FileSystemModel::setRoot(QString newPath) {
         FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName,
                                                        m_bookmarksModel,
                                                        engine);
-        this->deleteLater();
-        return fsmodel->setRoot(newPath);
+        // Do not delete this later here, make it delete by the nested call, after
+        // the context property has been updated with the new model object
+        return fsmodel->setRoot(newPath, this);
     }
 
     setIconProvider(&m_emptyIconProvider);
-    if (newPath.isEmpty()) {
+    if (newPath.isEmpty()) { // clear the model
+        m_ready = true;
+        // TODO: deduplicate, through an object destructor?
+        engine->rootContext()->setContextProperty(m_contextPropertyName, this);
+        if (oldModel)
+            oldModel->deleteLater();
+        emit sortFilterProxyModelChanged();
+        emit rootPathIndexChanged();
         return {};
     }
     m_root = QDir(newPath);
@@ -239,7 +248,8 @@ QModelIndex FileSystemModel::setRoot(QString newPath) {
             qFatal("Failure mapping FileSystemModel root path index to proxy model");
         }
         engine->rootContext()->setContextProperty(m_contextPropertyName, this);
-
+        if (oldModel)
+            oldModel->deleteLater();
         if (!m_ready)
             emit firstInitializationCompleted(m_root.path());
         m_ready = true;
