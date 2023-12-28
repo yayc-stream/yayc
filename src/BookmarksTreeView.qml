@@ -52,15 +52,20 @@ Rectangle {
     property var model: (historyView === undefined) ? undefined
                             : ((historyView) ?
                                 historyModel : fileSystemModel)
+    property bool spinnerEnabled: true
+
+    onModelChanged: {
+        clearModel()
+        setModel()
+    }
 
     function clearModel() {
-        viewContainer.model = null
+        viewContainer.spinnerEnabled = true
+        view.clearModel()
     }
 
     function setModel() {
-        viewContainer.model = (historyView === undefined) ? undefined
-                                    : ((historyView) ?
-                                        historyModel : fileSystemModel)
+        view.setModel()
     }
 
     property Menu contextMenu: BookmarkContextMenu {
@@ -489,6 +494,18 @@ Rectangle {
                  ? filterContainer.bottom
                  : parent.top
             bottom: parent.bottom
+        }
+
+        function clearModel() {
+            view.model = null
+        }
+
+        function setModel() {
+            view.model = (viewContainer.model !== null)
+                            ? viewContainer.model.sortFilterProxyModel : null
+            view.rootIndex = (viewContainer.model !== null)
+                    ? viewContainer.model.rootPathIndex : fileSystemModel.nullIndex
+            viewContainer.spinnerEnabled = view.rootIndex === fileSystemModel.nullIndex
         }
 
         model: (viewContainer.model !== null)
@@ -925,4 +942,16 @@ Rectangle {
         }
 
     } // QC1.TreeView
+
+    Rectangle {
+        anchors.fill: view
+        color: "transparent"
+        enabled: visible
+        visible: viewContainer.spinnerEnabled
+        z: 1000
+        BusyIndicator {
+            anchors.centerIn: parent
+            running: viewContainer.spinnerEnabled
+        }
+    }
 }

@@ -2,7 +2,7 @@ QT += quick core gui network widgets quickcontrols2
 QT += webchannel qml
 QT += webengine
 
-CONFIG += c++11
+CONFIG += c++14
 CONFIG += qtquickcompiler
 #unix:!android: CONFIG += use_lld_linker # fix for QTBUG-80964
 

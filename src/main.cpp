@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -64,6 +64,8 @@ In addition to the above,
 #include <QVersionNumber>
 #include <QtGui/QTextDocument>
 #include <QtGlobal>
+#include <QThread>
+#include <atomic>
 
 #include "third_party/ad-block/ad_block_client.h"
 
@@ -1216,6 +1218,12 @@ public:
         m_images[key] = std::move(img);
     }
 
+    void insert(const QVariantMap &thumbs) {
+        for (auto k: thumbs.keys()) {
+            insert(k, thumbs.value(k).toByteArray());
+        }
+    }
+
     QImage requestImage(const QString &id,
                         QSize */*size*/,
                         const QSize &/*requestedSize*/) override
@@ -1374,7 +1382,7 @@ private:
 class FileSystemModel : public QFileSystemModel {
     Q_OBJECT
 
-    bool m_ready{false};
+    QAtomicInt m_ready{false};
     bool m_bookmarksModel{false};
     QHash<QString, VideoMetadata> m_cache;
     QHash<QString, ChannelMetadata> m_channelCache;
@@ -1385,6 +1393,8 @@ class FileSystemModel : public QFileSystemModel {
 
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
+    QScopedPointer<QThread> m_incubatorThread;
+    QString m_lastRequestedRootPath;
 
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
@@ -1425,7 +1435,6 @@ public:
         auto pmName = m_contextPropertyName + "_ProxyModel";
         pm->setObjectName(pmName.toStdString().c_str());
         m_proxyModel.swap(pm);
-        ThumbnailFetcher::registerModel(*this);
     }
 
     ~FileSystemModel() override {
@@ -1449,18 +1458,15 @@ public:
     };
     Q_ENUM(Roles)
 
-    Q_INVOKABLE QModelIndex setRoot(QString newPath, FileSystemModel *oldModel = nullptr) {
+    Q_INVOKABLE void setRoot(QString newPath,
+                             FileSystemModel *oldModel = nullptr) {
+        qWarning() << "setRoot " << newPath;
         if (newPath.startsWith("file://")) {
             newPath = newPath.mid(7);
 #if defined(Q_OS_WINDOWS)
             newPath = newPath.mid(1); // Strip one more /
 #endif
         }
-
-        if (m_ready
-            && rootPath() == newPath
-            && m_rootPathIndex.isValid())
-            return m_rootPathIndex;
 
         QQmlApplicationEngine *engine = qobject_cast<QQmlApplicationEngine*>(parent());
         if (!engine) {
@@ -1469,32 +1475,66 @@ public:
         if (!m_proxyModel) {
             qFatal("NULL sortfilter proxy model");
         }
-        if (!rootPath().isEmpty() && (rootPath() != ".")) {
+
+        if (m_incubatorThread && m_incubatorThread->isRunning()) {
+            // Ideally cancel old one? easier said than done
+            // TODO
+        }
+
+        // TODO: fix this, and enable queuing, or even better canceling, if possible.
+        // As it is ATM, setting root on an already processing model will be ignored.
+        if (m_incubatorThread) {
+            return;
+        }
+
+        if (m_ready
+            && rootPath() == newPath
+            && m_rootPathIndex.isValid())
+            return;
+
+        // TODO: revise this whole 3 stage scheme (UI -> worker -> UI) and make it more robust
+        if (newPath.isEmpty()) { // clear the model synchronously
+            m_ready = true;
             // create a new one
             FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName,
                                                            m_bookmarksModel,
                                                            engine);
-            // Do not delete this later here, make it delete by the nested call, after
-            // the context property has been updated with the new model object
-            return fsmodel->setRoot(newPath, this);
-        }
 
-        setIconProvider(&m_emptyIconProvider);
-        if (newPath.isEmpty()) { // clear the model
-            m_ready = true;
-            // TODO: deduplicate, through an object destructor?
-            engine->rootContext()->setContextProperty(m_contextPropertyName, this);
-            if (oldModel)
-                oldModel->deleteLater();
+            fsmodel->setIconProvider(&fsmodel->m_emptyIconProvider);
+            engine->rootContext()->setContextProperty(m_contextPropertyName, fsmodel);
             emit sortFilterProxyModelChanged();
             emit rootPathIndexChanged();
-            return {};
+            deleteLater();
+            return;
         }
+
+        auto createModel = [oldModel = this,
+                            newPath,
+                            propertyName = m_contextPropertyName,
+                            bookmarksModel = m_bookmarksModel]() {
+            FileSystemModel *fsmodel = new FileSystemModel(propertyName,
+                                                           bookmarksModel,
+                                                           nullptr);
+            qWarning() << "Before setRootReal! main T: "<<qApp->thread() << " this thread: "
+                << QThread::currentThread() << " fsModelT: "<<fsmodel->thread();
+
+            fsmodel->setRootReal(newPath, oldModel);
+        };
+
+        QScopedPointer<QThread> nt(QThread::create(std::move(createModel)));
+        m_incubatorThread.swap(nt);
+        m_incubatorThread->start(QThread::LowPriority);
+    }
+
+    void setRootReal(const QString &newPath, FileSystemModel *oldModel) {
+        qWarning() << "setRootReal " << newPath;
+        setIconProvider(&m_emptyIconProvider);
+
         // validate newPath
         m_root = QDir(newPath);
         if (!m_root.exists()) {
             qFatal("Trying to set root directory to non-existent %s\n", newPath.toStdString().c_str());
-            return {};
+            return;
         }
 
         m_cache = cacheRoot(m_root);
@@ -1504,23 +1544,18 @@ public:
         } else {
             qDebug() << "setRoot history model";
         }
-        ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider*>(engine->imageProvider(QLatin1String("videothumbnail")));
-        if (!provider) {
-            qFatal("Unable to retrieve ThumbnailImageProvider");
-        }
+
+        QVariantMap thumbnailData;
         for (const auto &e: qAsConst(m_cache)) {
             if (e.hasThumbnail())
-                provider->insert(e.key, e.thumbnailData);
+                thumbnailData.insert(e.key, e.thumbnailData);
         }
         setResolveSymlinks(true);
-
 
         auto res = this->QFileSystemModel::setRootPath(newPath);
         if (res.isValid()) {
             m_proxyModel->setSourceModel(this);
-
             m_proxyModel->setDynamicSortFilter(true);
-            //m_proxyModel->setFilterRegularExpression("^[^\\.].*"); // Skip entries starting with . , this skips .channels and every other hidden dir
             m_proxyModel->setSortRole(LastModifiedRole);
             m_proxyModel->sort(3);
 
@@ -1528,22 +1563,18 @@ public:
             if (!m_rootPathIndex.isValid()) {
                 qFatal("Failure mapping FileSystemModel root path index to proxy model");
             }
-            engine->rootContext()->setContextProperty(m_contextPropertyName, this);
-            if (oldModel)
-                oldModel->deleteLater();
+            this->moveToThread(qApp->thread()); // you can only call moveToThread on an object from
+                                                // the same thread it currently has affinity to
 
-//            updateSearchTerm();
-
-            if (!m_ready)
-                emit firstInitializationCompleted(m_root.path());
-            m_ready = true;
-            emit sortFilterProxyModelChanged();
-            emit rootPathIndexChanged();
-            return m_rootPathIndex;
+            move2thread(qApp->thread());
+            QMetaObject::invokeMethod(oldModel, "finalizeSetRoot",
+                                      Qt::QueuedConnection,
+                                      Q_ARG(QString, newPath),
+                                      Q_ARG(FileSystemModel *, this),
+                                      Q_ARG(QVariantMap, thumbnailData));
         } else {
-            qFatal("Critical failure in QFileSystemModel::setRootPath");
+            qFatal("Critical failure in FileSystemModel::setRootReal");
         }
-        return QModelIndex();
     }
 
     Q_INVOKABLE QString key(const QModelIndex &item) const {
@@ -1696,6 +1727,47 @@ public:
     }
 
 public slots:
+     void finalizeSetRoot(QString newPath,
+                          FileSystemModel *newModel,
+                          const QVariantMap thumbnailData = {}) {
+
+        if (!newModel) {
+            qWarning() << "WArning: incubating new model for " << newPath << " failed!";
+            return;
+        }
+        m_incubatorThread.reset();
+
+        QQmlApplicationEngine *engine = qobject_cast<QQmlApplicationEngine*>(parent());
+        newModel->setParent(parent());
+
+        if (newPath.isEmpty()) { // clear the model
+            engine->rootContext()->setContextProperty(m_contextPropertyName, newModel);
+            emit sortFilterProxyModelChanged();
+            emit rootPathIndexChanged();
+            deleteLater();
+        }
+
+        ThumbnailFetcher::registerModel(*newModel);
+        ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider*>(engine->imageProvider(QLatin1String("videothumbnail")));
+        if (!provider) {
+            qFatal("Unable to retrieve ThumbnailImageProvider");
+        }
+        provider->insert(thumbnailData);
+
+        engine->rootContext()->setContextProperty(m_contextPropertyName, newModel);
+        if (!newModel->m_ready)
+            emit newModel->firstInitializationCompleted(newModel->m_root.path());
+        newModel->m_ready = true;
+        emit sortFilterProxyModelChanged();
+        emit rootPathIndexChanged();
+
+        emit newModel->sortFilterProxyModelChanged();
+        emit newModel->rootPathIndexChanged();
+        emit replacementModelCreated();
+        emit newModel->replacementModelCreated();
+        deleteLater();
+    }
+
     QString keyFromViewItem(const QModelIndex &item) const {
         return key(item); // ToDo: Deduplicate!
     }
@@ -2209,12 +2281,29 @@ signals:
     void searchInTitlesChanged();
     void searchInChannelNamesChanged();
     void firstInitializationCompleted(const QString &rootPath);
+    void replacementModelCreated();
 
 private slots:
+    void onIncubationFinished() {
 
+    }
 
 private:
+    void move2thread(QThread *t) {
+        m_proxyModel->moveToThread(t);
+        std::function<void(QObject *)> moveChildren2Thread;
+        moveChildren2Thread = [t, &moveChildren2Thread](QObject *o) {
+            o->moveToThread(t);
+            for (auto c: qAsConst(o->children())) {
+                moveChildren2Thread(c);
+            }
+        };
+        moveChildren2Thread(this);
+    }
+
     void addThumbnail(const QString &key, const QByteArray &thumbnailData) {
+        if (!m_ready)
+            return;
         if (m_cache.contains(key) && !m_cache[key].hasThumbnail()) {
             m_cache[key].setThumbnail(thumbnailData);
         }
@@ -2222,7 +2311,9 @@ private:
 
     void updateChannel(const QString &key,
                        const QString &channelId,
-                       const QString &channelName) {
+                       const QString &/*channelName*/) {
+        if (!m_ready)
+            return;
         if (m_cache.contains(key)) {
             m_cache[key].channelID = channelId;
         }
@@ -2232,7 +2323,7 @@ private:
                     const Platform::Vendor vendor,
                     const QString &channelName,
                     const QString &channelAvatarURL) {
-        if (!m_bookmarksModel || !m_ready)
+        if (!m_ready || !m_bookmarksModel)
             return;
         const QString &key = ChannelMetadata::key(channelId, vendor);
         bool avatarNeedsFetch = true;
@@ -2349,7 +2440,7 @@ void ThumbnailFetcher::onThumbnailRequestFinished()
             for (auto &m: qAsConst(m_models)) {
                 m->addThumbnail(key, networkContent);
             }
-            if (m_models.size()) {
+            if (m_models.size() && (*m_models.begin())->ready()) {
                 QQmlApplicationEngine *engine =
                         qobject_cast<QQmlApplicationEngine*>((*m_models.begin())->parent());
                 ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider*>(engine->imageProvider(QLatin1String("videothumbnail")));
@@ -2460,6 +2551,8 @@ void ThumbnailFetcher::fetchMissingThumbnails() {
     QSet<QString> missingKeys;
     qDebug() << "Missing Thumbs:";
     for (auto &m : qAsConst(m_models)) {
+        if (!m->ready())
+            continue;
         for (auto i = m->m_cache.begin(); i != m->m_cache.end(); ++i) {
             if (!i.value().hasThumbnail()) {
                 missingKeys.insert(i.key());
@@ -2489,9 +2582,12 @@ void ThumbnailFetcher::fetchMissingThumbnails() {
 
 FileSystemModel *ThumbnailFetcher::bookmarksModel()
 {
-    for (auto m: qAsConst(m_models))
+    for (auto m: qAsConst(m_models)) {
+        if (!m->ready())
+            continue;
         if (m->m_bookmarksModel)
             return m;
+    }
     return nullptr;
 }
 
@@ -2597,6 +2693,7 @@ int main(int argc, char *argv[])
 
         isPlasma = isPlasmaSession();
 
+        // TODO: revise the following. Useless if setting Root recreates the object.
         QObject::connect(fsmodel, &FileSystemModel::firstInitializationCompleted,
                          [fsmodel, &settings](const QString &path) {
             if (!fsmodel->ready()) {

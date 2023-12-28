@@ -85,6 +85,11 @@ Item {
     Shortcut {
         sequence: "F5"
         onActivated: {
+//            // Light version
+//            bookmarksContainer.clearModel()
+//            historyContainer.clearModel()
+//            bookmarksContainer.setModel()
+//            historyContainer.setModel()
             resetFilesystemModels()
         }
     }
