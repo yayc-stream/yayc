@@ -52,6 +52,21 @@ Rectangle {
     property var model: (historyView === undefined) ? undefined
                             : ((historyView) ?
                                 historyModel : fileSystemModel)
+    property bool spinnerEnabled: true
+
+    onModelChanged: {
+        clearModel()
+        setModel()
+    }
+
+    function clearModel() {
+        viewContainer.spinnerEnabled = true
+        view.clearModel()
+    }
+
+    function setModel() {
+        view.setModel()
+    }
 
     property Menu contextMenu: BookmarkContextMenu {
         isHistoryView: viewContainer.historyView
@@ -481,10 +496,22 @@ Rectangle {
             bottom: parent.bottom
         }
 
-        model: (viewContainer.model !== undefined)
-               ? viewContainer.model.sortFilterProxyModel : undefined
-        rootIndex: (viewContainer.model !== undefined)
-                   ? viewContainer.model.rootPathIndex : undefined
+        function clearModel() {
+            view.model = null
+        }
+
+        function setModel() {
+            view.model = (viewContainer.model !== null)
+                            ? viewContainer.model.sortFilterProxyModel : null
+            view.rootIndex = (viewContainer.model !== null)
+                    ? viewContainer.model.rootPathIndex : fileSystemModel.nullIndex
+            viewContainer.spinnerEnabled = view.rootIndex === fileSystemModel.nullIndex
+        }
+
+        model: (viewContainer.model !== null)
+               ? viewContainer.model.sortFilterProxyModel : null
+        rootIndex: (viewContainer.model !== null)
+                   ? viewContainer.model.rootPathIndex : fileSystemModel.nullIndex
         selectionMode: 0
 
         focus: true
@@ -915,4 +942,16 @@ Rectangle {
         }
 
     } // QC1.TreeView
+
+    Rectangle {
+        anchors.fill: view
+        color: "transparent"
+        enabled: visible
+        visible: viewContainer.spinnerEnabled
+        z: 1000
+        BusyIndicator {
+            anchors.centerIn: parent
+            running: viewContainer.spinnerEnabled
+        }
+    }
 }
