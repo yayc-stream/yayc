@@ -654,7 +654,7 @@ Item {
             return res;
         }
 
-        property var videoSpeeds: [
+        readonly property var videoSpeeds: [
             "0.25",
             "0.50",
             "0.75",
@@ -662,7 +662,7 @@ Item {
             "1.25",
             "1.50",
             "1.75",
-            "2.00",
+            "2.00"
         ]
 
         function getPlayVideoScript(isShorts) {
@@ -1606,39 +1606,41 @@ Item {
         x: buttonSpeed.x + buttonSpeed.width - width
         width: 48
         visible: false
+        ColumnLayout {
+            width: parent.width
+            Repeater {
+                model: internals.videoSpeeds
 
-        Repeater {
-            model: internals.videoSpeeds
 
+                ToolButton {
 
-            ToolButton {
+                    height: playbackRateMenu.width
+                    width: height
+                    enabled: true
+                    checkable: false
+                    checked: timePuller.playbackRate.toFixed(2) === text
 
-                height: playbackRateMenu.width
-                width: height
-                enabled: true
-                checkable: false
-                checked: timePuller.playbackRate.toFixed(2) === text
+                    z: playbackRateMenu.z + 5
 
-                z: playbackRateMenu.z + 5
+                    text: internals.videoSpeeds[index]
 
-                text: internals.videoSpeeds[index]
+                    display: AbstractButton.TextOnly
 
-                display: AbstractButton.TextOnly
+                    onClicked: {
+                        buttonSpeed.checked = false
+                        var scriptToRun = internals.getPlaybackRateSetterScript(
+                                    text, utilities.isYoutubeShortsUrl(root.url)
+                                 )
+    //                    console.log(scriptToRun)
+                        webEngineView.runJavaScript(scriptToRun)
+                    }
 
-                onClicked: {
-                    buttonSpeed.checked = false
-                    var scriptToRun = internals.getPlaybackRateSetterScript(
-                                text, utilities.isYoutubeShortsUrl(root.url)
-                             )
-//                    console.log(scriptToRun)
-                    webEngineView.runJavaScript(scriptToRun)
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Set playback rate to " + text
+                    ToolTip.delay: 300
+
                 }
-
-                hoverEnabled: true
-                ToolTip.visible: hovered
-                ToolTip.text: "Set playback rate to " + text
-                ToolTip.delay: 300
-
             }
         }
     }
