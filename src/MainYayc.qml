@@ -669,7 +669,7 @@ Item {
             return res;
         }
 
-        property var videoSpeeds: [
+        readonly property var videoSpeeds: [
             "0.25",
             "0.50",
             "0.75",
@@ -1626,39 +1626,37 @@ Item {
         x: buttonSpeed.x + buttonSpeed.width - width
         width: 48
         visible: false
+        ColumnLayout {
+            width: parent.width
+            Repeater {
+                model: internals.videoSpeeds
+                ToolButton {
+                    height: playbackRateMenu.width
+                    width: height
+                    enabled: true
+                    checkable: false
+                    checked: timePuller.playbackRate.toFixed(2) === text
 
-        Repeater {
-            model: internals.videoSpeeds
+                    z: playbackRateMenu.z + 5
 
+                    text: internals.videoSpeeds[index]
 
-            ToolButton {
+                    display: AbstractButton.TextOnly
 
-                height: playbackRateMenu.width
-                width: height
-                enabled: true
-                checkable: false
-                checked: timePuller.playbackRate.toFixed(2) === text
+                    onClicked: {
+                        buttonSpeed.checked = false
+                        var scriptToRun = internals.getPlaybackRateSetterScript(
+                                    text, utilities.isYoutubeShortsUrl(root.url)
+                                 )
+    //                    console.log(scriptToRun)
+                        webEngineView.runJavaScript(scriptToRun)
+                    }
 
-                z: playbackRateMenu.z + 5
-
-                text: internals.videoSpeeds[index]
-
-                display: AbstractButton.TextOnly
-
-                onClicked: {
-                    buttonSpeed.checked = false
-                    var scriptToRun = internals.getPlaybackRateSetterScript(
-                                text, utilities.isYoutubeShortsUrl(root.url)
-                             )
-//                    console.log(scriptToRun)
-                    root.runScript(scriptToRun)
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Set playback rate to " + text
+                    ToolTip.delay: 300
                 }
-
-                hoverEnabled: true
-                ToolTip.visible: hovered
-                ToolTip.text: "Set playback rate to " + text
-                ToolTip.delay: 300
-
             }
         }
     }

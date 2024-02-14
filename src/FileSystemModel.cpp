@@ -240,8 +240,11 @@ QModelIndex FileSystemModel::setRoot(QString newPath, FileSystemModel *oldModel 
     if (res.isValid()) {
         m_proxyModel->setSourceModel(this);
         m_proxyModel->setDynamicSortFilter(true);
-        m_proxyModel->setSortRole(LastModifiedRole);
-        m_proxyModel->sort(3);
+//        m_proxyModel->setSortRole(LastModifiedRole);
+//        m_proxyModel->sort(3);
+        m_proxyModel->setSortRole(CreatedRole);
+        m_proxyModel->sort(0);
+
 
         m_rootPathIndex = m_proxyModel->mapFromSource(res);
         if (!m_rootPathIndex.isValid()) {
@@ -321,7 +324,7 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
             return QVariant(fileInfo(index).lastModified().toString(QStringLiteral("yyyyMMddhhmmss")));
         case CreatedRole: {
             if (isDir(index))
-                return {};
+                QVariant(fileInfo(index).birthTime().toString(QStringLiteral("yyyyMMddhhmmss")));
             const QString &key = itemKey(index);
             if (!m_cache.contains(key)) {
                 qWarning() << "key not found " << key << " " << fileInfo(index).baseName();
