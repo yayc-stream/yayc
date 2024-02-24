@@ -213,10 +213,9 @@ void VideoMetadata::loadFile() {
     if (m.contains("thumbnail")) {
         thumbnailData = QByteArray::fromBase64(m.value("thumbnail").toString().toLatin1());
     }
-    if (m.contains("creationDate")) {
+    if (m.contains("creationDate") && m.value("creationDate").toDateTime().isValid()) {
         creationDate = m.value("creationDate").toDateTime();
-    }
-    if (!creationDate.isValid()) {
+    } else {
         QFileInfo check_file(f);
         creationDate = check_file.birthTime().toUTC();
     }
