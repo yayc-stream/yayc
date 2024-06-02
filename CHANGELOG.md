@@ -1,3 +1,17 @@
+## YAYC v1.3.0 (2024.06) -- Limes
+
+### ✨ New Features
+
+- Added button to disable/enable custom JS javascript
+- Yayc can be configured to switch homepage to about:blank when in bg to save CPU
+
+### 🐞 Bug fixes
+
+- Fixed handling presses to the window X button
+- Various internal fixes
+- Fixed a bug causing doubled startup time
+- Fixed bookmark sorting by date
+
 ## YAYC v1.2.0 (2023.08) -- Chase
 
 ### ✨ New Features
