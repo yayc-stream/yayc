@@ -213,6 +213,7 @@ Item {
         property alias donateUrl: root.donateUrl
         property alias donateUrlETag: root.donateUrlETag
         property alias customScript: root.customScript
+        property alias customScriptEnabled: buttonToggleJS.checked
         property alias darkMode: root.darkMode
         property alias debugMode: root.debugMode
         property alias wevZoomFactor: root.wevZoomFactor
@@ -965,7 +966,7 @@ Item {
                     WebEngineScript {
                         injectionPoint: WebEngineScript.Deferred
                         worldId: WebEngineScript.MainWorld
-                        sourceCode: root.customScript
+                        sourceCode: (settings.customScriptEnabled) ? root.customScript : ""
                     }
                 ]
 
@@ -1431,6 +1432,27 @@ Item {
                     hoverEnabled: true
                     ToolTip.visible: hovered
                     ToolTip.text: "Toggle Guide panel"
+                    ToolTip.delay: 300
+                }
+
+                ToolButton {
+                    id: buttonToggleJS
+                    text: "Activate/Deactivate custom script"
+                    enabled: settings.customScript !== ""
+                    visible: enabled
+                    checkable: true
+                    checked: true
+
+                    onCheckedChanged: {
+                        timePuller.clickGuideButton()
+                    }
+
+                    icon.source: "/icons/js.svg"
+                    display: AbstractButton.IconOnly
+
+                    hoverEnabled: true
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Toggle custom script"
                     ToolTip.delay: 300
                 }
 
