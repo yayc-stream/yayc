@@ -35,6 +35,7 @@ In addition to the above,
 #include <QLatin1String>
 #include <QQmlEngine>
 #include <QQmlContext>
+#include <QNetworkProxy>
 #include <QtWebEngineQuick/qquickwebengineprofile.h>
 
 // Static member definitions
@@ -297,6 +298,22 @@ int YaycUtilities::compareSemver(const QString &version1, const QString &version
     if (v1 > v2)
         return 1;
     return 0;
+}
+
+void YaycUtilities::setNetworkProxy(const QString &proxyType, const QString &proxyHost, int proxyPort) {
+    QNetworkProxy::ProxyType type =
+        ((proxyType == QLatin1String("none")) ? QNetworkProxy::NoProxy :
+             ((proxyType == QLatin1String("http")) ? QNetworkProxy::HttpProxy
+                                                   : QNetworkProxy::Socks5Proxy));
+
+    QNetworkProxy proxy;
+    QUrl host = QUrl::fromUserInput(proxyHost);
+    if (!host.isValid() || proxyPort < 1 || proxyPort > 65535)
+        type = QNetworkProxy::NoProxy;
+    proxy.setType(type);
+    proxy.setHostName(host.host());
+    proxy.setPort(proxyPort);
+    QNetworkProxy::setApplicationProxy(proxy);
 }
 
 bool YaycUtilities::isShortVideo(const QString &fkey)
