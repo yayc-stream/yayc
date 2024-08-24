@@ -223,6 +223,9 @@ Item {
         property alias volume: root.volume
         property alias userSpecifiedVolume: sliderVolume.userValue
         property alias guidePaneToggled: root.guideToggled
+        property alias proxyType: proxyMenu.proxyType
+        property alias proxyPort: proxyMenu.proxyPort
+        property alias proxyHost: proxyMenu.proxyHost
         property var splitView
 
         Component.onCompleted: {
@@ -488,7 +491,7 @@ Item {
         // console.log("onYoutubeUrlRequested ",u)
     }
 
-    property string httpUserAgent: "Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0"
+    property string httpUserAgent: "'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'"
     property string httpAcceptLanguage: "en-US"
 
     FontLoader {
@@ -1668,6 +1671,99 @@ Item {
     }
 
     Dialog {
+        id: proxyMenu
+        x: (parent.width - width) * 0.5
+        y: (parent.height - height) * 0.5
+        width: 800
+        height: 300
+        visible: false
+        modal: true
+
+        header: Item {
+                    width: aboutContainer.width
+                    height: properties.fsH3 * 1.5
+                    Label {
+                        anchors {
+                            topMargin: 4
+                            centerIn: parent
+                        }
+                        text: "<b>Proxy Settings</b>"
+                        font.pixelSize: properties.fsH3
+                    }
+                }
+        footer: DialogButtonBox {
+            standardButtons: DialogButtonBox.Ok | DialogButtonBox.Cancel
+        }
+
+        property string proxyType: "none"
+        property string proxyHost: ""
+        property int proxyPort: 0
+
+       GridLayout {
+           anchors.fill: parent
+           columns: 2
+
+           Label {
+               text: "Proxy Type:"
+           }
+
+           ComboBox {
+               id: proxyTypeComboBox
+               model: ["None", "HTTP", "SOCKS5"]
+               Layout.fillWidth: true
+               onCurrentTextChanged: {
+                   proxyMenu.proxyType = currentText.toLowerCase()
+               }
+           }
+
+           GroupBox {
+               id: proxySettingsGroup
+               Layout.columnSpan: 2
+               Layout.fillWidth: true
+               enabled: proxyMenu.proxyType !== "none"
+
+               GridLayout {
+                   anchors.fill: parent
+                   columns: 2
+
+                   Label {
+                       text: "Host:"
+                   }
+
+                   TextField {
+                       id: hostTextField
+                       Layout.fillWidth: true
+                       placeholderText: "Enter proxy host"
+                       onTextChanged: proxyMenu.proxyHost = text
+                   }
+
+                   Label {
+                       text: "Port:"
+                   }
+
+                   SpinBox {
+                       id: portSpinBox
+                       editable: true
+                       Layout.fillWidth: true
+                       from: 0
+                       to: 65535
+                       value: 0
+                       onValueChanged: proxyMenu.proxyPort = value
+                   }
+               }
+           }
+       }
+
+       onAccepted: {
+           utilities.setNetworkProxy(proxyType, proxyHost, proxyPort)
+       }
+
+        onRejected: {
+            close()
+        }
+    }
+
+    Dialog {
         id: settingsMenu
         x: (parent.width - width) * 0.5
         y: (parent.height - height) * 0.5
@@ -2205,97 +2301,118 @@ Item {
                 }
             }
 
-            Row {
-                Layout.columnSpan: 8
-                Layout.alignment: Qt.AlignLeft
-                Layout.fillWidth: true
-                CheckBox {
-                    id: darkModeCheck
-                    checked: root.darkMode
-                    text: qsTr("Dark mode (requires restart)")
-                    onCheckedChanged: {
-                        root.darkMode = checked
+            Rectangle {
+                color: "transparent"
+                width: settingsMain.width
+                height: settingsButtonsLayout.height
+
+                RowLayout {
+                    id: settingsButtonsLayout
+                    anchors.centerIn: parent
+                    width: parent.width
+                    spacing: 0
+
+                    Row {
+                        Layout.alignment: Qt.AlignLeft
+                        CheckBox {
+                            Layout.alignment: Qt.AlignLeft
+                            id: darkModeCheck
+                            checked: root.darkMode
+                            text: qsTr("Dark mode\n(requires restart)")
+                            onCheckedChanged: {
+                                root.darkMode = checked
+                            }
+                        }
+                        CheckBox {
+
+                            id: debugModeCHeck
+                            checked: root.debugMode
+                            text: qsTr("Developer\nmode")
+                            onCheckedChanged: {
+                                root.debugMode = checked
+                            }
+                        }
+
+                        CheckBox {
+
+                            id: deleteStorageCheck
+                            visible: root.debugMode
+                            checked: root.removeStorageOnDelete
+                            text: qsTr("Delete\nstorage")
+                            onCheckedChanged: {
+                                root.removeStorageOnDelete = checked
+                            }
+
+                            hoverEnabled: true
+
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
+                        }
+                        CheckBox {
+
+                            id: blankWhenHiddenCheck
+                            visible: root.debugMode
+                            checked: root.blankWhenHidden
+                            text: qsTr("Blank when\ninvisible")
+                            onCheckedChanged: {
+                                root.blankWhenHidden = checked
+                            }
+
+                            hoverEnabled: true
+
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
+                        }
+                    }
+                    Row {
+                        Layout.alignment: Qt.AlignLRight
+                        Layout.rightMargin: -32
+                        Button {
+                            id: buttonOpenProxyDialog
+                            flat: true
+                            display: Button.TextOnly
+                            text: "Proxy\nSettings"
+                            onClicked: proxyMenu.open()
+                            hoverEnabled: true
+
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Edit the proxy settings used to access the network"
+                        }
+                        Button {
+                            id: buttonOpenJSDialog
+                            flat: true
+                            display: Button.TextOnly
+                            visible: root.debugMode
+                            text: "Custom\nScript"
+                            onClicked: customScriptDialog.open()
+                            hoverEnabled: true
+
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Edit the custom script that is run after loading a video page"
+                        }
+                        Button {
+                            id: buttonResetSettings
+                            flat: true
+                            visible: root.debugMode
+                            enabled: true
+                            display: Button.IconOnly
+                            icon.source: "/icons/restart.svg"
+                            text: "Custom\nScript"
+                            onClicked: utilities.clearSettings()
+                            hoverEnabled: true
+
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Clear all settings (restarts YAYC)"
+                        }
                     }
                 }
-                CheckBox {
-                    id: debugModeCHeck
-                    checked: root.debugMode
-                    text: qsTr("Developer mode")
-                    onCheckedChanged: {
-                        root.debugMode = checked
-                    }
-                }
-                Button {
-                    id: buttonResetSettings
-                    flat: true
-                    visible: root.debugMode
-                    enabled: true
-                    display: Button.IconOnly
-                    icon.source: "/icons/restart.svg"
-                    text: "Custom\nScript"
-                    Layout.columnSpan: 1
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -12
-                    onClicked: utilities.clearSettings()
-                    hoverEnabled: true
 
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Clear all settings (restarts YAYC)"
-                }
-
-                Button {
-                    id: buttonOpenJSDialog
-                    flat: true
-                    display: Button.TextOnly
-                    visible: root.debugMode
-                    text: "Custom\nScript"
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.leftMargin: -12
-                    onClicked: customScriptDialog.open()
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Edit the custom script that is run after loading a video page"
-                }
-                CheckBox {
-                    id: deleteStorageCheck
-                    visible: root.debugMode
-                    checked: root.removeStorageOnDelete
-                    text: qsTr("Delete storage")
-                    onCheckedChanged: {
-                        root.removeStorageOnDelete = checked
-                    }
-
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
-                }
-                CheckBox {
-                    id: blankWhenHiddenCheck
-                    visible: root.debugMode
-                    checked: root.blankWhenHidden
-                    text: qsTr("Blank when invisible")
-                    onCheckedChanged: {
-                        root.blankWhenHidden = checked
-                    }
-
-                    hoverEnabled: true
-
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 300
-                    ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
-                }
             }
-
-
-//            Item {
-//                Layout.alignment: Qt.AlignVCenter
-//                Layout.fillWidth: true
-//            }
 
             RowLayout {
                 Item {

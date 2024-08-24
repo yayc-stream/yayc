@@ -52,6 +52,7 @@ In addition to the above,
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QNetworkProxy>
 #include <QRegularExpression>
 #include <QRegularExpressionMatch>
 #include <QTcpSocket>
@@ -220,6 +221,24 @@ public:
         QLoggingCategory category("qmldebug");
         QSettings settings;
         qCInfo(category) << QString::number(msecs / 1000.0, 'f', 1) << ": " << s;
+    }
+
+    Q_INVOKABLE static void setNetworkProxy(const QString &proxyType,
+                                            const QString &proxyHost,
+                                            int proxyPort) {
+        QNetworkProxy::ProxyType type =
+                ((proxyType == QLatin1String("none")) ? QNetworkProxy::NoProxy :
+                   ((proxyType == QLatin1String("http")) ? QNetworkProxy::HttpProxy
+                                                         : QNetworkProxy::Socks5Proxy));
+        QNetworkProxy proxy;
+        QUrl host = QUrl::fromUserInput(proxyHost);
+        if (!host.isValid() || proxyPort < 1 || proxyPort > 65535)
+            type = QNetworkProxy::NoProxy;
+
+        proxy.setType(type);
+        proxy.setHostName(host.host());
+        proxy.setPort(proxyPort);
+        QNetworkProxy::setApplicationProxy(proxy);
     }
 
     Q_INVOKABLE void addRequestInterceptor(QObject *webEngineView);
@@ -2549,6 +2568,14 @@ int main(int argc, char *argv[])
         qputenv("QT_QUICK_CONTROLS_MATERIAL_PRIMARY", QByteArrayLiteral("#3d3d3d"));
         qputenv("QT_QUICK_CONTROLS_MATERIAL_ACCENT", QByteArrayLiteral("Red"));
         qputenv("QT_QUICK_CONTROLS_MATERIAL_VARIANT", QByteArrayLiteral("Dense")); // ToDo: add setting
+
+        if (settings.contains("proxyType")
+                && settings.value("proxyType").toString() != ""
+                && settings.value("proxyType").toString() != "none") {
+            YaycUtilities::setNetworkProxy(settings.value("proxyType").toString(),
+                                           settings.value("proxyHost").toString(),
+                                           settings.value("proxyPort").toInt());
+        }
 
         qInfo("Starting YAYC v%s ...", appVersion().data());
 #ifdef QT_NO_DEBUG_OUTPUT
