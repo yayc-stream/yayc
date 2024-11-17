@@ -66,7 +66,7 @@ Item {
         win.hide()
     }
 
-    Shortcut {
+    Shortcut { // print settings path
         sequence: "Ctrl+P"
         onActivated: {
             if (root.debugMode) {
@@ -74,15 +74,13 @@ Item {
             }
         }
     }
-
-    Shortcut {
+    Shortcut { // Fetch Missing Thumbnails
         sequence: "Ctrl+F"
         onActivated: {
             utilities.fetchMissingThumbnails()
         }
     }
-
-    Shortcut {
+    Shortcut { // reset filesystem models
         sequence: "F5"
         onActivated: {
             resetFilesystemModels()
@@ -290,6 +288,7 @@ Item {
         if (sliderVolume.value !== sliderVolume.userValue)
             sliderVolume.value = sliderVolume.userValue
     }
+
     Component.onDestruction: {
         settings.splitView = splitView.saveState()
     }

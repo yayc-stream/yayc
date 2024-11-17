@@ -1400,6 +1400,8 @@ class FileSystemModel : public QFileSystemModel {
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
     QModelIndex m_nullIndex;
+    QString m_lastDestination;
+    QString m_lastDestinationName;
 
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
@@ -1407,6 +1409,8 @@ class FileSystemModel : public QFileSystemModel {
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
     Q_PROPERTY(QVariant nullIndex MEMBER m_nullIndex CONSTANT)
+    Q_PROPERTY(QString lastDestinationCategory MEMBER m_lastDestination NOTIFY lastDestinationCategoryChanged)
+    Q_PROPERTY(QString lastDestinationCategoryName MEMBER m_lastDestinationName NOTIFY lastDestinationCategoryChanged)
 
 public:
     QVariant rootPathIndex() const {
@@ -2031,6 +2035,7 @@ public slots:
         if (!m_ready)
             return false;
 
+        auto destDirOriginal = destinationDir;
         destinationDir = m_proxyModel->mapToSource(destinationDir);
 
         if (!m_cache.contains(key)
@@ -2045,6 +2050,12 @@ public slots:
         if (!d.exists()) {
             qWarning() << "Destination directory doesn't exist";
             return false;
+        }
+
+        if (m_lastDestination != d.path()) {
+            m_lastDestination = d.path();
+            m_lastDestinationName = d.dirName();
+            emit lastDestinationCategoryChanged();
         }
 
         QTimer::singleShot(0, this,
@@ -2069,6 +2080,12 @@ public slots:
             return false;
         }
 
+        if (m_lastDestination != d.path()) {
+            m_lastDestination = d.path();
+            m_lastDestinationName = d.dirName();
+            emit lastDestinationCategoryChanged();
+        }
+
         if (isDir(item)) { // moving a category
             QDir f(filePath(item));
             if (!f.exists()) {
@@ -2076,7 +2093,6 @@ public slots:
                 return false;
             }
             QString newName = d.absoluteFilePath(fileName(item));
-
 
             const bool res = f.rename(f.absoluteFilePath(""), newName); // this one nicely fails if parent is moved into child
             if (res) {
@@ -2094,6 +2110,20 @@ public slots:
                 [this, key, d]() { moveEntry(key, d); });
             return true;
         }
+    }
+
+    // as of 2024.11.17 used only in BookmarkContextMenu.Move to (last dest)
+    void moveEntry(const QString &key, const QString &ds) {
+        if (!m_ready)
+            return;
+        if (!m_cache.contains(key))
+            return;
+        QDir d(ds);
+        if (!d.exists()) {
+            qWarning() << "Destination directory doesn't exist";
+            return;
+        }
+        m_cache[key].moveLocation(d);
     }
 
     void moveEntry(const QString &key, const QDir &d) {
@@ -2229,6 +2259,7 @@ signals:
     void searchInTitlesChanged();
     void searchInChannelNamesChanged();
     void firstInitializationCompleted(const QString &rootPath);
+    void lastDestinationCategoryChanged();
 
 private slots:
 

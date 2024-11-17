@@ -72,6 +72,21 @@ Menu {
     }
 
     MenuItem {
+        text: "Move to " + rootItem.model.lastDestinationCategoryName
+        enabled: rootItem.parentView
+                 && rootItem.deleteVideoItem
+                 && rootItem.model.lastDestinationCategoryName !== ""
+        visible: true
+        height: enabled ? implicitHeight : 0
+        onClicked: {
+            let lastDst = rootItem.model.lastDestinationCategory
+            console.log(lastDst)
+            let res = rootItem.model.moveEntry(rootItem.key, lastDst)
+        }
+        icon.source: "/icons/move.svg"
+        display: MenuItem.TextBesideIcon
+    }
+    MenuItem {
         text: "Add category"
         enabled: !rootItem.isHistoryView && rootItem.parentView
         height: enabled ? implicitHeight : 0
