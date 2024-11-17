@@ -33,6 +33,11 @@ Visual Studio 2019 (community) can be obtained for free from Microsoft (https://
 Latest version of Qt5 (5.15) can be installed through the Qt online installer (https://www.qt.io/download-qt-installer).
 Remember to select OpenSSL 1.1.1 from the Qt online installer.
 
+**UPDATE:** Starting summer 2024, QtWebEngine shipped with Qt 5.15.2 (last official Qt5 opensource release) is not able to run the youtube embedded player anymore. 
+At the same time, it seemingly is the only Qt5 release for windows able to properly deploy with windeployqt. 
+Therefore, for the time being, we are unable to provide an updated binary release package for Windows.
+A working solution is to use Microsoft *vcpkg* and vcpkg Qt5 package to build and run YAYC. 
+Unfortunatly, vcpkg Qt5 package also seemingly has a broken windeployqt setup, and so it cannot be used to produce a binary YAYC windows release.
 
 #### Linux
 
