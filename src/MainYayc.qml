@@ -839,7 +839,6 @@ Item {
         function addCurrentVideo() {
             if (!utilities.isYoutubeVideoUrl(root.url)) {
                 // Q_UNREACHABLE
-                console.log("NOT A YOUTUBE VIDEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 return;
             }
 
