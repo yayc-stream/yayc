@@ -590,13 +590,13 @@ Item {
             setTimeout(function() {
 //                try {
                     var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
-                    var chanInfo = activeShort.querySelector('div[id=\"channel-info\"]')
-                    backend.channelURL = chanInfo.children[0].href
-                    backend.channelName = chanInfo.children[1].getElementsByTagName('yt-formatted-string')[0].textContent
-                    backend.channelAvatar = chanInfo.firstElementChild.firstElementChild.firstElementChild.src
+                    //var chanInfo = activeShort.querySelector('div[id=\"channel-info\"]')
+                    backend.channelURL = activeShort.getElementsByClassName('yt-core-attributed-string__link yt-core-attributed-string__link--call-to-action-color yt-core-attributed-string--link-inherit-color')[0].href
+                    backend.channelName = activeShort.getElementsByClassName('yt-core-attributed-string__link yt-core-attributed-string__link--call-to-action-color yt-core-attributed-string--link-inherit-color')[0].textContent
+                    backend.channelAvatar = activeShort.getElementsByClassName('yt-core-image yt-spec-avatar-shape__image yt-core-image--fill-parent-height yt-core-image--fill-parent-width yt-core-image--content-mode-scale-to-fill yt-core-image--loaded')[0].src
 
                     //var url = activeShort.getElementsByClassName('player-container style-scope ytd-reel-video-renderer')[0].getAttribute('style')
-                    var url = activeShort.getElementsByClassName('ytp-title-link yt-uix-sessionlink')[0].getAttribute('href').split('/');
+                    var url = activeShort.getElementsByClassName('ytp-title-link yt-uix-sessionlink')[0].href.split('/');
                     url = url[url.length - 1]
                     backend.videoID = url;
                     backend.shorts = true;
@@ -823,6 +823,7 @@ Item {
         function addCurrentVideo() {
             if (!utilities.isYoutubeVideoUrl(root.url)) {
                 // Q_UNREACHABLE
+                console.log("NOT A YOUTUBE VIDEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 return;
             }
 
