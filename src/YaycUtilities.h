@@ -71,6 +71,9 @@ public:
     Q_INVOKABLE void fetchMissingThumbnails();
 
     Q_INVOKABLE int compareSemver(const QString &version1, const QString &version2);
+    Q_INVOKABLE static void setNetworkProxy(const QString &proxyType,
+                                            const QString &proxyHost,
+                                            int proxyPort);
 
     static bool isShortVideo(const QString &fkey);
     static void openInBrowser(const QString &key, const QString &extWorkingDirRoot);

@@ -118,7 +118,8 @@ public slots:
     bool isStarred(const QModelIndex &item) const;
     bool isStarred(const QString &key) const;
     bool hasWorkingDir(const QModelIndex &item, const QString &extWorkingDirRoot) const;
-    bool hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const;
+    int hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const;
+    bool hasSummary(const QString &key, const QString &extWorkingDirRoot) const;
     void starEntry(const QModelIndex &item, bool starred);
     void starEntry(const QString &key, bool starred);
     QString videoIconUrl(const QModelIndex &item) const;

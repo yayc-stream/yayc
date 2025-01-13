@@ -681,11 +681,31 @@ bool FileSystemModel::hasWorkingDir(const QModelIndex &item, const QString &extW
     return hasWorkingDir(key, extWorkingDirRoot);
 }
 
-bool FileSystemModel::hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const {
+int FileSystemModel::hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const {
     if (!m_ready || !key.size() || !m_cache.contains(key))
         return false;
     QDir d(extWorkingDirRoot);
-    return d.exists() && d.exists(key);
+    const bool exists = d.exists() && d.exists(key);
+    if (!exists || !d.cd(key))
+        return 0;
+    return 1 + int(!d.isEmpty());
+}
+
+bool FileSystemModel::hasSummary(const QString &key, const QString &extWorkingDirRoot) const {
+    if (!m_ready || !key.size() || !m_cache.contains(key))
+
+        return false;
+
+    if (!hasWorkingDir(key, extWorkingDirRoot))
+        return false;
+    QDirIterator it(extWorkingDirRoot + "/" + key, QStringList() << "*summary*",
+                    QDir::Files, QDirIterator::Subdirectories);
+    size_t cnt = 0;
+    while (it.hasNext()) {
+        ++cnt;
+    }
+
+    return cnt > 0;
 }
 
 void FileSystemModel::starEntry(const QModelIndex &item, bool starred) {
