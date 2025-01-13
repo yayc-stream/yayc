@@ -1990,14 +1990,33 @@ public slots:
         const QString &key = keyFromViewItem(item);
         return hasWorkingDir(key, extWorkingDirRoot);
     }
-    bool hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const {
+    int hasWorkingDir(const QString &key, const QString &extWorkingDirRoot) const {
         if (!m_ready || !key.size() || !m_cache.contains(key))
             return false;
 
         QDir d(extWorkingDirRoot);
 
         const bool exists = d.exists() && d.exists(key);
-        return exists;
+        if (!exists || !d.cd(key))
+            return 0;
+        return 1 + int(!d.isEmpty());
+    }
+    bool hasSummary(const QString &key, const QString &extWorkingDirRoot) const {
+        if (!m_ready || !key.size() || !m_cache.contains(key))
+            return false;
+
+        if (!hasWorkingDir(key, extWorkingDirRoot))
+            return false;
+
+        QDirIterator it(extWorkingDirRoot + "/" + key, QStringList() << "*summary*",
+                        QDir::Files, QDirIterator::Subdirectories);
+
+        size_t cnt = 0;
+        while (it.hasNext()) {
+            ++cnt;
+        }
+
+        return cnt > 0;
     }
     void starEntry(const QModelIndex &item, bool starred) {
         if (!m_ready)

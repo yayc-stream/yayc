@@ -1281,6 +1281,7 @@ Item {
                 }
 
                 ToolButton {
+                    id: reloadButton
                     property int itemAction: webEngineView.loading ? WebEngineView.Stop : WebEngineView.Reload
                     text: webEngineView.action(itemAction).text
                     enabled: webEngineView.action(itemAction).enabled

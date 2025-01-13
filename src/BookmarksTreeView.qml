@@ -570,9 +570,9 @@ Rectangle {
                 property bool starred: (!styleData.hasChildren)
                                        ? viewContainer.model.isStarred(qmodelindex)
                                        : false
-                property bool hasWorkingDir: (!styleData.hasChildren && root.extWorkingDirExists)
+                property int hasWorkingDir: (!styleData.hasChildren && root.extWorkingDirExists)
                                        ? viewContainer.model.hasWorkingDir(key, root.extWorkingDirPath)
-                                       : false
+                                       : 0
                 property bool shorts: (!styleData.hasChildren)
                                       ? utilities.isYoutubeShortsUrl(videoUrl)
                                       : false
@@ -605,6 +605,9 @@ Rectangle {
 
                     text: treeViewDelegate.title + "\n"
                           + "Added " + treeViewDelegate.creationDate
+                          + "  -- Duration "
+                          + treeViewDelegate.duration
+                          + " -- " + treeViewDelegate.key
                     delay: 300
                     font {
                         family: mainFont.name
@@ -628,6 +631,7 @@ Rectangle {
                 Drag.imageSource : "qrc:/images/save.png"
 
                 Image {
+                    id: iconVideo
                     visible: !styleData.hasChildren
                     anchors {
                         left: parent.left
@@ -642,17 +646,26 @@ Rectangle {
                     fillMode: Image.PreserveAspectFit
 
                     Image {
+                        id: iconStarred
                         visible: treeViewDelegate.starred
                         anchors.fill: parent
                         source: "qrc:/images/starred.png"
                     }
                     Image {
-                        visible: treeViewDelegate.hasWorkingDir
+                        id: iconDataPresent
+                        visible: treeViewDelegate.hasWorkingDir == 2
                         anchors.fill: parent
                         source: "qrc:/images/workingdirpresent.png"
                     }
+                    Image {
+                        id: iconSummaryPresent
+                        visible: treeViewDelegate.hasWorkingDir == 1
+                        anchors.fill: parent
+                        source: "qrc:/images/workingdirpresentempty.png"
+                    }
                 }
                 Image {
+                    id: iconFolder
                     visible: styleData.hasChildren
                     anchors {
                         left: parent.left
