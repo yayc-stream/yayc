@@ -441,9 +441,10 @@ Item {
     }
 
     function isWorkingDirPresent(key, trigger) {
-        return root.extWorkingDirExists
-               && fileSystemModel.hasWorkingDir(key,
+        if (root.extWorkingDirExists)
+            return fileSystemModel.hasWorkingDir(key,
                                                 root.extWorkingDirPath)
+        return 0
     }
 
     property string lastHoveredLink
@@ -897,7 +898,7 @@ Item {
                 property bool isYoutubeChannel: utilities.isYoutubeChannelPage(url)
                 property bool isYoutubeHome: utilities.isYoutubeHomepage(url)
                 property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
-                property bool keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
+                property int keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
                                                                     root.extWorkingDirPath,
                                                                     root.workingDirTrigger)
                 enabled: true
@@ -1323,8 +1324,7 @@ Item {
 
                     property bool currentVideoAdded: isCurrentVideoAdded(webEngineView.key,
                                                                          root.addedVideoTrigger)
-                    property bool workingDirPresent: currentVideoAdded
-                                                     && webEngineView.keyHasWorkingDir
+                    property int workingDirPresent: webEngineView.keyHasWorkingDir
 
                     icon {
                         source: "/icons/add.svg"
@@ -1338,10 +1338,9 @@ Item {
                     }
 
                     Image {
-                        visible: parent.workingDirPresent
+                        visible: parent.workingDirPresent == 2
                         anchors {
                             fill: parent
-
                             rightMargin: 12
                             topMargin: 12
                             bottomMargin: 4
@@ -1349,6 +1348,19 @@ Item {
                         }
 
                         source: "qrc:/images/workingdirpresent.png"
+                        opacity: .5
+                    }
+                    Image {
+                        visible: parent.workingDirPresent == 1
+                        anchors {
+                            fill: parent
+                            rightMargin: 12
+                            topMargin: 12
+                            bottomMargin: 4
+                            leftMargin: 4
+                        }
+
+                        source: "qrc:/images/workingdirpresentempty.png"
                         opacity: .5
                     }
                     display: AbstractButton.IconOnly
