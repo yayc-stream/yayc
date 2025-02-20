@@ -168,8 +168,10 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
     bool searchInTitles = m_searchInTitles || (!m_searchInTitles && !m_searchInChannelNames);
 
     bool res = false;
-    if (searchInTitles)
+    if (searchInTitles) {
         res |= title.contains(re);
+        res |= key.contains(re);
+    }
     if (m_searchInChannelNames) {
         res |= channelName.contains(re);
         res |= channelId.contains(re);
