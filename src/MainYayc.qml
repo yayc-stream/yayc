@@ -1027,7 +1027,7 @@ Item {
                         }
 
                         Image {
-                            visible: parent.workingDirPresent
+                            visible: parent.workingDirPresent > 0
                             anchors {
                                 left: parent.left
                                 top: parent.top
@@ -1037,7 +1037,9 @@ Item {
                                 bottomMargin: 4
                             }
 
-                            source: "qrc:/images/workingdirpresent.png"
+                            source: (parent.workingDirPresent == 2)
+                                        ? "qrc:/images/workingdirpresent.png"
+                                        : "qrc:/images/workingdirpresentempty.png"
                             opacity: .7
                         }
 
