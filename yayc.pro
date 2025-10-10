@@ -67,14 +67,14 @@ APPVERSION = "$$cat($$PWD/APPVERSION)"
 
 DEFINES += "APPVERSION=\"$$APPVERSION\""
 
-SOURCES +=  src/third_party/ad-block/ad_block_client.cc \
-            src/third_party/ad-block/no_fingerprint_domain.cc \
-            src/third_party/ad-block/filter.cc \
-            src/third_party/ad-block/protocol.cc \
-            src/third_party/ad-block/context_domain.cc \
-            src/third_party/ad-block/cosmetic_filter.cc \
-            src/third_party/bloom-filter-cpp/BloomFilter.cpp \
-            src/third_party/hashset-cpp/hash_set.cc \
-            src/third_party/hashset-cpp/hashFn.cc
+#SOURCES +=  src/third_party/ad-block/ad_block_client.cc \
+#            src/third_party/ad-block/no_fingerprint_domain.cc \
+#            src/third_party/ad-block/filter.cc \
+#            src/third_party/ad-block/protocol.cc \
+#            src/third_party/ad-block/context_domain.cc \
+#            src/third_party/ad-block/cosmetic_filter.cc \
+#            src/third_party/bloom-filter-cpp/BloomFilter.cpp \
+#            src/third_party/hashset-cpp/hash_set.cc \
+#            src/third_party/hashset-cpp/hashFn.cc
 
-HEADERS = src/third_party/ad-block/ad_block_client.h
+#HEADERS = src/third_party/ad-block/ad_block_client.h

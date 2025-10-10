@@ -68,8 +68,10 @@ In addition to the above,
 #include <QRegExp>
 #include <QRegularExpression>
 #include <QStringRef>
+#include <QCommandLineParser>
+#include <QCommandLineOption>
 
-#include "third_party/ad-block/ad_block_client.h"
+//#include "third_party/ad-block/ad_block_client.h"
 
 namespace  {
 bool isPlasma{false};
@@ -223,7 +225,6 @@ public:
         auto modelReadyTS = QDateTime::currentDateTimeUtc();
         auto msecs = appstartTS.msecsTo(modelReadyTS);
         QLoggingCategory category("qmldebug");
-        QSettings settings;
         qCInfo(category) << QString::number(msecs / 1000.0, 'f', 1) << ": " << s;
     }
 
@@ -1033,18 +1034,18 @@ public:
         if (m_loading.loadAcquire() == 1)
             return;
 
-        if (client.matches(info.requestUrl().toString().toStdString().c_str(),
-            FONoFilterOption, info.requestUrl().host().toStdString().c_str())) {
-//                qWarning() << "Blocked: " << info.requestUrl();
-                info.block(true);
-//                qWarning() << "Blocked: " << ++blocked;
-        }
+//        if (client.matches(info.requestUrl().toString().toStdString().c_str(),
+//            FONoFilterOption, info.requestUrl().host().toStdString().c_str())) {
+////                qWarning() << "Blocked: " << info.requestUrl();
+//                info.block(true);
+////                qWarning() << "Blocked: " << ++blocked;
+//        }
     }
 
 protected:
     QAtomicInt m_loading{0};
     QString m_easyListPath;
-    AdBlockClient client;
+//    AdBlockClient client;
 //    unsigned int blocked{0};
 
 friend class EasylistLoader;
@@ -1062,7 +1063,7 @@ void EasylistLoader::run()
             easyListTxt = file.readAll();
         }
         file.close();
-        m_interceptor->client.parse(easyListTxt.toStdString().c_str());
+        //m_interceptor->client.parse(easyListTxt.toStdString().c_str());
     }
     m_interceptor->m_loading.storeRelease(0);
 }
@@ -2540,6 +2541,36 @@ int main(int argc, char *argv[])
         QCoreApplication::setApplicationName("yayc");
 
         QSettings settings;
+
+
+        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+        QtWebEngineQuick::initialize();
+
+        QGuiApplication app(argc, argv);
+        app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
+        args = app.arguments();
+
+        // Create command line parser
+        QCommandLineParser parser;
+        parser.setApplicationDescription("YAYC");
+        parser.addHelpOption();
+        parser.addVersionOption();
+
+        // Add custom command line options
+        QCommandLineOption debugOption(QStringList() << "d" << "debug",
+                                       "Enable debug mode");
+        parser.addOption(debugOption);
+
+        QCommandLineOption configOption(QStringList() << "c" << "config",
+                                        "Configuration file path",
+                                        "file");
+        parser.addOption(configOption);
+
+        if (parser.isSet(configOption)) {
+            QString configFile = parser.value(configOption);
+            settings = QSettings(configFile, QSettings::NativeFormat);
+        }
+
 #if defined(Q_OS_LINUX)
         qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
 #endif
@@ -2563,14 +2594,6 @@ int main(int argc, char *argv[])
 //                                                        "*.fatal=true\n"
 //                                                        ));
 #endif
-
-        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-        QtWebEngineQuick::initialize();
-
-        QGuiApplication app(argc, argv);
-        app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
-        args = app.arguments();
-
 
         QQmlApplicationEngine engine;
         ThumbnailImageProvider *imageProvider = new ThumbnailImageProvider();
