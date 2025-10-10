@@ -608,9 +608,9 @@ Item {
 //                try {
                     var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
                     //var chanInfo = activeShort.querySelector('div[id=\"channel-info\"]')
-                    backend.channelURL = activeShort.getElementsByClassName('yt-core-attributed-string__link yt-core-attributed-string__link--call-to-action-color yt-core-attributed-string--link-inherit-color')[0].href
+                    backend.channelURL = activeShort.getElementsByClassName('yt-core-attributed-string__link yt-core-attributed-string__link--call-to-action-color yt-core-attributed-string--link-inherit-color')[0].href.replace('/shorts', '');
                     backend.channelName = activeShort.getElementsByClassName('yt-core-attributed-string__link yt-core-attributed-string__link--call-to-action-color yt-core-attributed-string--link-inherit-color')[0].textContent
-                    backend.channelAvatar = activeShort.getElementsByClassName('yt-core-image yt-spec-avatar-shape__image yt-core-image--fill-parent-height yt-core-image--fill-parent-width yt-core-image--content-mode-scale-to-fill yt-core-image--loaded')[0].src
+                    backend.channelAvatar = document.getElementsByClassName('yt-spec-avatar-shape__image ytCoreImageHost')[0].src
 
                     //var url = activeShort.getElementsByClassName('player-container style-scope ytd-reel-video-renderer')[0].getAttribute('style')
                     var url = activeShort.getElementsByClassName('ytp-title-link yt-uix-sessionlink')[0].href.split('/');
