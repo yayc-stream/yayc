@@ -2613,8 +2613,8 @@ int main(int argc, char *argv[])
 
         if (!settings.contains("darkMode") || settings.value("darkMode").toBool()) {
             // https://chromium.googlesource.com/chromium/src/+/821cfffb54899797c86ca3eb351b73b91c2c5879/third_party/blink/web_tests/VirtualTestSuites
-            qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
-                    QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
+//            qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+//                    QByteArrayLiteral("--dark-mode-settings=ImagePolicy=1 --blink-settings=forceDarkModeEnabled=true"));  // Current Chromium
             qputenv("QT_QUICK_CONTROLS_MATERIAL_THEME", QByteArrayLiteral("Dark")); // ToDo: fix text color
         }
         qputenv("QT_QUICK_CONTROLS_MATERIAL_PRIMARY", QByteArrayLiteral("#3d3d3d"));
