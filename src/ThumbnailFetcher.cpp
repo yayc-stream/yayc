@@ -26,7 +26,9 @@ In addition to the above,
 #include <QQmlApplicationEngine>
 #include <QTextDocument>
 
-ThumbnailFetcher::ThumbnailFetcher(QObject *parent) : QObject(parent) {}
+ThumbnailFetcher::ThumbnailFetcher(QObject *parent) : QObject(parent) {
+    m_nam.setCookieJar(new QNetworkCookieJar);
+}
 
 ThumbnailFetcher &ThumbnailFetcher::GetInstance() {
     static ThumbnailFetcher instance;
@@ -77,8 +79,10 @@ void ThumbnailFetcher::fetchThumbnail(const QString &key) {
     QNetworkRequest req(
         QUrl(QString(QLatin1String("https://img.youtube.com/vi/%1/0.jpg")).arg(ytKey)));
     auto *reply = m_nam.get(req);
-    if (!reply)
-        qFatal("NULL QNetworkReply while retrieving thumbnails");
+    if (!reply) {
+        qWarning("NULL QNetworkReply while retrieving thumbnails");
+        return;
+    }
     QObject::connect(reply, &QNetworkReply::finished, this,
                      &ThumbnailFetcher::onThumbnailRequestFinished);
     reply->setProperty("key", key);
@@ -89,7 +93,6 @@ void ThumbnailFetcher::fetchChannelInternal(const QString &key) {
     const QUrl url = sUrl;
 
     QNetworkRequest req(url);
-    m_nam.setCookieJar(new QNetworkCookieJar);
     req.setRawHeader("User-Agent",
                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                      "(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36");
@@ -127,7 +130,7 @@ void ThumbnailFetcher::fetchChannelAvatarInternal(const QString &channelKey, QSt
 }
 
 FileSystemModel *ThumbnailFetcher::bookmarksModel() {
-    for (auto m : qAsConst(m_models))
+    for (auto m : std::as_const(m_models))
         if (m->m_bookmarksModel)
             return m;
     return nullptr;
@@ -144,14 +147,20 @@ void ThumbnailFetcher::onThumbnailRequestFinished() {
     if (reply->error() == QNetworkReply::NoError) {
         QByteArray networkContent = reply->readAll();
         if (networkContent.size()) {
-            for (auto &m : qAsConst(m_models)) {
+            for (auto &m : std::as_const(m_models)) {
                 m->addThumbnail(key, networkContent);
             }
             if (m_models.size()) {
                 QQmlApplicationEngine *engine =
                     qobject_cast<QQmlApplicationEngine *>((*m_models.begin())->parent());
+                Q_ASSERT(engine);
+                if (!engine)
+                    qFatal("ThumbnailFetcher: failed to retrieve QQmlApplicationEngine");
                 ThumbnailImageProvider *provider = static_cast<ThumbnailImageProvider *>(
                     engine->imageProvider(QLatin1String("videothumbnail")));
+                Q_ASSERT(provider);
+                if (!provider)
+                    qFatal("ThumbnailFetcher: failed to retrieve ThumbnailImageProvider");
                 provider->insert(key, networkContent);
             }
         } else {
@@ -215,7 +224,7 @@ void ThumbnailFetcher::onVideoPageRequestFinished() {
                     title = td.toPlainText();
                 }
 
-                for (auto &m : qAsConst(m_models)) {
+                for (auto &m : std::as_const(m_models)) {
                     m->addChannel(channelId, Platform::toVendor(videoVendor(key)), channelName,
                                   channelAvatarURL);
                     m->updateChannelID(key, channelId);
@@ -246,7 +255,7 @@ void ThumbnailFetcher::onFetchAvatarRequestFinished() {
 
     if (reply->error() == QNetworkReply::NoError) {
         const QByteArray &networkContent = reply->readAll();
-        for (auto &m : qAsConst(m_models)) {
+        for (auto &m : std::as_const(m_models)) {
             m->updateChannelAvatar(channelKey, networkContent);
         }
     } else {
@@ -259,7 +268,7 @@ void ThumbnailFetcher::onFetchAvatarRequestFinished() {
 void ThumbnailFetcher::fetchMissingThumbnails() {
     QSet<QString> missingKeys;
     qDebug() << "Missing Thumbs:";
-    for (auto &m : qAsConst(m_models)) {
+    for (auto &m : std::as_const(m_models)) {
         for (auto i = m->m_cache.begin(); i != m->m_cache.end(); ++i) {
             if (!i.value().hasThumbnail()) {
                 missingKeys.insert(i.key());

@@ -191,7 +191,7 @@ QModelIndex FileSystemModel::setRoot(QString newPath) {
     if (!m_proxyModel) {
         qFatal("NULL sortfilter proxy model");
     }
-    if (!rootPath().isEmpty() && (rootPath() != ".")) {
+    if (!rootPath().isEmpty() && (rootPath() != ".")) { // if this is the current fsmodel
         FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName,
                                                        m_bookmarksModel,
                                                        engine);
@@ -220,7 +220,7 @@ QModelIndex FileSystemModel::setRoot(QString newPath) {
     if (!provider) {
         qFatal("Unable to retrieve ThumbnailImageProvider");
     }
-    for (const auto &e : qAsConst(m_cache)) {
+    for (const auto &e : std::as_const(m_cache)) {
         if (e.hasThumbnail())
             provider->insert(e.key, e.thumbnailData);
     }
@@ -253,10 +253,10 @@ QModelIndex FileSystemModel::setRoot(QString newPath) {
 
 QString FileSystemModel::key(const QModelIndex &item) const {
     if (!m_ready)
-        return QLatin1String("");
+        return QString();
     auto index = m_proxyModel->mapToSource(item);
     if (isDir(index)) {
-        return QLatin1String("");
+        return QString();
     }
     const QString &key = itemKey(index);
     return key;
@@ -264,28 +264,30 @@ QString FileSystemModel::key(const QModelIndex &item) const {
 
 QString FileSystemModel::title(const QModelIndex &item) const {
     if (!m_ready)
-        return QLatin1String("");
+        return QString();
     const QString &key = keyFromViewItem(item);
     if (!key.size() || !m_cache.contains(key))
-        return QLatin1String("");
+        return QString();
     return title(key);
 }
 
 QString FileSystemModel::title(const QString &key) const {
     if (!m_ready || !key.size() || !m_cache.contains(key))
-        return QLatin1String("");
+        return QString();
     return m_cache.value(key).title;
 }
 
 bool FileSystemModel::isVideoBookmarked(const QString &key) {
+    if (!m_ready || !key.size())
+        return false;
     return m_cache.contains(key);
 }
 
 QString FileSystemModel::creationDate(const QString &key) const {
     if (!m_ready)
-        return QLatin1String("");
+        return QString();
     if (!key.size() || !m_cache.contains(key))
-        return QLatin1String("");
+        return QString();
     return m_cache.value(key).creationDate.toString(QStringLiteral("yyyy.MM.dd hh:mm"));
 }
 
@@ -397,16 +399,16 @@ QString FileSystemModel::keyFromViewItem(const QModelIndex &item) const {
 
 QVariant FileSystemModel::videoUrl(QModelIndex item) {
     if (!m_ready)
-        return QLatin1String("");
+        return QString();
     const QString &key = keyFromViewItem(item);
     if (!key.size() || !m_cache.contains(key))
-        return QLatin1String("");
+        return QString();
     return videoUrl(key);
 }
 
 QVariant FileSystemModel::videoUrl(const QString &key) {
     if (!m_ready || !key.size() || !m_cache.contains(key))
-        return QLatin1String("");
+        return QString();
     return m_cache.value(key).url();
 }
 
@@ -490,8 +492,7 @@ bool FileSystemModel::deleteEntry(QModelIndex item,
     if (isDir(item)) {
         QDir d(filePath(item));
         if (d.isEmpty()) {
-            res = d.removeRecursively();
-            remove(item);
+            remove(item); // it does removeRecursively internally
         } else {
             qWarning() << "Category not empty! " << fileInfo(item).baseName();
             res = false;
@@ -532,8 +533,7 @@ void FileSystemModel::deleteStorage(const QString &key, const QString &extWorkin
     if (!extWorkingDirRoot.isEmpty()) {
         QDir d(extWorkingDirRoot);
         if (d.exists() && d.exists(key)) {
-            if (d.cd(key))
-                d.removeRecursively();
+            QDir(d.filePath(key)).removeRecursively();
         }
     }
 }
@@ -550,12 +550,10 @@ void FileSystemModel::sync() {
 qreal FileSystemModel::progress(const QString &key) const {
     if (!m_ready)
         return 0;
-    if (!m_cache.contains(key)) {
+    if (!key.size() || !m_cache.contains(key)) {
         qWarning() << "FileSystemModel::progress: Key " << key << " not present!";
         return 0;
     }
-    if (!key.size())
-        return 0.;
 
     const auto &position = m_cache.value(key).position;
     const auto &duration = m_cache.value(key).duration;
@@ -633,7 +631,7 @@ bool FileSystemModel::isStarred(const QModelIndex &item) const {
 }
 
 bool FileSystemModel::isStarred(const QString &key) const {
-    if (!key.size() || !m_cache.contains(key))
+    if (!m_ready || !key.size() || !m_cache.contains(key))
         return false;
     return m_cache.value(key).starred;
 }
@@ -672,14 +670,14 @@ void FileSystemModel::starEntry(const QString &key, bool starred) {
 
 QString FileSystemModel::videoIconUrl(const QModelIndex &item) const {
     if (!m_ready)
-        return QLatin1String("");
+        return QString();
     const QString &key = keyFromViewItem(item);
     return videoIconUrl(key);
 }
 
 QString FileSystemModel::videoIconUrl(const QString &key) const {
     if (!m_ready || !key.size() || !m_cache.contains(key))
-        return QLatin1String("");
+        return QString();
     const bool shortVideo = isShortVideo(key);
     const bool viewed = isViewed(key);
     if (shortVideo) {
@@ -883,7 +881,7 @@ void FileSystemModel::addChannel(const QString &channelId,
 
 QString FileSystemModel::itemKey(const QModelIndex &index) const {
     if (!m_ready)
-        return QLatin1String("");
+        return QString();
     const auto &fi = fileInfo(index);
     return fi.baseName();
 }

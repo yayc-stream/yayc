@@ -19,6 +19,7 @@ In addition to the above,
 #include <QtWebEngineCore/qwebengineurlrequestinterceptor.h>
 #include <QAtomicInt>
 #include <QRunnable>
+#include <QPointer>
 
 class RequestInterceptor;
 
@@ -30,7 +31,7 @@ public:
 
 private:
     QString m_path;
-    RequestInterceptor *m_interceptor;
+    QPointer<RequestInterceptor> m_interceptor;
 };
 
 class RequestInterceptor : public QWebEngineUrlRequestInterceptor
@@ -38,6 +39,7 @@ class RequestInterceptor : public QWebEngineUrlRequestInterceptor
     Q_OBJECT
 public:
     RequestInterceptor(QObject *parent = nullptr);
+    ~RequestInterceptor() override;
 
     Q_INVOKABLE void setEasyListPath(QString newPath);
     void interceptRequest(QWebEngineUrlRequestInfo &info) override;

@@ -27,7 +27,7 @@ VideoMetadata::~VideoMetadata() {
         saveFile();
 }
 
-VideoMetadata::VideoMetadata() {}
+VideoMetadata::VideoMetadata() : vendor(Platform::UNK) {}
 
 VideoMetadata::VideoMetadata(const QString &k, const QDir &p)
     : key(k), parent(p) {

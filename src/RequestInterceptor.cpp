@@ -36,10 +36,11 @@ void EasylistLoader::run()
             easyListTxt = file.readAll();
             file.close();
         } else {
-            qWarning() << "Failed opening file "<<file.fileName()<< " for writing.";
+            qWarning() << "Failed opening file "<<file.fileName()<< " for reading.";
         }
     }
-    m_interceptor->m_loading.storeRelease(0);
+    if (m_interceptor)
+        m_interceptor->m_loading.storeRelease(0);
 }
 
 RequestInterceptor::RequestInterceptor(QObject *parent)
@@ -47,9 +48,17 @@ RequestInterceptor::RequestInterceptor(QObject *parent)
 {
 }
 
+RequestInterceptor::~RequestInterceptor()
+{
+    // Wait for any running EasylistLoader to finish
+    while (m_loading.loadAcquire() == 1) {
+        QThreadPool::globalInstance()->waitForDone();
+    }
+}
+
 void RequestInterceptor::setEasyListPath(QString newPath)
 {
-    if (!m_easyListPath.isEmpty() || m_loading)
+    if (!m_easyListPath.isEmpty() || m_loading.loadAcquire() == 1)
         return;
 
     if (newPath.startsWith("file://")) {
@@ -59,6 +68,7 @@ void RequestInterceptor::setEasyListPath(QString newPath)
             newPath = newPath.mid(1);
 #endif
     }
+    m_easyListPath = newPath;
 
     EasylistLoader *loader = new EasylistLoader(newPath, this);
     loader->setAutoDelete(true);

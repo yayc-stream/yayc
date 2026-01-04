@@ -107,7 +107,7 @@ bool NoDirSortProxyModel::lessThan(const QModelIndex &left, const QModelIndex &r
 void NoDirSortProxyModel::updateSearchTerm() {
     QString pattern;
     if (!m_searchTerm.isEmpty())
-        pattern = ".*" + m_searchTerm + ".*";
+        pattern = ".*" + QRegularExpression::escape(m_searchTerm) + ".*";
 
     setFilterRegularExpression(QRegularExpression(pattern,
                                                   QRegularExpression::CaseInsensitiveOption));
@@ -124,7 +124,7 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
     }
 
     QModelIndex nameIndex = fsm->index(sourceRow, 0, sourceParent);
-    const bool isDir = fsm->hasChildren(nameIndex);
+    const bool isDir = fsm->isDir(nameIndex);
 
     const QString key = fsm->data(nameIndex, FileSystemModel::FileNameRole).toString();
 
@@ -150,9 +150,11 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
     if ((viewed && !m_searchInWatched) || (!viewed && !m_searchInUnwatched))
         return false;
 
-    const bool hasWorkingDir = m_workingDirRoot.isEmpty() || fsm->hasWorkingDir(key, m_workingDirRoot);
-    if ((!hasWorkingDir && !m_searchInUnsaved) || (hasWorkingDir && !m_searchInSaved))
-        return false;
+    if (!m_workingDirRoot.isEmpty()) { // if m_workingDirRoot is unset, the following filter should be ignored
+        const bool hasWorkingDir = fsm->hasWorkingDir(key, m_workingDirRoot);
+        if ((!hasWorkingDir && !m_searchInUnsaved) || (hasWorkingDir && !m_searchInSaved))
+            return false;
+    }
 
     if (re.pattern().isEmpty())
         return true;

@@ -45,9 +45,9 @@ bool isPlasmaSession() {
     QProcess plasmaRunning;
     QStringList arguments;
     arguments << "ksmserver";
-    plasmaRunning.start("/usr/bin/pidof", arguments);
     plasmaRunning.setStandardOutputFile(QProcess::nullDevice());
     plasmaRunning.setStandardErrorFile(QProcess::nullDevice());
+    plasmaRunning.start("/usr/bin/pidof", arguments);
 
     if(!plasmaRunning.waitForFinished())
         return false; // Not found or pidof does not work
@@ -62,8 +62,8 @@ bool findExecLinux(const QString &name) {
     QProcess findProcess;
     QStringList arguments;
     arguments << name;
-    findProcess.start("which", arguments);
     findProcess.setReadChannel(QProcess::ProcessChannel::StandardOutput);
+    findProcess.start("which", arguments);
 
     if(!findProcess.waitForFinished())
         return false; // Not found or which does not work
@@ -91,9 +91,6 @@ int main(int argc, char *argv[])
         QCoreApplication::setApplicationName("yayc");
 
         QScopedPointer<QSettings> settings(new QSettings);
-
-
-        QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
         QtWebEngineQuick::initialize();
 
         QGuiApplication app(argc, argv);

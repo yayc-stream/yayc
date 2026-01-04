@@ -4,7 +4,7 @@ QT += webchannel qml
 QT += webenginecore webenginewidgets webenginequick webenginequickdelegatesqml
 QT += core5compat
 
-CONFIG += c++11
+CONFIG += c++14
 CONFIG += qtquickcompiler
 #unix:!android: CONFIG += use_lld_linker # fix for QTBUG-80964
 
