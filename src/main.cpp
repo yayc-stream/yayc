@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
                                         "Configuration file path",
                                         "file");
         parser.addOption(configOption);
-
+        parser.process(app);
         if (parser.isSet(configOption)) {
             QString configFile = parser.value(configOption);
             settings.reset(new QSettings(configFile, QSettings::NativeFormat));
