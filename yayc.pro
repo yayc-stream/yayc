@@ -9,10 +9,30 @@ CONFIG += qtquickcompiler
 #unix:!android: CONFIG += use_lld_linker # fix for QTBUG-80964
 
 #No debug output in release mode
-CONFIG(release): DEFINES += QT_NO_DEBUG_OUTPUT
+#CONFIG(release): DEFINES += QT_NO_DEBUG_OUTPUT
 
 SOURCES += \
-        src/main.cpp
+        src/main.cpp \
+        src/Platform.cpp \
+        src/VideoMetadata.cpp \
+        src/ChannelMetadata.cpp \
+        src/NoDirSortProxyModel.cpp \
+        src/FileSystemModel.cpp \
+        src/ThumbnailFetcher.cpp \
+        src/RequestInterceptor.cpp \
+        src/YaycUtilities.cpp
+
+HEADERS += \
+        src/Platform.h \
+        src/VideoMetadata.h \
+        src/ChannelMetadata.h \
+        src/ThumbnailImageProvider.h \
+        src/EmptyIconProvider.h \
+        src/NoDirSortProxyModel.h \
+        src/FileSystemModel.h \
+        src/ThumbnailFetcher.h \
+        src/RequestInterceptor.h \
+        src/YaycUtilities.h
 
 qml.files = $$files($$PWD/src/*.qml)
 qml.base = $$PWD/src/
