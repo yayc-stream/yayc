@@ -173,7 +173,10 @@ void VideoMetadata::saveFile() {
     QJsonDocument d = QJsonDocument::fromVariant(m);
     QFile f(filePath());
 
-    f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        qWarning() << "Failed opening file "<<f.fileName()<< " for writing.";
+        return;
+    }
     f.write(d.toJson());
     f.close();
 }
@@ -182,7 +185,10 @@ void VideoMetadata::loadFile() {
     QFile f(filePath());
     if (!f.exists())
         return;
-    f.open(QIODevice::ReadOnly | QIODevice::Text);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed opening file " << f.fileName()<< " for reading.";
+        return;
+    }
     QString data = f.readAll();
     f.close();
 

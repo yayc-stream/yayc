@@ -34,8 +34,10 @@ void EasylistLoader::run()
     } else {
         if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
             easyListTxt = file.readAll();
+            file.close();
+        } else {
+            qWarning() << "Failed opening file "<<file.fileName()<< " for writing.";
         }
-        file.close();
     }
     m_interceptor->m_loading.storeRelease(0);
 }

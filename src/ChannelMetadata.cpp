@@ -95,16 +95,24 @@ void ChannelMetadata::saveFile() {
     QJsonDocument d = QJsonDocument::fromVariant(m);
     QFile f(filePath());
 
-    f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        qWarning() << "Failed opening "<<filePath() << " for writing.";
+        return;
+    }
     f.write(d.toJson());
     f.close();
 }
 
 void ChannelMetadata::loadFile() {
     QFile f(filePath());
-    if (!f.exists())
+    if (!f.exists()) {
+        qWarning() << f.fileName() << "does not exist.";
         return;
-    f.open(QIODevice::ReadOnly | QIODevice::Text);
+    }
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed opening file " << f.fileName()<< " for reading.";
+        return;
+    }
     QString data = f.readAll();
     f.close();
 
