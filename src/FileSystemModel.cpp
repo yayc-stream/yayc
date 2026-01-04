@@ -344,9 +344,7 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
                 const QString &key = itemKey(index);
                 if (!m_cache.contains(key))
                     return {};
-                const auto &title = m_cache.value(key).title;
-                if (title.size())
-                    return title;
+                return m_cache.value(key).title;
             } else {
                 return QFileSystemModel::data(index, role);
             }
