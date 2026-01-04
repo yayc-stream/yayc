@@ -80,7 +80,7 @@ disclaimer.prefix = /
 
 RESOURCES += disclaimer
 
-OTHER_FILES += LICENSE README.md CHANGELOG.md APPVERSION DONATE DISCLAIMER.md \
+OTHER_FILES += LICENSE README.md CHANGELOG.md APPVERSION DONATE DISCLAIMER.md\
                $$files($$PWD/docs/*, true)
 
 APPVERSION = "$$cat($$PWD/APPVERSION)"
