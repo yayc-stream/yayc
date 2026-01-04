@@ -72,6 +72,10 @@ void NoDirSortProxyModel::setSearchInChannelNames(bool enabled) {
 bool NoDirSortProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
 {
     QFileSystemModel *fsm = qobject_cast<QFileSystemModel*>(sourceModel());
+    Q_ASSERT(fsm);
+    if (!fsm) {
+        return false;
+    }
     bool asc = sortOrder() == Qt::AscendingOrder ? true : false;
 
     QFileInfo leftFileInfo  = fsm->fileInfo(left);
@@ -114,6 +118,10 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
     QRegularExpression re = filterRegularExpression();
 
     FileSystemModel *fsm = qobject_cast<FileSystemModel *>(sourceModel());
+    Q_ASSERT(fsm);
+    if (!fsm) {
+        return false;
+    }
 
     QModelIndex nameIndex = fsm->index(sourceRow, 0, sourceParent);
     const bool isDir = fsm->hasChildren(nameIndex);
