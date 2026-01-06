@@ -93,6 +93,7 @@ int main(int argc, char *argv[])
         QScopedPointer<QSettings> settings(new QSettings);
         QtWebEngineQuick::initialize();
 
+        qSetMessagePattern("%{file}:%{line} - %{message}");
         QGuiApplication app(argc, argv);
         app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
         args = app.arguments();

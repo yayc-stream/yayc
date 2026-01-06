@@ -32,7 +32,7 @@ ApplicationWindow {
     width: Screen.width
     visible: true
     title: qsTr("YAYC")
-    property bool hidden: false
+    property bool hidden: (win.visibility == Window.Hidden || win.visibility == Window.Minimized)
 
     function minimizeToTray() {
         if (mainYaycLoader.loaded())
@@ -59,10 +59,6 @@ ApplicationWindow {
     Shortcut {
         sequence: "Ctrl+H"
         onActivated: win.minimizeToTray()
-    }
-
-    onVisibilityChanged: {
-        win.hidden = (visibility == Window.Hidden || visibility == Window.Minimized)
     }
 
     Loader {
