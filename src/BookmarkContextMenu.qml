@@ -244,7 +244,6 @@ Menu {
         title: "Launch in external app"
         enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
                  && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
-        visible: enabled
         height: enabled ? implicitHeight : 0
 
         Repeater {

@@ -49,12 +49,17 @@ Item {
             settings.lastUrl = timePuller.getCurrentVideoURLWithPosition()
         }
         syncAll()
+        win.quitting = true
         Qt.quit()
     }
 
     function minimizeToTray() {
         syncAll()
         win.hide()
+    }
+
+    function runScript(s) {
+        webEngineView.runJavaScript(s)
     }
 
     Shortcut {
@@ -235,6 +240,7 @@ Item {
 
         storageName: "yayc"
         offTheRecord: false
+        userScripts.collection: createWebChannelScripts(root.customScript)
     }
 
     WebEngineProfile {
@@ -246,7 +252,24 @@ Item {
         cachePath: ""
         persistentStoragePath: ""
         offTheRecord: true
+        userScripts.collection: createWebChannelScripts(root.customScript)
     }
+
+    function createWebChannelScripts(customScript) { // TODO: remind the user that changing userScript requires app restart
+        let webChannelScript = WebEngine.script()
+        webChannelScript.name = "QWebChannel"
+        webChannelScript.injectionPoint = WebEngineScript.Deferred
+        webChannelScript.worldId = WebEngineScript.MainWorld
+        webChannelScript.sourceUrl = Qt.resolvedUrl("qrc:/qtwebchannel/qwebchannel.js")
+
+        let userScript = WebEngine.script()
+        userScript.injectionPoint = WebEngineScript.Deferred
+        userScript.worldId = WebEngineScript.MainWorld
+        userScript.sourceCode = customScript
+
+        return [ webChannelScript, userScript ]
+    }
+
 
     Component.onCompleted:  {
         utilities.networkFound.connect(onNetworkFound)
@@ -260,8 +283,6 @@ Item {
         if (historyPath !== "") {
             historyModel.setRoot(historyPath)
         }
-        if (easyListPath !== "")
-            requestInterceptor.setEasyListPath(easyListPath)
         splitView.restoreState(settings.splitView)
         if (root.externalCommands.length == 0) {
             root.pushEmptyCommand()
@@ -468,7 +489,7 @@ Item {
             if (isShorts) {
 //                res += "var ytplayer = document.getElementById('player').getPlayer();
                 res += "
-    var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
+    var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0];
     var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer();
 "
             } else {
@@ -516,6 +537,7 @@ Item {
         property string script_homePageStatusFetcher: "
             var backend;
             new QWebChannel(qt.webChannelTransport, function (channel) {
+                console.log('ASDASDASDA');
                 backend = channel.objects.backend;
             });
             setTimeout(function() {
@@ -694,13 +716,13 @@ Item {
 
         function clickGuideButton() {
             if (webEngineView.isYoutubeHome || webEngineView.isYoutubeChannel) {
-                webEngineView.runJavaScript(internals.script_clickGuide)
+                root.runScript(internals.script_clickGuide)
             }
         }
 
         function pullHomeData() {
             if (webEngineView.isYoutubeHome || webEngineView.isYoutubeChannel){
-                webEngineView.runJavaScript(internals.script_homePageStatusFetcher)
+                root.runScript(internals.script_homePageStatusFetcher)
             }
         }
 
@@ -850,6 +872,7 @@ Item {
                 id: webEngineView
                 url: "https://youtube.com"
                 property string key
+                property string easyListPath: root.easyListPath
                 property bool isShorts: false
                 property bool isYoutubeChannel: utilities.isYoutubeChannelPage(url)
                 property bool isYoutubeHome: utilities.isYoutubeHomepage(url)
@@ -867,23 +890,24 @@ Item {
                 }
 
                 objectName: "webEngineView"
-                Component.onCompleted: {
-                    utilities.addRequestInterceptor(this)
+//                Component.onCompleted: {
+//                    utilities.addRequestInterceptor(this)
+//                    requestInterceptor.setEasyListPath(easyListPath)
 
-                    userScripts.collection = [
-                        {
-                            injectionPoint: WebEngineScript.Deferred,
-                            name: "QWebChannel",
-                            worldId: WebEngineScript.MainWorld,
-                            sourceUrl: "qrc:/qtwebchannel/qwebchannel.js"
-                        },
-                        {
-                            injectionPoint: WebEngineScript.Deferred,
-                            worldId: WebEngineScript.MainWorld,
-                            sourceCode: root.customScript
-                        }
-                    ]
-                }
+//                    let webChannelScript = WebEngine.script()
+//                    webChannelScript.name = "QWebChannel"
+//                    webChannelScript.injectionPoint = WebEngineScript.Deferred
+//                    webChannelScript.worldId = WebEngineScript.MainWorld
+//                    webChannelScript.sourceUrl = Qt.resolvedUrl("qrc:/qtwebchannel/qwebchannel.js")
+
+//                    let userScript = WebEngine.script()
+//                    userScript.injectionPoint = WebEngineScript.Deferred
+//                    userScript.worldId = WebEngineScript.MainWorld
+//                    userScript.sourceCode = root.customScript
+
+//                    var list = [ webChannelScript, userScript ]
+//                    webEngineView.userScripts.insert(list)
+//                }
 
                 webChannel: web_channel
 
@@ -894,36 +918,38 @@ Item {
                 settings {
                     autoLoadImages: true
                     dnsPrefetchEnabled: true
+
+                    fullScreenSupportEnabled: true
+                    javascriptCanAccessClipboard: true
+                    javascriptCanPaste: true
+                    screenCaptureEnabled: true
+                    playbackRequiresUserGesture: false
                 }
 
-                onUrlChanged: {
-                    if (utilities.isYoutubeVideoUrl(url)) {
-                        root.addVideoEnabled = true
-                        zoomFactor = root.wevZoomFactorVideo
-                        key = utilities.getVideoID(url)
-                        isShorts = utilities.isYoutubeShortsUrl(url)
-                        dataPuller.startPulling()
-                        return;
-                    } else if (utilities.isYoutubeHomepage(url)
-                               || utilities.isYoutubeChannelPage(url)) {
-                        guideToggleSingleShot.start()
-                    }
-
-                    root.addVideoEnabled = false
-                    isShorts = false
-                    zoomFactor = root.wevZoomFactor
-                    dataPuller.stop()
-                    key = ""
-                }
-
-                onLoadingChanged: {
-                    if (loadRequest.status === WebEngineView.LoadSucceededStatus
-                        || loadRequest.status ===  WebEngineView.LoadStoppedStatus) {
+                onLoadingChanged: (loadingInfo) => {
+                    if (loadingInfo.status === WebEngineView.LoadSucceededStatus
+                        || loadingInfo.status ===  WebEngineView.LoadStoppedStatus) {
 
                         if (webEngineView.isYoutubeHome
                                 || webEngineView.isYoutubeChannel) {
                             guideToggleSingleShot.start()
                         }
+                        if (loadingInfo.status === WebEngineView.LoadSucceededStatus) {
+                            if (utilities.isYoutubeVideoUrl(url)) {
+                              root.addVideoEnabled = true
+                              zoomFactor = root.wevZoomFactorVideo
+                              key = utilities.getVideoID(url)
+                              isShorts = utilities.isYoutubeShortsUrl(url)
+                              dataPuller.startPulling()
+                              return;
+                            }
+
+                            root.addVideoEnabled = false
+                            isShorts = false
+                            zoomFactor = root.wevZoomFactor
+                            dataPuller.stop()
+                            key = ""
+                         }
                     } else {
                         // loading or errored
                     }
@@ -948,9 +974,9 @@ Item {
                             return;
 
                         if (webEngineView.isShorts) {
-                            webEngineView.runJavaScript(internals.script_videoTimeShorts)
+                            root.runScript(internals.script_videoTimeShorts)
                         } else {
-                            webEngineView.runJavaScript(internals.script_videoTime)
+                            root.runScript(internals.script_videoTime)
                         }
                     }
 
@@ -1041,21 +1067,21 @@ Item {
                     let regEx = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/gm;
                     return regEx.test(url);
                 }
-                onContextMenuRequested: function(request) {
+                onContextMenuRequested: (request) => {
                     {
                         request.accepted = true;
                         contextMenu.popup();
                     }
                 }
 
-                onLinkHovered:  {
+                onLinkHovered: (hoveredUrl) => {
                     if (hoveredUrl.toString().length > 0
                             && utilities.isYoutubeVideoUrl(hoveredUrl)) {
                         root.lastHoveredLink = hoveredUrl
                     }
                 }
 
-                onTooltipRequested: {
+                onTooltipRequested: (request) => {
                     if (request.type === TooltipRequest.Show) {
                         root.lastHoveredTooltip = request.text
                     }
@@ -1440,7 +1466,7 @@ Item {
                             scriptToRun = internals.getPlayVideoScript(webEngineView.isShorts)
 
 //                        console.log(timePuller.playerState, scriptToRun)
-                        webEngineView.runJavaScript(scriptToRun)
+                        root.runScript(scriptToRun)
                     }
 
                     icon.source: (timePuller.playerState === 1)
@@ -1481,7 +1507,7 @@ Item {
                             var newVolume = (userValue >= 0) ? userValue : value
 
                             var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(root.url))
-                            webEngineView.runJavaScript(scriptToRun)
+                            root.runScript(scriptToRun)
                         }
 
                         onUserValueChanged: {
@@ -1592,7 +1618,7 @@ Item {
                                 text, utilities.isYoutubeShortsUrl(root.url)
                              )
 //                    console.log(scriptToRun)
-                    webEngineView.runJavaScript(scriptToRun)
+                    root.runScript(scriptToRun)
                 }
 
                 hoverEnabled: true
@@ -1659,10 +1685,7 @@ Item {
             }
             Rectangle {
                 id: settingsScrollViewContainer
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                } // ToDo: fix warning
+                Layout.fillWidth: true
 
                 height: 210
                 color: "transparent"

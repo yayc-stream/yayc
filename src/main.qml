@@ -33,6 +33,7 @@ ApplicationWindow {
     visible: true
     title: qsTr("YAYC")
     property bool hidden: (win.visibility == Window.Hidden || win.visibility == Window.Minimized)
+    property bool quitting: false
 
     function minimizeToTray() {
         if (mainYaycLoader.loaded())
@@ -41,14 +42,19 @@ ApplicationWindow {
             win.hide()
     }
 
-    onClosing: {
-        close.accepted = false
-        win.minimizeToTray()
+    onClosing: (close) => {
+        if (win.quitting) {
+            close.accepted = true
+        } else {
+            close.accepted = false
+            win.minimizeToTray()
+        }
     }
 
     Shortcut {
         sequence: StandardKey.Quit
         onActivated: {
+            win.quitting = true
             if (mainYaycLoader.loaded())
                 mainYaycLoader.item.quit()
             else

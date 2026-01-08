@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -177,3 +177,4 @@ bool NoDirSortProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sou
 
     return res;
 }
+

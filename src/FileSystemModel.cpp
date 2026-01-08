@@ -24,6 +24,7 @@ In addition to the above,
 #include <QProcess>
 #include <QLoggingCategory>
 #include <QDirIterator>
+#include <QIdentityProxyModel>
 
 // Helper functions
 QString sizeString(const QFileInfo &fi)
@@ -130,7 +131,7 @@ QHash<QString, ChannelMetadata> cacheChannels(QDir d)
     QHash<QString, ChannelMetadata> res;
     const auto &files = findFiles(d, channelExtension);
     for (const auto &f : files) {
-        const QString &key = f.baseName();
+        const QString &key = f.fileName().chopped(channelExtension.length() + 1);
         if (!f.fileName().endsWith(channelExtension)) {
             continue;
         }
@@ -255,6 +256,9 @@ QString FileSystemModel::key(const QModelIndex &item) const {
     if (!m_ready)
         return QString();
     auto index = m_proxyModel->mapToSource(item);
+    if (!index.isValid()) {
+        qWarning() << "Failure mapping ProxyModel "<< item << " to fsmodel";
+    }
     if (isDir(index)) {
         return QString();
     }
@@ -293,6 +297,10 @@ QString FileSystemModel::creationDate(const QString &key) const {
 
 QVariant FileSystemModel::data(const QModelIndex &index, int role) const
 {
+    if (!index.isValid()) {
+        qWarning() << "FileSystemModel::data for role "<<role<< " : invalid index "<<index;
+        return QVariant();
+    }
     if (index.isValid() && role >= Qt::UserRole) {
         switch (role) {
         case SizeRole:
@@ -320,6 +328,16 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
                 return {};
             }
             return m_cache.value(key).url();
+        }
+        case KeyRole: {
+            if (!isDir(index)) {
+                const QString &key = itemKey(index);
+                if (!m_cache.contains(key)) {
+                    return QFileSystemModel::data(index, role);
+                }
+                return key;
+            }
+            return {};
         }
         case ContentNameRole:
         case QFileSystemModel::FileNameRole:
@@ -390,10 +408,12 @@ QHash<int, QByteArray> FileSystemModel::roleNames() const
     result.insert(LastModifiedRole, QByteArrayLiteral("lastModified"));
     result.insert(CreatedRole, QByteArrayLiteral("created"));
     result.insert(ContentNameRole, QByteArrayLiteral("contentName"));
+    result.insert(KeyRole, QByteArrayLiteral("key"));
     return result;
 }
 
 QString FileSystemModel::keyFromViewItem(const QModelIndex &item) const {
+    //qDebug() << "item model:" << item.model() << "proxy model:" << m_proxyModel.get();
     return key(item);
 }
 
@@ -482,24 +502,27 @@ bool FileSystemModel::deleteEntry(QModelIndex item,
                                   bool deleteStorage_) {
     if (!m_ready)
         return false;
-    item = m_proxyModel->mapToSource(item);
+    auto index = m_proxyModel->mapToSource(item);
+    if (index.isValid()) {
+        qWarning() << "Failure mapping ProxyModel "<< item << " to fsmodel";
+    }
 
-    if (!filePath(item).size()) {
+    if (!filePath(index).size()) {
         qWarning() << "invalid input";
         return false;
     }
     bool res = false;
-    if (isDir(item)) {
-        QDir d(filePath(item));
+    if (isDir(index)) {
+        QDir d(filePath(index));
         if (d.isEmpty()) {
-            remove(item); // it does removeRecursively internally
+            remove(index); // it does removeRecursively internally
         } else {
-            qWarning() << "Category not empty! " << fileInfo(item).baseName();
+            qWarning() << "Category not empty! " << fileInfo(index).baseName();
             res = false;
         }
         return res;
     } else {
-        const QString &key = itemKey(item);
+        const QString &key = itemKey(index);
         return deleteEntry(key, extWorkingDirRoot, deleteStorage_);
     }
 }
@@ -517,7 +540,8 @@ bool FileSystemModel::deleteEntry(const QString &key,
     return entry.eraseFile();
 }
 
-void FileSystemModel::deleteStorage(QModelIndex item, const QString &extWorkingDirRoot) {
+void FileSystemModel::deleteStorage(QModelIndex item,
+                                    const QString &extWorkingDirRoot) {
     if (!m_ready)
         return;
     const QString &key = keyFromViewItem(item);
@@ -526,7 +550,8 @@ void FileSystemModel::deleteStorage(QModelIndex item, const QString &extWorkingD
     deleteStorage(key, extWorkingDirRoot);
 }
 
-void FileSystemModel::deleteStorage(const QString &key, const QString &extWorkingDirRoot) {
+void FileSystemModel::deleteStorage(const QString &key,
+                                    const QString &extWorkingDirRoot) {
     if (!m_ready || !key.size() || !m_cache.contains(key))
         return;
 
@@ -694,13 +719,16 @@ QString FileSystemModel::videoIconUrl(const QString &key) const {
 bool FileSystemModel::moveVideo(const QString &key, QModelIndex destinationDir) {
     if (!m_ready)
         return false;
-    destinationDir = m_proxyModel->mapToSource(destinationDir);
+    auto index = m_proxyModel->mapToSource(destinationDir);
+    if (!index.isValid()) {
+        qWarning() << "Failure mapping ProxyModel "<< destinationDir << " to fsmodel";
+    }
     if (!m_cache.contains(key) || !m_cache[key].filePath().size() ||
-        !filePath(destinationDir).size() || !isDir(destinationDir)) {
-        qWarning() << "Invalid input trying to move " << key << " into " << filePath(destinationDir);
+        !filePath(index).size() || !isDir(index)) {
+        qWarning() << "Invalid input trying to move " << key << " into " << filePath(index);
         return false;
     }
-    QDir d(filePath(destinationDir));
+    QDir d(filePath(index));
     if (!d.exists()) {
         qWarning() << "Destination directory doesn't exist";
         return false;
@@ -712,9 +740,12 @@ bool FileSystemModel::moveVideo(const QString &key, QModelIndex destinationDir) 
 bool FileSystemModel::moveEntry(QModelIndex item, QModelIndex destinationDir) {
     if (!m_ready)
         return false;
-    item = m_proxyModel->mapToSource(item);
+    auto index = m_proxyModel->mapToSource(item);
+    if (!index.isValid()) {
+        qWarning() << "Failure mapping ProxyModel "<< item << " to fsmodel";
+    }
     destinationDir = m_proxyModel->mapToSource(destinationDir);
-    if (!filePath(item).size() || !filePath(destinationDir).size() || !isDir(destinationDir)) {
+    if (!filePath(index).size() || !filePath(destinationDir).size() || !isDir(destinationDir)) {
         qWarning() << "invalid input";
         return false;
     }
@@ -723,20 +754,20 @@ bool FileSystemModel::moveEntry(QModelIndex item, QModelIndex destinationDir) {
         qWarning() << "Destination directory doesn't exist";
         return false;
     }
-    if (isDir(item)) {
-        QDir f(filePath(item));
+    if (isDir(index)) {
+        QDir f(filePath(index));
         if (!f.exists()) {
             qWarning() << "directory to move doesn't exist";
             return false;
         }
-        QString newName = d.absoluteFilePath(fileName(item));
+        QString newName = d.absoluteFilePath(fileName(index));
         const bool res = f.rename(f.absoluteFilePath(""), newName);
         if (res) {
             m_cache = cacheRoot(rootDirectory());
         }
         return res;
     } else {
-        const QString &key = itemKey(item);
+        const QString &key = itemKey(index);
         if (!m_cache.contains(key)) {
             qWarning() << "Not present in cache: " << key;
             return false;
@@ -863,8 +894,10 @@ void FileSystemModel::addChannel(const QString &channelId,
                                  const Platform::Vendor vendor,
                                  const QString &channelName,
                                  const QString &channelAvatarURL) {
-    if (!m_bookmarksModel || !m_ready)
+    if (!m_bookmarksModel || !m_ready) {
+        qWarning() << "FileSystemModel not ready!";
         return;
+    }
     const QString &key = ChannelMetadata::key(channelId, vendor);
     bool avatarNeedsFetch = true;
     if (m_channelCache.contains(key)) {
@@ -880,8 +913,10 @@ void FileSystemModel::addChannel(const QString &channelId,
 }
 
 QString FileSystemModel::itemKey(const QModelIndex &index) const {
-    if (!m_ready)
+    if (!m_ready) {
+        qWarning() << "FileSystemModel not ready!";
         return QString();
+    }
     const auto &fi = fileInfo(index);
     return fi.baseName();
 }

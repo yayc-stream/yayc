@@ -75,6 +75,7 @@ public:
         ChannelNameRole = Qt::UserRole + 10,
         ChannelIdRole = Qt::UserRole + 11,
         CreatedRole = Qt::UserRole + 12,
+        KeyRole = Qt::UserRole + 13,
     };
     Q_ENUM(Roles)
 

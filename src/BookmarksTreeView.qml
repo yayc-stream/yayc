@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -18,10 +18,6 @@ import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Dialogs as QQD
 import QtWebEngine
-
-//import QtQuick.Controls 1.4 as QC1
-//import QtQuick.Controls.Styles 1.4 as QC1S
-
 import QtQuick.Layouts
 import QtQml.Models
 import QtWebChannel
@@ -45,6 +41,7 @@ Rectangle {
     property alias searchInSaved: selectorSaved.checked
     property alias searchInUnsaved: selectorUnsaved.checked
     property alias searchInShorts: selectorShorts.checked
+    readonly property int _branchIndicatorSize: 16
 
     property bool showFiltering: false
     property bool searchInTitles: true
@@ -472,6 +469,8 @@ Rectangle {
 
     TreeView {
         id: view
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
 
         anchors {
             left: parent.left
@@ -491,32 +490,35 @@ Rectangle {
         focus: true
 
         alternatingRows: false
-//        backgroundVisible: false
+
+        columnWidthProvider: function(column) {
+            return column === 0 ? width : 0
+        }
+
         property string selectedKey: ""
         property string contextedKey: ""
-
-//        QC1.TableViewColumn {
-//            title: "Name"
-//            role: "fileName"
-//            resizable: true
-//        }
 
         delegate: Rectangle {
             // Assigned to by TreeView:
             id: treeViewDelegate
 
+            // The following properties are assigned to by TreeView:
             required property TreeView treeView
             required property bool isTreeNode
             required property bool expanded
-            required property int hasChildren
+            required property bool hasChildren
             required property int depth
+            required property int row
+            required property int column
+            required property bool current
 
-
-            readonly property real indent: 20
-            readonly property real padding: 5
+            readonly property real indent: 24
+            readonly property real padding: (hasChildren)
+                                            ? 0
+                                            : viewContainer._branchIndicatorSize
             readonly property int defaultLineHeight: 26 // turns out to be 26/28 on standard desktop, in absence of uncommon characters
 
-            height: Math.round(defaultLineHeight * 1.1)
+            implicitHeight: column === 0 ? Math.round(defaultLineHeight * 1.1) : 0
             border.color: (ma.drag.active)
                           ? "red"
                           : (!treeViewDelegate.hasChildren
@@ -531,18 +533,16 @@ Rectangle {
                    ? properties.categoryBgColor
                    : properties.fileBgColor
 
-            property var qmodelindex: undefined
-            property bool initialized: qmodelindex !== undefined
-            Component.onCompleted: qmodelindex = view.index(row, column)
+            property var qmodelindex: treeView.index(row, column)
 
-            property string key: (!treeViewDelegate.hasChildren && initialized)
-                                 ? fileSystemModel.keyFromViewItem(qmodelindex)
-                                 : ""
+            property bool initialized: qmodelindex !== undefined
+
+            required property string key // from KeyRole
 
             property real duration: (!treeViewDelegate.hasChildren && initialized)
                                     ? viewContainer.model.duration(key)
                                     : 0
-            property real progress: (!treeViewDelegate.hasChildren)
+            property real progress: (!treeViewDelegate.hasChildren && key.length > 0)
                                     ? viewContainer.model.progress(key)
                                     : 0
             property string title: viewContainer.model.title(key) // with key it doesn't update, somehow
@@ -573,7 +573,7 @@ Rectangle {
             function updateProgress() {
                 if (!viewContainer.historyView
                         && !treeViewDelegate.hasChildren
-                        && key) {
+                        && key.length > 0) {
                     progress = viewContainer.model.progress(key)
                 }
             }
@@ -610,32 +610,36 @@ Rectangle {
             Drag.imageSource : "qrc:/images/save.png"
 
             Row {
-                anchors.fill: parent
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                x: treeViewDelegate.padding + (treeViewDelegate.depth * treeViewDelegate.indent)
                 Item {
                     id: branchIndicator
-                    property int size: (treeViewDelegate.hasChildren) ? 16 : 0
-                    width: size
-                    height: size
+                    property int indicatorSize: (treeViewDelegate.hasChildren)
+                                                ? viewContainer._branchIndicatorSize
+                                                : 0
+                    width: indicatorSize
+                    height: indicatorSize
                     Image {
-                        visible: column === 0 && treeViewDelegate.hasChildren
-                        anchors.fill: parent
-                        anchors.verticalCenterOffset: 2
+                        visible: treeViewDelegate.hasChildren
+                        width: branchIndicator.indicatorSize
+                        height: branchIndicator.indicatorSize
+                        anchors.centerIn: parent
+                        anchors.verticalCenterOffset: 6
                         source: "qrc:/images/arrow.png"
-                        transform: Rotation {
-                            origin.x: width / 2
-                            origin.y: height / 2
-                            angle: treeViewDelegate.expanded ? 0 : -90
-                        }
+                        rotation: treeViewDelegate.expanded ? 0 : -90
                     }
                 }
                 Row {
                     height: parent.height
                     spacing: 2
+                    visible: true
                     Image {
                         visible: !treeViewDelegate.hasChildren
                         anchors.verticalCenter: parent.verticalCenter
                         source: treeViewDelegate.videoIconUrl
                         fillMode: Image.PreserveAspectFit
+                        height: parent.height
 
                         Image {
                             visible: treeViewDelegate.starred
@@ -653,8 +657,8 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         source: "qrc:/images/folder-128.png"
                         fillMode: Image.PreserveAspectFit
+                        height: parent.height
                     } // Category Indicator
-
 
                     Text {
                         id: itemText
@@ -697,6 +701,7 @@ Rectangle {
                     } // Delegate text
                 } // ContentItem Row
             } // Delegate Row
+
             DropArea {
                 id: da
                 anchors.fill: parent
@@ -752,7 +757,7 @@ Rectangle {
                 cursorShape: (treeViewDelegate.hasChildren)
                              ? Qt.ArrowCursor
                              : Qt.PointingHandCursor
-                onClicked: {
+                onClicked: (mouse) => {
                     if (mouse.button === Qt.RightButton) {
                         contextualAction()
                     } else if (mouse.button === Qt.LeftButton) {
@@ -763,93 +768,82 @@ Rectangle {
                         webEngineView.url = url;
                     }
                 }
-                pressAndHoldInterval: 1000
+                pressAndHoldInterval: 1500
                 onPressAndHold: contextualAction()
                 onDoubleClicked: {
                     if (treeViewDelegate.hasChildren) {
-                        if (view.isExpanded(treeViewDelegate.qmodelindex))
-                            view.collapse(treeViewDelegate.qmodelindex)
+                        if (treeViewDelegate.expanded)
+                            treeView.collapse(treeViewDelegate.row)
                         else
-                            view.expand(treeViewDelegate.qmodelindex)
+                            treeView.expand(treeViewDelegate.row)
                     }
                 }
             } // MouseArea ma
         } // Delegate Root (Rectangle)
-
-
-//        onActivated : {
-//            if (!styleData.hasChildren) {
-//                var url = viewContainer.model.videoUrl(index)
-//                webEngineView.url = url;
-//            }
-//        }
-
-        //verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
-
-        Rectangle {
-            id: scrollBar // touch-friendly scrollbar
-            visible: scrollHandle.height < view.height - 1
-            color: "white"
-            opacity: 0.2
-            anchors {
-                bottom: parent.bottom
-                top: parent.top
-                right: parent.right
-            }
-            width: 36
-            MouseArea {
-                id: scrollBarMA
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                hoverEnabled: true
-                onClicked:  {
-                    event.accepted = true
-                }
-                Rectangle {
-                    id: scrollHandle
-                    color: "white"
-                    opacity: 0.01
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                    }
-                    property int scrollableHeight: (view.height - scrollHandle.height)
-                    property int scrollableContentHeight: (view.contentHeight - view.height)
-                    height:  Math.max(
-                                view.height * (view.height / view.contentHeight)
-                                ,16 )
-                    y: Math.max(0, Math.min( (view.contentY / scrollableContentHeight), 1.0))
-                       * scrollableHeight
-
-                    onYChanged: {
-                        if (!scrollHandleMA.drag.active)
-                            return
-                        view.contentY = (y / scrollableHeight) * scrollableContentHeight
-                    }
-
-                    MouseArea {
-                        id: scrollHandleMA
-                        anchors.fill: parent
-                        drag {
-                            target: scrollHandle
-                            axis: Drag.YAxis
-                            minimumY: 0
-                            maximumY: view.height - scrollHandle.height
-                        }
-                    }
-                }
-            }
-        }
-        Rectangle {
-            id: visualHandle
-            visible: scrollBar.visible
-            anchors.left: scrollBar.left
-            y: scrollHandle.y
-            width: scrollHandle.width
-            height: scrollHandle.height
-            color: "white"
-            opacity: .5
-        }
-
     } // QC1.TreeView
+
+    Rectangle {
+        id: scrollBar // touch-friendly scrollbar
+        visible: scrollHandle.height < view.height - 1
+        color: "white"
+        opacity: 0.2
+        anchors {
+            bottom: view.bottom
+            top: view.top
+            right: view.right
+        }
+        width: 36
+        MouseArea {
+            id: scrollBarMA
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            hoverEnabled: true
+            onClicked:  {
+                event.accepted = true
+            }
+            Rectangle {
+                id: scrollHandle
+                color: "white"
+                opacity: 0.01
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                }
+                property int scrollableHeight: (view.height - scrollHandle.height)
+                property int scrollableContentHeight: (view.contentHeight - view.height)
+                height:  Math.max(
+                            view.height * (view.height / view.contentHeight)
+                            ,16 )
+                y: Math.max(0, Math.min( (view.contentY / scrollableContentHeight), 1.0))
+                   * scrollableHeight
+
+                onYChanged: {
+                    if (!scrollHandleMA.drag.active)
+                        return
+                    view.contentY = (y / scrollableHeight) * scrollableContentHeight
+                }
+
+                MouseArea {
+                    id: scrollHandleMA
+                    anchors.fill: parent
+                    drag {
+                        target: scrollHandle
+                        axis: Drag.YAxis
+                        minimumY: 0
+                        maximumY: view.height - scrollHandle.height
+                    }
+                }
+            }
+        }
+    }
+    Rectangle {
+        id: visualHandle
+        visible: scrollBar.visible
+        anchors.left: scrollBar.left
+        y: scrollHandle.y + view.y
+        width: scrollHandle.width
+        height: scrollHandle.height
+        color: "white"
+        opacity: .5
+    }
 }
