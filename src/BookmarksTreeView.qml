@@ -521,6 +521,7 @@ Rectangle {
             required property int row
             required property int column
             required property bool current
+            required property string display
 
             readonly property real indent: 24
             readonly property real padding: (hasChildren)

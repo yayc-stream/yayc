@@ -178,7 +178,7 @@ FileSystemModel::~FileSystemModel() {
     ThumbnailFetcher::unregisterModel(*this);
 }
 
-QModelIndex FileSystemModel::setRoot(QString newPath, FileSystemModel *oldModel = nullptr) {
+QModelIndex FileSystemModel::setRoot(QString newPath, FileSystemModel *oldModel) {
     if (newPath.startsWith("file://")) {
         newPath = newPath.mid(7);
 #if defined(Q_OS_WINDOWS)

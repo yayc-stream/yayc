@@ -81,7 +81,7 @@ public:
     };
     Q_ENUM(Roles)
 
-    Q_INVOKABLE QModelIndex setRoot(QString newPath, FileSystemModel *oldModel);
+    Q_INVOKABLE QModelIndex setRoot(QString newPath, FileSystemModel *oldModel = nullptr);
     Q_INVOKABLE QString key(const QModelIndex &item) const;
     Q_INVOKABLE QString title(const QModelIndex &item) const;
     Q_INVOKABLE QString title(const QString &key) const;

@@ -2396,7 +2396,7 @@ Item {
                         }
                     }
                     Row {
-                        Layout.alignment: Qt.AlignLRight
+                        Layout.alignment: Qt.AlignRight
                         Layout.rightMargin: -32
                         Button {
                             id: buttonOpenProxyDialog
