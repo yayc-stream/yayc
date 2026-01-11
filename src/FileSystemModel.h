@@ -48,6 +48,8 @@ class FileSystemModel : public QFileSystemModel {
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
     QModelIndex m_nullIndex;
+    QString m_lastDestination;
+    QString m_lastDestinationName;
 
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
@@ -55,6 +57,8 @@ class FileSystemModel : public QFileSystemModel {
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
     Q_PROPERTY(QVariant nullIndex MEMBER m_nullIndex CONSTANT)
+    Q_PROPERTY(QString lastDestinationCategory MEMBER m_lastDestination NOTIFY lastDestinationCategoryChanged)
+    Q_PROPERTY(QString lastDestinationCategoryName MEMBER m_lastDestinationName NOTIFY lastDestinationCategoryChanged)
 
 public:
     QVariant rootPathIndex() const;
@@ -126,6 +130,7 @@ public slots:
     QString videoIconUrl(const QString &key) const;
     bool moveVideo(const QString &key, QModelIndex destinationDir);
     bool moveEntry(QModelIndex item, QModelIndex destinationDir);
+    void moveEntry(const QString &key, const QString &ds);
     void moveEntry(const QString &key, const QDir &d);
     bool addCategory(const QString &name);
     bool updateEntry(const QString &key, const QString &title, const QString &channelURL,
@@ -146,6 +151,7 @@ signals:
     void searchInTitlesChanged();
     void searchInChannelNamesChanged();
     void firstInitializationCompleted(const QString &rootPath);
+    void lastDestinationCategoryChanged();
 
 private:
     void addThumbnail(const QString &key, const QByteArray &thumbnailData);

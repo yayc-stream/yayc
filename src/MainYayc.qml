@@ -386,13 +386,11 @@ Item {
 
 
     function resetFilesystemModels() {
-        console.log("resetFilesystemModels")
         clearFilesystemModels()
         Qt.callLater(setFilesystemModels)
     }
 
     function clearFilesystemModels() {
-        console.log("clearFilesystemModels")
         bookmarksContainer.clearModel()
         historyContainer.clearModel()
         fileSystemModel.setRoot("")
@@ -400,7 +398,6 @@ Item {
     }
 
     function setFilesystemModels() {
-        console.log("setFilesystemModels ", youtubePath,  historyPath)
         if (youtubePath !== "")
             fileSystemModel.setRoot(youtubePath)
         if (historyPath !== "") {
@@ -682,7 +679,7 @@ Item {
             "1.25",
             "1.50",
             "1.75",
-            "2.00",
+            "2.00"
         ]
 
         function getPlayVideoScript(isShorts) {

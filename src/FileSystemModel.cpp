@@ -766,6 +766,12 @@ bool FileSystemModel::moveVideo(const QString &key, QModelIndex destinationDir) 
         qWarning() << "Destination directory doesn't exist";
         return false;
     }
+
+    if (m_lastDestination != d.path()) {
+        m_lastDestination = d.path();
+        m_lastDestinationName = d.dirName();
+        emit lastDestinationCategoryChanged();
+    }
     QTimer::singleShot(0, this, [this, key, d]() { moveEntry(key, d); });
     return true;
 }
@@ -786,6 +792,11 @@ bool FileSystemModel::moveEntry(QModelIndex item, QModelIndex destinationDir) {
     if (!d.exists()) {
         qWarning() << "Destination directory doesn't exist";
         return false;
+    }
+    if (m_lastDestination != d.path()) {
+        m_lastDestination = d.path();
+        m_lastDestinationName = d.dirName();
+        emit lastDestinationCategoryChanged();
     }
     if (isDir(index)) {
         QDir f(filePath(index));
@@ -808,6 +819,19 @@ bool FileSystemModel::moveEntry(QModelIndex item, QModelIndex destinationDir) {
         QTimer::singleShot(0, this, [this, key, d]() { moveEntry(key, d); });
         return true;
     }
+}
+
+// as of 2024.11.17 used only in BookmarkContextMenu.Move to (last dest)
+void FileSystemModel::moveEntry(const QString &key, const QString &ds) {
+    if (!m_ready || !m_cache.contains(key))
+        return;
+
+    QDir d(ds);
+    if (!d.exists()) {
+        qWarning() << "Destination directory doesn't exist";
+        return;
+    }
+    m_cache[key].moveLocation(d);
 }
 
 void FileSystemModel::moveEntry(const QString &key, const QDir &d) {

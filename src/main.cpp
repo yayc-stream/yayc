@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
         QtWebEngineQuick::initialize();
 
         qSetMessagePattern("%{file}:%{line} - %{message}");
+        qputenv("QT_ACCESSIBILITY", "0");
         QGuiApplication app(argc, argv);
         app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
         args = app.arguments();
@@ -119,7 +120,6 @@ int main(int argc, char *argv[])
             settings.reset(new QSettings(configFile, QSettings::NativeFormat));
         }
 
-        qputenv("QT_ACCESSIBILITY", "0");
 #if defined(Q_OS_LINUX)
         qputenv("QT_QPA_PLATFORMTHEME", QByteArrayLiteral("gtk3"));
 #endif

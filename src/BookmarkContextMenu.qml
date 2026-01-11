@@ -69,9 +69,12 @@ Menu {
     }
 
     MenuItem {
-        text: "Move to " + rootItem.model.lastDestinationCategoryName
+        text: (rootItem.model)
+                ? "Move to " + rootItem.model.lastDestinationCategoryName
+                : ""
         enabled: rootItem.parentView
                  && rootItem.deleteVideoItem
+                 && rootItem.model
                  && rootItem.model.lastDestinationCategoryName !== ""
         visible: true
         height: enabled ? implicitHeight : 0
