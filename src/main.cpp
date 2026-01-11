@@ -1,4 +1,4 @@
-/*
+﻿/*
 Copyright (C) 2023- YAYC team <yaycteam@gmail.com>
 
 This work is licensed under the terms of the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
@@ -83,6 +83,15 @@ bool findExecLinux(const QString &name) {
 
 int main(int argc, char *argv[])
 {
+    // Must be set before ANY Qt initialization
+    // Workaround for Qt 6.10.x accessibility crash (QTBUG-...)
+    qputenv("QT_ACCESSIBILITY", "0");
+    qputenv("QT_LINUX_ACCESSIBILITY_ALWAYS_ON", "0");
+    qputenv("QTWEBENGINE_ENABLE_LINUX_ACCESSIBILITY", "0");  // Key fix for Qt 6.10.1
+    qunsetenv("AT_SPI_BUS_ADDRESS");  // Disable AT-SPI D-Bus connection
+    qputenv("NO_AT_BRIDGE", "1");     // Another way to disable AT-SPI
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-accessibility");
+
     int currentExitCode = 0;
     QStringList args;
     {
@@ -91,10 +100,10 @@ int main(int argc, char *argv[])
         QCoreApplication::setApplicationName("yayc");
 
         QScopedPointer<QSettings> settings(new QSettings);
+
         QtWebEngineQuick::initialize();
 
         qSetMessagePattern("%{file}:%{line} - %{message}");
-        qputenv("QT_ACCESSIBILITY", "0");
         QGuiApplication app(argc, argv);
         app.setWindowIcon(QIcon(":/images/yayc-alt.png"));
         args = app.arguments();
