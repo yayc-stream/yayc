@@ -21,6 +21,7 @@
 *.qbs.user
 *.qbs.user.*
 *.moc
+*.code-workspace
 moc_*.cpp
 qrc_*.cpp
 ui_*.h

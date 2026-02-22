@@ -13,20 +13,17 @@ In addition to the above,
 
 */
 
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
-import QtQuick.Dialogs 1.3 as QQD
-import QtWebEngine 1.11
-import QtQuick.Controls 1.4 as QC1
-import QtQuick.Controls.Styles 1.4 as QC1S
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.2
-import QtWebChannel 1.15
-import Qt.labs.settings 1.1
-import Qt.labs.platform 1.1 as QLP
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs as QQD
+import QtWebEngine
+import QtQuick.Layouts
+import QtQml.Models
+import QtWebChannel
+import Qt.labs.settings
+import Qt.labs.platform as QLP
+import Qt5Compat.GraphicalEffects
 import yayc 1.0
 
 Menu {
@@ -39,7 +36,41 @@ Menu {
     property var model
     property string key: ""
     property bool isHistoryView: true
-    property var parentView: null
+    property var parentView: null  // It's null when spawned from the + button in the toolbar
+    property var parentContainer: null
+    property var targetDelegate: null
+    required property bool extWorkingDirExists
+    required property string extWorkingDirPath
+    required property var externalCommands
+    required property bool removeStorageOnDelete
+    required property bool extCommandEnabled
+
+    onClosed: targetDelegate = null
+
+    function bumpDelegate() {
+        if (targetDelegate) targetDelegate.revision++
+    }
+
+    function bumpDelegateDelayed(delayMs) {
+        var delegate = targetDelegate
+        if (!delegate) return
+        var remaining = 4
+        var timer = Qt.createQmlObject(
+            'import QtQuick; Timer { interval: ' + delayMs
+            + '; running: true; repeat: true }', rootItem)
+        timer.triggered.connect(function() {
+            try {
+                if (delegate)
+                    delegate.revision++
+            } catch(e) {}
+            if (--remaining <= 0) {
+                timer.stop()
+                timer.destroy()
+            } else {
+                timer.interval = delayMs * 10
+            }
+        })
+    }
 
     onOpened: {
         // workaround for the submenu occasionally showing opened
@@ -50,12 +81,14 @@ Menu {
         if (parentView)
             parentView.contextedKey = ""
         categoryIndex = idx
+        videoIndex = undefined
         deleteCategoryItem = true
         deleteVideoItem = false
     }
 
     function setVideoIndex(idx) {
         videoIndex = idx
+        categoryIndex = undefined
         key = rootItem.model.keyFromViewItem(idx)
         if (parentView)
             parentView.contextedKey = key
@@ -72,9 +105,12 @@ Menu {
     }
 
     MenuItem {
-        text: "Move to " + rootItem.model.lastDestinationCategoryName
+        text: (rootItem.model)
+                ? "Move to " + rootItem.model.lastDestinationCategoryName
+                : ""
         enabled: rootItem.parentView
                  && rootItem.deleteVideoItem
+                 && rootItem.model
                  && rootItem.model.lastDestinationCategoryName !== ""
         visible: true
         height: enabled ? implicitHeight : 0
@@ -116,6 +152,8 @@ Menu {
             if (rootItem.isHistoryView)
                 return
             rootItem.model.deleteEntry(rootItem.categoryIndex)
+            if (rootItem.parentContainer)
+                rootItem.parentContainer.refreshLayout()
         }
         icon.source: "/icons/folder_delete.svg"
         display: MenuItem.TextBesideIcon
@@ -127,11 +165,13 @@ Menu {
         height: enabled ? implicitHeight : 0
         onClicked: {
             rootItem.model.deleteEntry(rootItem.key,
-                                            (root.removeStorageOnDelete)
-                                            ? root.extWorkingDirPath
+                                            (rootItem.removeStorageOnDelete)
+                                            ? rootItem.extWorkingDirPath
                                             : "",
-                                            root.removeStorageOnDelete)
-            root.triggerVideoAdded()
+                                            rootItem.removeStorageOnDelete)
+            // root.triggerVideoAdded() FIXME
+            if (rootItem.parentContainer)
+                rootItem.parentContainer.refreshLayout()
         }
         icon.source: "/icons/remove.svg"
         display: MenuItem.TextBesideIcon
@@ -164,7 +204,7 @@ Menu {
                 return
             var starred = rootItem.model.isStarred(rootItem.key)
             rootItem.model.starEntry(rootItem.key, !starred)
-            buttonStarVideo.triggerStarred() // ToDo: check
+            rootItem.bumpDelegate()
         }
         icon.source: "/icons/"+(fileSystemModel.isStarred(rootItem.key)
                                 ? "star_fill.svg" : "star.svg")
@@ -181,6 +221,7 @@ Menu {
                 return
             var viewed = rootItem.model.isViewed(rootItem.key)
             rootItem.model.viewEntry(rootItem.key, !viewed)
+            rootItem.bumpDelegate()
         }
         icon.source: "/icons/"+(fileSystemModel.isViewed(rootItem.key)
                                 ? "check_circle_fill.svg" : "check_circle.svg")
@@ -223,35 +264,37 @@ Menu {
     }
     MenuItem {
         text: "Open containing folder"
-        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
-                 && root.extWorkingDirExists
+        enabled: (rootItem.targetDelegate ? rootItem.targetDelegate.revision >= 0 : true)
+                 && (rootItem.deleteVideoItem || !rootItem.parentView)
+                 && rootItem.extWorkingDirExists
                  && rootItem.model.hasWorkingDir(
                      rootItem.key,
-                     root.extWorkingDirPath)
+                     rootItem.extWorkingDirPath)
         visible: true
         height: enabled ? implicitHeight : 0
         onClicked: {
             rootItem.model.openInBrowser(
                         rootItem.key,
-                        root.extWorkingDirPath)
+                        rootItem.extWorkingDirPath)
         }
         icon.source: "/icons/open_in_browser.svg"
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
         text: "Delete storage data"
-        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
-                 && root.extWorkingDirExists
+        enabled: (rootItem.targetDelegate ? rootItem.targetDelegate.revision >= 0 : true)
+                 && (rootItem.deleteVideoItem || !rootItem.parentView)
+                 && rootItem.extWorkingDirExists
                  && rootItem.model.hasWorkingDir(
                      rootItem.key,
-                     root.extWorkingDirPath)
+                     rootItem.extWorkingDirPath)
         visible: true
         height: enabled ? implicitHeight : 0
         onClicked: {
             rootItem.model.deleteStorage(
                         rootItem.key,
-                        root.extWorkingDirPath)
-            root.triggerWorkingDir()
+                        rootItem.extWorkingDirPath)
+            rootItem.bumpDelegateDelayed(500)
         }
         icon.source: "/icons/delete_forever.svg"
         display: MenuItem.TextBesideIcon
@@ -260,26 +303,33 @@ Menu {
     Menu {
         id: extAppMenu
         title: "Launch in external app"
-        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
-                 && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
-        visible: enabled
+        enabled: rootItem.extCommandEnabled
         height: enabled ? implicitHeight : 0
 
         Repeater {
-            model: root.externalCommands
+            model: (extAppMenu.enabled)
+                    ? rootItem.externalCommands
+                    : undefined
             MenuItem {
-                text: root.externalCommands[index].name
-                enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
-                         && root.extCommandEnabled // ToDo: enable only if related dir present in external dir
+                text: (rootItem.externalCommands[index])
+                        ? rootItem.externalCommands[index].name
+                        : ""
+                enabled: true
                 visible: true
                 height: enabled ? implicitHeight : 0
                 onClicked: {
-                    // ToDo: use only one model if processes should be tracked
-                    rootItem.model.openInExternalApp(
-                                rootItem.key,
-                                root.externalCommands[index].command,
-                                root.extWorkingDirPath)
-                    root.triggerWorkingDir()
+                    if (rootItem.categoryIndex !== undefined) {
+                        rootItem.model.enqueueCategoryExternalApp(
+                                    rootItem.categoryIndex,
+                                    rootItem.externalCommands[index].command,
+                                    rootItem.extWorkingDirPath)
+                    } else {
+                        rootItem.model.enqueueExternalApp(
+                                    rootItem.key,
+                                    rootItem.externalCommands[index].command,
+                                    rootItem.extWorkingDirPath)
+                    }
+                    rootItem.bumpDelegateDelayed(1000)
                 }
                 icon.source: "/icons/extension.svg"
                 display: MenuItem.TextBesideIcon

@@ -13,51 +13,41 @@ In addition to the above,
 
 */
 
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Controls.Material 2.15
-import QtQuick.Dialogs 1.3 as QQD
-import QtWebEngine 1.11
-import QtQuick.Controls 1.4 as QC1
-import QtQuick.Controls.Styles 1.4 as QC1S
-import QtQuick.Layouts 1.15
-import QtQml.Models 2.2
-import QtWebChannel 1.15
-import Qt.labs.settings 1.1
-import Qt.labs.platform 1.1 as QLP
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Dialogs as QQD
+import QtWebEngine
+import QtQuick.Layouts
+import QtQml.Models
+import QtWebChannel
+import Qt.labs.platform as QLP
+import Qt5Compat.GraphicalEffects
 import yayc 1.0
-
-/*
-  == Known issues ==
-
-  - QC1.TreeView is terribly buggy. Consider reimplementing it
-*/
 
 Item {
     id: root
-    objectName: "root"
+    objectName: "MainYayc"
 
-    property alias addVideoEnabled: buttonAddVideo.enabled
-
-    property int addedVideoTrigger: 0
-    function triggerVideoAdded() { addedVideoTrigger += 1 }
-    property int workingDirTrigger: 0
-    function triggerWorkingDir() { workingDirTrigger += 1 }
-    property alias url: webEngineView.url
-    property url previousUrl
+    property var webEngineView: webEngineViewLoader.item
+    property url url: "https://youtube.com"
+    property url previousUrl: ""
     property bool filesystemModelReady: false
     property bool windowHidden: win.hidden
 
-    function quit() {
+    function prepareQuit() {
         // the setting is an alias for reloading purposes
-        if (root.windowHidden && root.blankWhenHidden && previousUrl !== "") {
-            settings.lastUrl = previousUrl // ToDo: try to save/restore position too
-        } else {
-            settings.lastUrl = timePuller.getCurrentVideoURLWithPosition()
+        if (root.windowHidden && root.blankWhenHidden && root.previousUrl !== "") {
+            settings.lastUrl = root.previousUrl // ToDo: try to save/restore position too
+        } else if (webEngineView) {
+            settings.lastUrl = webEngineView.timePuller.getCurrentVideoURLWithPosition()
         }
         syncAll()
+    }
+
+    function quit() {
+        root.prepareQuit()
+        win.quitting = true
         Qt.quit()
     }
 
@@ -66,7 +56,7 @@ Item {
         win.hide()
     }
 
-    Shortcut { // print settings path
+    Shortcut {
         sequence: "Ctrl+P"
         onActivated: {
             if (root.debugMode) {
@@ -74,30 +64,18 @@ Item {
             }
         }
     }
-    Shortcut { // Fetch Missing Thumbnails
+
+    Shortcut {
         sequence: "Ctrl+F"
         onActivated: {
             utilities.fetchMissingThumbnails()
         }
     }
-    Shortcut { // reset filesystem models
+
+    Shortcut {
         sequence: "F5"
         onActivated: {
             resetFilesystemModels()
-        }
-    }
-
-    onWindowHiddenChanged: {
-        if (!root.blankWhenHidden || webEngineView.isYoutubeVideo)
-            return
-        if (windowHidden) {
-            // store && change
-            previousUrl = url
-            url = "about:blank"
-        } else {
-            // restore
-            url = previousUrl
-            previousUrl = ""
         }
     }
 
@@ -121,11 +99,11 @@ Item {
             QLP.MenuItem {
                 text: qsTr("Quit")
                 onTriggered: {
-                    root.quit()
+                    win.quitApp()
                 }
             }
         }
-        onActivated: {
+        onActivated: (reason) =>{
             if (reason == QLP.SystemTrayIcon.Trigger) {
                 if (win.visible)
                     win.hide()
@@ -135,7 +113,7 @@ Item {
         }
     }
 
-    property string profilePath // if empty, the webengineview profile will turn itself "off the record"
+    property string profilePath: WebBrowsingProfiles.profilePath //cant alias a property of a different component
     property string youtubePath
     property string historyPath
     property string easyListPath
@@ -157,11 +135,14 @@ Item {
     property bool debugMode: false
     property bool removeStorageOnDelete: false
     property bool blankWhenHidden: false
+    property bool showCategoryBar: true
+    property int homeGridColumns: 4
     property real wevZoomFactor
     property real wevZoomFactorVideo
-    property alias volume: sliderVolume.value
+    property real volume: 0
+    property real userSpecifiedVolume: -1
     property bool muted: false
-    property bool guideToggled: buttonToggleGuide.checked
+    property bool guideToggled: false
 
     property var externalCommands: []
     function pushEmptyCommand() {
@@ -170,7 +151,7 @@ Item {
                 && root.externalCommands[root.externalCommands.length - 1].name == ""
                 && root.externalCommands[root.externalCommands.length - 1].command == "")
             return;
-        var newCommands = root.externalCommands
+        var newCommands = root.externalCommands.slice()
         newCommands.push(empty)
         root.externalCommands = newCommands
     }
@@ -185,6 +166,18 @@ Item {
             pushEmptyCommand()
     }
 
+    Binding { target: YaycProperties; property: "isDarkMode"; value: root.darkMode }
+    onDarkModeChanged: {
+        utilities.setColorScheme(root.darkMode)
+        if (root.settingsLoaded && webEngineView)
+            deferReloadAfterColorSchemeChange.restart()
+    }
+    Timer {
+        id: deferReloadAfterColorSchemeChange
+        interval: 4000
+        onTriggered: if (webEngineView) webEngineView.reload()
+    }
+
     property bool settingsLoaded: false
     Timer {
         id: timerSettings
@@ -195,8 +188,10 @@ Item {
             root.settingsLoaded = true
         }
     }
-    Settings {
+    property bool settingsInitialized: false
+    YaycSettings {
         id: settings
+        location: configFileUrl
         property alias lolAccepted: root.limitationOfLiabilityAccepted
         property alias firstRun: root.firstRun
         property alias profilePath: root.profilePath
@@ -218,52 +213,51 @@ Item {
         property alias wevZoomFactorVideo: root.wevZoomFactorVideo
         property alias removeStorageOnDelete: root.removeStorageOnDelete
         property alias blankWhenHidden: root.blankWhenHidden
+        property alias showCategoryBar: root.showCategoryBar
+        property alias homeGridColumns: root.homeGridColumns
         property alias volume: root.volume
-        property alias userSpecifiedVolume: sliderVolume.userValue
+        property alias userSpecifiedVolume: root.userSpecifiedVolume
         property alias guidePaneToggled: root.guideToggled
         property alias proxyType: proxyMenu.proxyType
         property alias proxyPort: proxyMenu.proxyPort
         property alias proxyHost: proxyMenu.proxyHost
         property var splitView
 
-        Component.onCompleted: {
+        onLoadedChanged: {
+            if (!loaded || root.settingsInitialized)
+                return
+            root.settingsInitialized = true
+
             disclaimerContainer.visible = Qt.binding(function() { return !settings.lolAccepted })
-            webEngineView.zoomFactor =  Qt.binding(function() {
-                var res = (webEngineView.isYoutubeVideo)
-                                ? root.wevZoomFactorVideo
-                                : root.wevZoomFactor
-                return (res) ? res : 1.0
-            })
+
+            WebBrowsingProfiles.profilePath = Qt.binding(function() { return settings.profilePath })
+            WebBrowsingProfiles.customScript = Qt.binding(function() { return settings.customScript })
+            WebBrowsingProfiles.customScriptEnabled = Qt.binding(function() { return settings.customScriptEnabled })
+            deferRecreateWebEngineProfiles.restart()
+
+            // TODO: rework this
             timerSettings.start()
         }
+
+        function updateWebEngineProfiles() {
+            if (!root.settingsInitialized)
+                return
+            deferRecreateWebEngineProfiles.restart()
+        }
+
+        onCustomScriptChanged: settings.updateWebEngineProfiles()
+        onCustomScriptEnabledChanged: settings.updateWebEngineProfiles()
+        onProfilePathChanged: settings.updateWebEngineProfiles()
     }
 
-    WebEngineProfile {
-        id: userProfile
-        httpAcceptLanguage: root.httpAcceptLanguage
-        httpUserAgent: root.httpUserAgent
-        httpCacheType: WebEngineProfile.MemoryHttpCache
-        persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
-
-        cachePath: (typeof(root.profilePath) !== "undefined" && root.profilePath !== "")
-                   ? root.profilePath + "/cache" : ""
-
-        persistentStoragePath: (typeof(root.profilePath) !== "undefined" && root.profilePath !== "")
-                               ? root.profilePath + "/data" : ""
-
-        storageName: "yayc"
-        offTheRecord: false
-    }
-
-    WebEngineProfile {
-        id: inkognitoProfile
-        httpAcceptLanguage: root.httpAcceptLanguage
-        httpUserAgent: root.httpUserAgent
-        httpCacheType: WebEngineProfile.MemoryHttpCache
-        persistentCookiesPolicy: WebEngineProfile.NoPersistentCookies
-        cachePath: ""
-        persistentStoragePath: ""
-        offTheRecord: true
+    //FIXME figure the issue
+    Timer {
+        id: deferRecreateWebEngineProfiles
+        interval: 500
+        onTriggered: {
+            WebBrowsingProfiles.recreateProfiles()
+            // profile binding is handled by sourceComponent: profile: WebBrowsingProfiles.profile
+        }
     }
 
     Component.onCompleted:  {
@@ -275,20 +269,13 @@ Item {
         // Re-enable (maybe) after fixing the connections after deletion/re-instantiation of these models
         // fileSystemModel.directoryLoaded.connect(onFSmodelDirectoryLoaded)
         // fileSystemModel.filesAdded.connect(onFSModelFilesAdded)
-
         win.interfaceLoaded.connect(resetFilesystemModels)
-        if (easyListPath !== "")
-            requestInterceptor.setEasyListPath(easyListPath)
+
         splitView.restoreState(settings.splitView)
         if (root.externalCommands.length == 0) {
             root.pushEmptyCommand()
         }
-        triggerWorkingDir()
-        triggerVideoAdded()
-        if (sliderVolume.value !== sliderVolume.userValue)
-            sliderVolume.value = sliderVolume.userValue
     }
-
     Component.onDestruction: {
         settings.splitView = splitView.saveState()
     }
@@ -307,20 +294,31 @@ Item {
         }
     }
 
-    onProfilePathChanged: {
-        webEngineView.reload()
-        settings.sync()
-    }
-
-    Timer {
-        id: zoomFactorSyncer
-        repeat: true
-        running: true
-        interval: 1000 * 5
-        onTriggered: {
-            syncZoomFactor()
+    Connections {
+        target: WebBrowsingProfiles
+        function onProfileChanged() {
+            if (webEngineView)
+                webEngineView.reload()
+            settings.sync()
         }
     }
+
+    Connections {
+        target: bookmarksContainer
+        function onVideoSelected(url_) {
+            root.url = url_
+        }
+    }
+
+    Connections {
+        target: historyContainer
+        function onVideoSelected(url_) {
+            root.url = url_
+        }
+    }
+
+    // zoomFactorSyncer timer removed: syncZoomFactor is now called
+    // reactively via webViewSync Connections onZoomFactorChanged
 
     Timer {
         id: fileSystemSyncer // will sync only dirty entries
@@ -364,10 +362,33 @@ Item {
         root.lastestRemoteVersion = latestVersion
 
         var res = utilities.compareSemver(previousRemoteVersion, latestVersion)
-        if (res === 1) { // if latest is greater
+        if (res === -1) { // if latest is greater
             // highlight settings
             root.firstRun = true
         }
+    }
+
+
+    function resetFilesystemModels() {
+        clearFilesystemModels()
+        Qt.callLater(setFilesystemModels)
+    }
+
+    function clearFilesystemModels() {
+        bookmarksContainer.clearModel()
+        historyContainer.clearModel()
+        fileSystemModel.setRoot("")
+        historyModel.setRoot("")
+    }
+
+    function setFilesystemModels() {
+        if (youtubePath !== "")
+            fileSystemModel.setRoot(youtubePath)
+        if (historyPath !== "") {
+            historyModel.setRoot(historyPath)
+        }
+        bookmarksContainer.setModel()
+        historyContainer.setModel()
     }
 
     function onDonateETag(latestETag) {
@@ -384,31 +405,6 @@ Item {
         root.firstRun = true
     }
 
-    function resetFilesystemModels() {
-        console.log("resetFilesystemModels")
-        clearFilesystemModels()
-        Qt.callLater(setFilesystemModels)
-    }
-
-    function clearFilesystemModels() {
-        console.log("clearFilesystemModels")
-        bookmarksContainer.clearModel()
-        historyContainer.clearModel()
-        fileSystemModel.setRoot("")
-        historyModel.setRoot("")
-    }
-
-    function setFilesystemModels() {
-        console.log("setFilesystemModels ", youtubePath,  historyPath)
-        if (youtubePath !== "")
-            fileSystemModel.setRoot(youtubePath)
-        if (historyPath !== "") {
-            historyModel.setRoot(historyPath)
-        }
-        bookmarksContainer.setModel()
-        historyContainer.setModel()
-    }
-
     function syncAll() {
         syncZoomFactor()
         fileSystemModel.sync()
@@ -417,12 +413,16 @@ Item {
     }
 
     function syncZoomFactor() {
-        if (!root.settingsLoaded)
+        if (!root.settingsLoaded || !webEngineView)
             return
-        if (webEngineView.isYoutubeVideo)
-            root.wevZoomFactorVideo = webEngineView.zoomFactor
-        else
-            root.wevZoomFactor = webEngineView.zoomFactor
+        var newZoom = webEngineView.zoomFactor
+        if (webEngineView.isYoutubeVideo) {
+            if (root.wevZoomFactorVideo !== newZoom)
+                root.wevZoomFactorVideo = newZoom
+        } else {
+            if (root.wevZoomFactor !== newZoom)
+                root.wevZoomFactor = newZoom
+        }
     }
 
     function deUrlizePath(path) {
@@ -434,51 +434,7 @@ Item {
         return path
     }
 
-    function isCurrentVideoAdded(key, trigger) {
-        if (!utilities.isYoutubeVideoUrl(root.url))
-            return false;
-        return fileSystemModel.isVideoBookmarked(key)
-    }
-
-    function isWorkingDirPresent(key, trigger) {
-        if (root.extWorkingDirExists)
-            return fileSystemModel.hasWorkingDir(key,
-                                                root.extWorkingDirPath)
-        return 0
-    }
-
-    property string lastHoveredLink
-    property string lastHoveredTooltip
-
     Item { id: dummy } // Workaround for QTBUG-59940
-    QtObject {
-        id: properties
-        property color textColor: "#ffffff"
-        property color disabledTextColor: "#a0a1a2"
-        property color addedTextColor: "#32cd32" //"limegreen"
-        property color addedDisabledTextColor: "#196619" // tinted down
-        property color selectionColor: "#43adee"
-        property color listHighlightColor: "#585a5c"
-        property color paneBackgroundColor: "#2e2f30"
-        property color paneColor: "#373839"
-        property color viewBorderColor: "#000000"
-        property color itemBackgroundColor: "#46484a"
-        property color itemColor: "#cccccc"
-        property color iconHighlightColor: "#26282a"
-        property string labelFontFamily: "Open Sans"
-        property color fileBgColor: "black"
-        property color categoryBgColor: "black"
-        property color checkedButtonColor: "#EF9A9A" // Red material accent
-        readonly property real fsH0: 40
-        readonly property real fsH1: 34
-        readonly property real fsH2: 28
-        readonly property real fsH3: 24
-        readonly property real fsH4: 20
-        readonly property real fsH5: 16
-        readonly property real fsH6: 12
-        readonly property real fsP1: 16
-        readonly property real fsP2: 12
-    }
 
     function onFSmodelDirectoryLoaded(path) {
         // console.log( "directoryLoaded ", path );
@@ -504,355 +460,6 @@ Item {
 
     }
 
-    QtObject{
-        id: internals
-
-        function getPlayer(isShorts) {
-            var res = ""
-            if (isShorts) {
-//                res += "var ytplayer = document.getElementById('player').getPlayer();
-                res += "
-    var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
-    var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer();
-"
-            } else {
-                res += "var ytplayer = document.getElementById('movie_player');
-"
-            }
-            return res
-        }
-
-        property string script_videoTime: "
-            var backend;
-            new QWebChannel(qt.webChannelTransport, function (channel) {
-                backend = channel.objects.backend;
-            });
-            setTimeout(function() {  //function puller()
-                    backend.channelURL = document.getElementById('text').firstChild.href;
-                    backend.channelName = document.getElementById('text').firstChild.text;
-                    backend.channelAvatar = document.getElementById('owner').firstElementChild.firstElementChild.firstElementChild.firstElementChild.src;
-
-                    var ytplayer = document.getElementById('movie_player');
-
-                    backend.videoTitle = ytplayer.getVideoData().title;
-                    backend.videoDuration = ytplayer.getDuration();
-                    backend.videoPosition = ytplayer.getCurrentTime();
-                    backend.playbackRate = ytplayer.getPlaybackRate();
-                    backend.playerState = ytplayer.getPlayerState();
-                    backend.volume = ytplayer.getVolume();
-                    backend.muted = ytplayer.isMuted();
-
-                    var url = document.getElementsByTagName('ytd-watch-flexy')[0].getAttribute('video-id')
-                    backend.videoID = url;
-                    backend.shorts = false;
-                    backend.vendor = 'YTB';
-            }, 100);
-            //puller();
-        "
-
-        property string script_backend: "
-            var backend;
-            new QWebChannel(qt.webChannelTransport, function (channel) {
-                backend = channel.objects.backend;
-            });
-        "
-
-        property string script_homePageStatusFetcher: "
-            var backend;
-            new QWebChannel(qt.webChannelTransport, function (channel) {
-                backend = channel.objects.backend;
-            });
-            setTimeout(function() {
-                var btn = document.querySelectorAll(
-                    'button[id=\"button\"][class=\"style-scope yt-icon-button\"][aria-label=\"Guide\"]')[0]
-
-                backend.guideButtonChecked = btn.getAttribute(\"aria-pressed\")
-            }, 100);
-        "
-
-        property string script_clickGuide: "
-            var backend;
-            new QWebChannel(qt.webChannelTransport, function (channel) {
-                backend = channel.objects.backend;
-            });
-            setTimeout(function() {
-                var btn = document.querySelectorAll(
-                    'button[id=\"button\"][class=\"style-scope yt-icon-button\"][aria-label=\"Guide\"]')[0]
-                btn.click()
-                backend.guideButtonChecked = btn.getAttribute(\"aria-pressed\")
-            }, 100);
-"
-
-        property string script_videoTimeShorts: "
-            var backend;
-            new QWebChannel(qt.webChannelTransport, function (channel) {
-                backend = channel.objects.backend;
-            });
-            setTimeout(function() {
-//                try {
-                    var activeShort = document.querySelectorAll('ytd-reel-video-renderer[is-active]')[0]
-                    //var chanInfo = activeShort.querySelector('div[id=\"channel-info\"]')
-                    backend.channelURL = activeShort.getElementsByClassName('yt-core-attributed-string__link yt-core-attributed-string__link--call-to-action-color yt-core-attributed-string--link-inherit-color')[0].href.replace('/shorts', '');
-                    backend.channelName = activeShort.getElementsByClassName('yt-core-attributed-string__link yt-core-attributed-string__link--call-to-action-color yt-core-attributed-string--link-inherit-color')[0].textContent
-                    backend.channelAvatar = document.getElementsByClassName('yt-spec-avatar-shape__image ytCoreImageHost')[0].src
-
-                    //var url = activeShort.getElementsByClassName('player-container style-scope ytd-reel-video-renderer')[0].getAttribute('style')
-                    var url = activeShort.getElementsByClassName('ytp-title-link yt-uix-sessionlink')[0].href.split('/');
-                    url = url[url.length - 1]
-                    backend.videoID = url;
-                    backend.shorts = true;
-                    backend.vendor = 'YTB';
-
-                    var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer();
-
-                    backend.videoTitle = document.title;
-                    backend.videoDuration = ytplayer.getDuration();
-                    backend.videoPosition = ytplayer.getCurrentTime();
-                    backend.playbackRate = ytplayer.getPlaybackRate();
-                    backend.playerState = ytplayer.getPlayerState();
-                    backend.volume = ytplayer.getVolume();
-                    backend.muted = ytplayer.isMuted();
-                    //console.log(document.title);
-//                } catch (e) {
-//                    console.log(e);
-//                }
-            }, 100);
-        "
-
-        function getPlaybackRateSetterScript(rate, isShorts) {
-            var res = "
-            setTimeout(function() {
-    " + getPlayer(isShorts) +
-"                 ytplayer.setPlaybackRate(" + rate + ");
-        }, 100);
-"
-            return res;
-        }
-
-        function getVolumeSetterScript(volume, isShorts) {
-            var res = "
-            setTimeout(function() {
-    " + getPlayer(isShorts) +
-"                 ytplayer.setVolume(" + volume + ");
-        }, 100);
-"
-            return res;
-        }
-
-        function getMutedSetterScript(muted, isShorts) {
-            var res = "
-            setTimeout(function() {
-    " + getPlayer(isShorts)
-
-            if (muted) {
-                res += "                 ytplayer.mute();
-"
-            } else {
-                res += "                 ytplayer.unMute();
-"
-            }
-
-            res +=
-"       }, 100);
-"
-            return res;
-        }
-
-        readonly property var videoSpeeds: [
-            "0.25",
-            "0.50",
-            "0.75",
-            "1.00",
-            "1.25",
-            "1.50",
-            "1.75",
-            "2.00"
-        ]
-
-        function getPlayVideoScript(isShorts) {
-            var res = "
-            setTimeout(function() {
-    " + getPlayer(isShorts) +
-"                 ytplayer.playVideo();
-        }, 100);
-"
-            return res;
-        }
-
-        function getPlayNextVideoScript(isShorts) {
-            var res = "
-            setTimeout(function() {
-    " + getPlayer(isShorts) +
-"                 ytplayer.playNextVideo();
-        }, 100);
-"
-            return res;
-        }
-
-        function getPauseVideoScript(isShorts) {
-            var res = "
-            setTimeout(function() {
-" + getPlayer(isShorts) +
-"                 ytplayer.pauseVideo();
-        }, 100);
-"
-            return res;
-        }
-    }
-
-    Timer {
-        id: guideToggleSingleShot
-        repeat: false
-        running: false
-        interval: 2750 // webEngineView is not emitting loadingChanged
-                       // when clicking on the youtube logo to go back to the homepage
-                       // However, onUrlChanged is also too soon, as the page is not laoded
-        onTriggered: {
-            timePuller.pullHomeData()
-        }
-    }
-
-
-    property bool guideButtonCheckedClientSet: false
-    QtObject {
-        id: timePuller
-
-        // ID, under which this object will be known at WebEngineView side
-        WebChannel.id: "backend"
-
-        property real videoPosition: 0
-        property real videoDuration: 0
-        property string videoID
-        property string videoTitle
-        property string channelURL
-        property string channelName
-        property string channelAvatar
-        property string vendor
-
-        property real playbackRate
-        property int playerState
-        property int volume
-        property bool muted
-        property bool shorts
-        property bool guideButtonChecked
-
-        function clickGuideButton() {
-            if (webEngineView.isYoutubeHome || webEngineView.isYoutubeChannel) {
-                webEngineView.runJavaScript(internals.script_clickGuide)
-            }
-        }
-
-        function pullHomeData() {
-            if (webEngineView.isYoutubeHome || webEngineView.isYoutubeChannel){
-                webEngineView.runJavaScript(internals.script_homePageStatusFetcher)
-            }
-        }
-
-        onGuideButtonCheckedChanged: {
-            if (root.guideButtonCheckedClientSet) {
-                guideButtonCheckedClientSet = false
-                return
-            }
-
-            if (guideButtonChecked === buttonToggleGuide.checked) {
-                return;
-            }
-            clickGuideButton();
-        }
-
-        onVolumeChanged: root.volume = volume
-        onMutedChanged: root.muted = muted
-
-        function getCurrentVideoURLWithPosition() {
-            if (webEngineView.isYoutubeVideo && videoID !== ""
-                    && webEngineView.key == utilities.getVideoID(videoID, vendor, shorts))
-                return utilities.urlWithPosition(root.url, timePuller.videoPosition)
-            return root.url
-        }
-
-        onVideoPositionChanged: {
-            var k = utilities.getVideoID(videoID, vendor, shorts)
-            if (webEngineView.key !== k) {
-                root.addVideoEnabled = false
-                return
-            }
-
-            root.addVideoEnabled = true
-
-            if (webEngineView.key !== ""
-                  && videoTitle === "") {
-                // missing title, silently ignore
-                return;
-            }
-
-            // url didn't change, position changed
-            update()
-        }
-
-        onPlaybackRateChanged: {
-
-        }
-
-        function update() {
-            var k = utilities.getVideoID(videoID, vendor, shorts)
-            if (k !== webEngineView.key)
-                return
-
-            fileSystemModel.updateEntry(webEngineView.key,
-                                        videoTitle,
-                                        channelURL,
-                                        channelAvatar,
-                                        channelName,
-                                        videoDuration,
-                                        videoPosition)
-            if (!historyModel.updateEntry(webEngineView.key,
-                                          videoTitle,
-                                          channelURL,
-                                          channelAvatar,
-                                          channelName,
-                                          videoDuration,
-                                          videoPosition)) {
-                historyModel.addEntry(webEngineView.key,
-                                      videoTitle,
-                                      channelURL,
-                                      channelAvatar,
-                                      channelName,
-                                      videoDuration,
-                                      videoPosition)
-            }
-        }
-        function addCurrentVideo() {
-            if (!utilities.isYoutubeVideoUrl(root.url)) {
-                // Q_UNREACHABLE
-                return;
-            }
-
-            var k = utilities.getVideoID(videoID, vendor, shorts)
-
-            if (webEngineView.key !== k) {
-                root.addVideoEnabled = false
-                return
-            }
-
-            fileSystemModel.addEntry(webEngineView.key,
-                                     videoTitle,
-                                     channelURL,
-                                     channelAvatar,
-                                     channelName,
-                                     videoDuration,
-                                     videoPosition)
-
-            if (k !== "" && shorts)
-                fileSystemModel.viewEntry(webEngineView.key, true);
-            root.triggerVideoAdded()
-        }
-    } // timePuller
-
-    WebChannel {
-        id : web_channel
-        registeredObjects: [timePuller]
-    }
-
     Item {
         id: mainContainer
         anchors {
@@ -871,11 +478,14 @@ Item {
                 historyView: false
                 width: 200
                 implicitWidth: 200
-                anchors {
-                    top: parent.top
-                    bottom: parent.bottom
-                }
                 showFiltering: bookmarksToolButton.searching
+
+                extWorkingDirExists: root.extWorkingDirExists
+                extWorkingDirPath: root.extWorkingDirPath
+                externalCommands: root.externalCommands
+                removeStorageOnDelete: root.removeStorageOnDelete
+                extCommandEnabled: root.extCommandEnabled
+                webEngineViewKey: webEngineView ? webEngineView.key : ""
             }
             BookmarksTreeView {
                 id: historyContainer
@@ -883,227 +493,171 @@ Item {
                 historyView: true
                 width: 200
                 implicitWidth: 200
-                anchors {
-                    top: parent.top
-                    bottom: parent.bottom
-                }
                 showFiltering: historyToolButton.searching
+
+                extWorkingDirExists: root.extWorkingDirExists
+                extWorkingDirPath: root.extWorkingDirPath
+                externalCommands: root.externalCommands
+                removeStorageOnDelete: root.removeStorageOnDelete
+                extCommandEnabled: root.extCommandEnabled
+                webEngineViewKey: webEngineView ? webEngineView.key : ""
             }
 
-            WebEngineView {
-                id: webEngineView
-                url: "https://youtube.com"
-                property string key
-                property bool isShorts: false
-                property bool isYoutubeChannel: utilities.isYoutubeChannelPage(url)
-                property bool isYoutubeHome: utilities.isYoutubeHomepage(url)
-                property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
-                property int keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
-                                                                    root.extWorkingDirPath,
-                                                                    root.workingDirTrigger)
-                enabled: true
-                visible: enabled
+            Item {
+                id: webViewWrapper
                 SplitView.minimumWidth: 200
                 SplitView.fillWidth: true
+
                 anchors {
                     top: parent.top
                     bottom: parent.bottom
                 }
 
-                objectName: "webEngineView"
-                Component.onCompleted: {
-                    utilities.addRequestInterceptor(this)
-                }
+                property bool videoPlaying: false
 
-                webChannel: web_channel
+                Loader {
+                    id: webEngineViewLoader
+                    anchors.fill: parent
+                    asynchronous: true
 
-                profile: (typeof(root.profilePath) !== "undefined" && root.profilePath !== "")
-                         ? userProfile
-                         : inkognitoProfile
-
-                settings {
-                    autoLoadImages: true
-                    dnsPrefetchEnabled: true
-                }
-
-                onUrlChanged: {
-                    if (utilities.isYoutubeVideoUrl(url)) {
-                        root.addVideoEnabled = true
-                        zoomFactor = root.wevZoomFactorVideo
-                        key = utilities.getVideoID(url)
-                        isShorts = utilities.isYoutubeShortsUrl(url)
-                        dataPuller.startPulling()
-                        return;
-                    } else if (utilities.isYoutubeHomepage(url)
-                               || utilities.isYoutubeChannelPage(url)) {
-                        guideToggleSingleShot.start()
-                    }
-
-                    root.addVideoEnabled = false
-                    isShorts = false
-                    zoomFactor = root.wevZoomFactor
-                    dataPuller.stop()
-                    key = ""
-                }
-
-                onLoadingChanged: {
-                    if (loadRequest.status === WebEngineView.LoadSucceededStatus
-                        || loadRequest.status ===  WebEngineView.LoadStoppedStatus) {
-
-                        if (webEngineView.isYoutubeHome
-                                || webEngineView.isYoutubeChannel) {
-                            guideToggleSingleShot.start()
-                        }
-                    } else {
-                        // loading or errored
-                    }
-                }
-
-                userScripts: [
-                    WebEngineScript {
-                        injectionPoint: WebEngineScript.Deferred
-                        name: "QWebChannel"
-                        worldId: WebEngineScript.MainWorld
-                        sourceUrl: "qrc:/qtwebchannel/qwebchannel.js"
-                    },
-                    WebEngineScript {
-                        injectionPoint: WebEngineScript.Deferred
-                        worldId: WebEngineScript.MainWorld
-                        sourceCode: (settings.customScriptEnabled) ? root.customScript : ""
-                    }
-                ]
-
-                Timer {
-                    id: dataPuller
-                    interval: 5000;
-                    running: false;
-                    repeat: true
-
-                    function startPulling() {
-                        start()
-                    }
-
-                    function pullTime() {
-                        interval = 5000
-                        // console.log(timePuller.keyBefore, webEngineView.key, timePuller.videoTitle, timePuller.videoPosition, timePuller.videoDuration)
-
-                        if (!webEngineView.isYoutubeVideo
-                                || webEngineView.key === "")
-                            return;
-
-                        if (webEngineView.isShorts) {
-                            webEngineView.runJavaScript(internals.script_videoTimeShorts)
+                    // Desired state: profile exists AND (window visible OR audio playing)
+                    property bool shouldBeActive: WebBrowsingProfiles.profile !== null
+                                                   && (!root.windowHidden || webViewWrapper.videoPlaying)
+                    onShouldBeActiveChanged: {
+                        if (shouldBeActive) {
+                            webEngineViewLoaderDeactivateTimer.stop()
+                            webEngineViewLoaderActivateTimer.restart()
                         } else {
-                            webEngineView.runJavaScript(internals.script_videoTime)
+                            webEngineViewLoaderActivateTimer.stop()
+                            webEngineViewLoaderDeactivateTimer.restart()
                         }
                     }
-
-                    onTriggered: {
-                        pullTime()
+                    Timer {
+                        id: webEngineViewLoaderActivateTimer
+                        interval: 500
+                        onTriggered: webEngineViewLoader.active = true
                     }
-                }
-
-                property Menu contextMenu: Menu {
-                    MenuItem {
-                        text: currentVideoAdded ? "Added" : "Add"
-                        enabled: linkHovered && !currentVideoAdded
-
-                        property bool linkHovered: typeof(root.lastHoveredLink) !== "undefined" && root.lastHoveredLink !== ""
-                        property bool storagePresent: linkHovered && fileSystemModel.isVideoBookmarked(utilities.getVideoID(root.lastHoveredLink))
-                        property bool currentVideoAdded: linkHovered && fileSystemModel.isVideoBookmarked(utilities.getVideoID(root.lastHoveredLink))
-                        property bool workingDirPresent: currentVideoAdded
-                                                         && root.extWorkingDirExists
-                                                         && fileSystemModel.hasWorkingDir(utilities.getVideoID(root.lastHoveredLink),
-                                                                                          root.extWorkingDirPath)
-                        icon {
-                            source: "/icons/add.svg"
-                            color: (currentVideoAdded) // ToDo: deduplicate
-                                   ? (enabled)
-                                     ? properties.addedTextColor
-                                     : properties.addedDisabledTextColor
-                                   : (enabled)
-                                     ? "white"
-                                     : properties.disabledTextColor
-                        }
-
-                        Image {
-                            visible: parent.workingDirPresent > 0
-                            anchors {
-                                left: parent.left
-                                top: parent.top
-                                bottom: parent.bottom
-                                leftMargin: 12
-                                topMargin: 12
-                                bottomMargin: 4
-                            }
-
-                            source: (parent.workingDirPresent == 2)
-                                        ? "qrc:/images/workingdirpresent.png"
-                                        : "qrc:/images/workingdirpresentempty.png"
-                            opacity: .7
-                        }
-
-                        onClicked: {
-                            var key = utilities.getVideoID(root.lastHoveredLink)
-                            if (key !== "")
-                                fileSystemModel.addEntry(
-                                            key,
-                                            root.lastHoveredTooltip,
-                                            "",
-                                            "",
-                                            "")
-                        }
-                        display: MenuItem.TextBesideIcon
+                    Timer {
+                        id: webEngineViewLoaderDeactivateTimer
+                        interval: 10 * 1000
+                        onTriggered: webEngineViewLoader.active = false
                     }
-                    Repeater {
-                        model: [
-                            WebEngineView.Back,
-                            WebEngineView.Forward,
-                            WebEngineView.Reload,
-                            WebEngineView.Copy,
-                            WebEngineView.Paste,
-                            WebEngineView.Cut,
-                            WebEngineView.CopyLinkToClipboard,
-                        ]
-                        MenuItem {
-                            text: webEngineView.action(modelData).text
-                            enabled: webEngineView.action(modelData).enabled
-                            onClicked: webEngineView.action(modelData).trigger()
-                            icon.source: switch(modelData) {
-                                         case WebEngineView.Back:"/icons/arrow_back.svg";break;
-                                         case WebEngineView.Forward:"/icons/arrow_forward.svg";break;
-                                         case WebEngineView.Reload:"/icons/refresh.svg";break;
-                                         case WebEngineView.Copy:"/icons/content_copy.svg";break;
-                                         case WebEngineView.Paste:"/icons/content_paste.svg";break;
-                                         case WebEngineView.Cut:"/icons/content_cut.svg";break;
-                                         case WebEngineView.CopyLinkToClipboard:"/icons/add_link.svg";break;
-                                         }
-                            display: MenuItem.TextBesideIcon
+                    active: false // initial; managed imperatively above
+
+                    onLoaded: {
+                        item.webViewTools.parent = webViewToolsContainer
+                    }
+                    onItemChanged: if (!item) webViewWrapper.videoPlaying = false
+
+                    sourceComponent: WebView {
+                        // Declarative bindings: re-applied on every Loader activation.
+                        // User navigation / slider changes break these bindings,
+                        // but webViewSync pull Connections keeps root in sync.
+                        url: root.url
+                        previousUrl: root.previousUrl
+                        profile: WebBrowsingProfiles.profile
+                        volume: root.volume
+                        userSpecifiedVolume: root.userSpecifiedVolume
+                        guideToggled: root.guideToggled
+                        showCategoryBar: root.showCategoryBar
+                        homeGridColumns: root.homeGridColumns
+
+                        enabled: true
+                        visible: enabled
+
+                        // required properties (one-way, parent -> child)
+                        customScript: root.customScript
+                        wevZoomFactor: root.wevZoomFactor
+                        historyPath: root.historyPath
+                        youtubePath: root.youtubePath
+                        extWorkingDirPath: root.extWorkingDirPath
+                        wevZoomFactorVideo: root.wevZoomFactorVideo
+                        easyListPath: root.easyListPath
+                        profilePath: root.profilePath
+                        extWorkingDirExists: root.extWorkingDirExists
+                        externalCommands: root.externalCommands
+                        removeStorageOnDelete: root.removeStorageOnDelete
+                        extCommandEnabled: root.extCommandEnabled
+                    }
+
+                    // Keep videoPlaying in sync for Loader active condition
+                    Connections {
+                        target: webEngineViewLoader.item
+                        ignoreUnknownSignals: true
+                        function onIsYoutubeVideoChanged() {
+                            webViewWrapper.videoPlaying = webEngineViewLoader.item.isYoutubeVideo
                         }
                     }
-                }
+                } // Loader
 
-                function isValidHttpUrl(url) {
-                    let regEx = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/gm;
-                    return regEx.test(url);
-                }
-                onContextMenuRequested: function(request) {
-                    {
-                        request.accepted = true;
-                        contextMenu.popup();
+                Item {
+                    anchors.fill: parent
+                    visible: !webEngineViewLoader.item
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Loading..."
+                        color: YaycProperties.textColor
+                        font.pixelSize: YaycProperties.fsH2
                     }
                 }
+            } // webViewWrapper
 
-                onLinkHovered:  {
-                    if (hoveredUrl.toString().length > 0
-                            && utilities.isYoutubeVideoUrl(hoveredUrl)) {
-                        root.lastHoveredLink = hoveredUrl
+            // Bidirectional property sync between root and WebView (Loader item).
+            // 1. Initial: sourceComponent bindings set WebView props from root on each load.
+            // 2. Child->parent: pull Connections copy WebView changes back to root.
+            // 3. Parent->child: push aliases detect root changes, imperatively assign to WebView.
+            //    (needed after WebView breaks the declarative binding via internal assignment)
+            // !== guards in both directions prevent infinite loops.
+            // On unload root retains values; on reload sourceComponent re-applies them.
+            QtObject {
+                id: webViewSync
+
+                // Push (parent -> child)
+                property alias url: root.url
+                onUrlChanged: if (webEngineView && webEngineView.url !== url)
+                                  webEngineView.url = url
+
+                property alias volume: root.volume
+                onVolumeChanged: if (webEngineView && webEngineView.volume !== volume)
+                                     webEngineView.volume = volume
+
+                property alias userSpecifiedVolume: root.userSpecifiedVolume
+                onUserSpecifiedVolumeChanged: if (webEngineView && webEngineView.userSpecifiedVolume !== userSpecifiedVolume)
+                                                  webEngineView.userSpecifiedVolume = userSpecifiedVolume
+
+                // Pull (child -> parent)
+                property Connections connections : Connections {
+                    target: webEngineView
+                    function onUrlChanged() {
+                        if (root.url !== webEngineView.url)
+                            root.url = webEngineView.url
                     }
-                }
-
-                onTooltipRequested: {
-                    if (request.type === TooltipRequest.Show) {
-                        root.lastHoveredTooltip = request.text
+                    function onPreviousUrlChanged() {
+                        if (root.previousUrl !== webEngineView.previousUrl)
+                            root.previousUrl = webEngineView.previousUrl
+                    }
+                    function onVolumeChanged() {
+                        if (root.volume !== webEngineView.volume)
+                            root.volume = webEngineView.volume
+                    }
+                    function onUserSpecifiedVolumeChanged() {
+                        if (root.userSpecifiedVolume !== webEngineView.userSpecifiedVolume)
+                            root.userSpecifiedVolume = webEngineView.userSpecifiedVolume
+                    }
+                    function onGuideToggledChanged() {
+                        if (root.guideToggled !== webEngineView.guideToggled)
+                            root.guideToggled = webEngineView.guideToggled
+                    }
+                    function onShowCategoryBarChanged() {
+                        if (root.showCategoryBar !== webEngineView.showCategoryBar)
+                            root.showCategoryBar = webEngineView.showCategoryBar
+                    }
+                    function onHomeGridColumnsChanged() {
+                        if (root.homeGridColumns !== webEngineView.homeGridColumns)
+                            root.homeGridColumns = webEngineView.homeGridColumns
+                    }
+                    function onZoomFactorChanged() {
+                        syncZoomFactor()
                     }
                 }
             }
@@ -1117,15 +671,6 @@ Item {
             top: parent.top
             right: parent.right
         }
-
-        property Menu contextMenu: BookmarkContextMenu {
-            isHistoryView: false
-            model: fileSystemModel
-            parentView: null
-            x: buttonAddVideo.x
-            y: buttonAddVideo.y + buttonAddVideo.height
-        }
-
         ColumnLayout {
             anchors.fill: parent
             RowLayout {
@@ -1134,555 +679,294 @@ Item {
                 Layout.fillHeight: true
                 id: navigationBar
 
-                ToolButton {
-                    property int itemAction: WebEngineView.Back
-                    text: webEngineView.action(itemAction).text
-                    enabled: webEngineView.action(itemAction).enabled
-                    onClicked: webEngineView.action(itemAction).trigger()
-                    icon.source: "/icons/arrow_back.svg"
-                    display: AbstractButton.IconOnly //TextUnderIcon
+                RowLayout {
+                    id: staticControlsLeft
 
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Go Back"
-                    ToolTip.delay: 300
-                }
+                    ToolButton {
+                        property int itemAction: WebEngineView.Back
+                        text: webEngineView ? webEngineView.action(itemAction).text : ""
+                        enabled: webEngineView ? webEngineView.action(itemAction).enabled : false
+                        onClicked: if (webEngineView) webEngineView.action(itemAction).trigger()
+                        icon.source: "/icons/arrow_back.svg"
+                        display: AbstractButton.IconOnly //TextUnderIcon
 
-                ToolButton {
-                    property int itemAction: WebEngineView.Forward
-                    text: webEngineView.action(itemAction).text
-                    enabled: webEngineView.action(itemAction).enabled
-                    onClicked: webEngineView.action(itemAction).trigger()
-                    icon.source: "/icons/arrow_forward.svg"
-                    display: AbstractButton.IconOnly
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Go Back (long press for history)"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
 
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Go Forward"
-                    ToolTip.delay: 300
-                }
-
-                ToolButton {
-                    text: "Bookmarks"
-                    id: bookmarksToolButton
-                    enabled: true
-                    checkable: false
-                    property bool checked_: true // bypassing built in checkable to make it tristate
-                    property bool searching: false
-                    onClicked: {
-                        if (checked_)
-                            if (!searching)
-                                searching = true
-                            else
-                                checked_ = searching = false
-                        else
-                            checked_ = true
-
-                        bookmarksContainer.visible = checked_
-                    }
-
-                    icon {
-                        source: "/icons/bookmarks.svg"
-                        color: (checked_)
-                               ? properties.checkedButtonColor
-                               : "white"
-                    }
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: (checked_)
-                                  ? "Hide bookmarks pane"
-                                  : "Show bookmarks pane"
-                    ToolTip.delay: 300
-
-                    Image {
-                        id: bookmarksToolButtonOverlay
-                        anchors {
-                            left: parent.horizontalCenter
-                            right: parent.right
-                            top: parent.verticalCenter
-                            bottom: parent.bottom
-                            leftMargin: 4
-                            topMargin: 4
+                        TapHandler {
+                            onLongPressed: {
+                                historyToolButton.checked_ = !historyToolButton.checked_
+                                historyContainer.visible = historyToolButton.checked_
+                            }
                         }
+                    }
 
-                        source: "/icons/search.svg"
+                    ToolButton {
+                        property int itemAction: WebEngineView.Forward
+                        text: webEngineView ? webEngineView.action(itemAction).text : ""
+                        enabled: webEngineView ? webEngineView.action(itemAction).enabled : false
+                        onClicked: if (webEngineView) webEngineView.action(itemAction).trigger()
+                        icon.source: "/icons/arrow_forward.svg"
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Go Forward (long press for history)"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+
+                        TapHandler {
+                            onLongPressed: {
+                                historyToolButton.checked_ = !historyToolButton.checked_
+                                historyContainer.visible = historyToolButton.checked_
+                            }
+                        }
+                    }
+
+                    ToolButton {
+                        text: "Bookmarks"
+                        id: bookmarksToolButton
                         enabled: true
-                        visible: parent.searching
-                        z: parent.z + 1
-
-                        layer.enabled: true
-                        layer.effect: ColorOverlay {
-                            source: bookmarksToolButtonOverlay
-                            anchors.fill: bookmarksToolButtonOverlay
-                            color: "white"
-                            visible: true
-                        }
-                    }
-                }
-
-                ToolButton {
-                    text: "History"
-                    id: historyToolButton
-                    enabled: true
-                    checkable: false
-                    property bool checked_: false // bypassing built in checkable to make it tristate
-                    property bool searching: false
-                    onClicked: {
-                        if (checked_)
-                            if (!searching)
-                                searching = true
+                        checkable: false
+                        property bool checked_: true // bypassing built in checkable to make it tristate
+                        property bool searching: false
+                        onClicked: {
+                            if (checked_)
+                                if (!searching)
+                                    searching = true
+                                else
+                                    checked_ = searching = false
                             else
-                                checked_ = searching = false
-                        else
-                            checked_ = true
+                                checked_ = true
 
-                        historyContainer.visible = checked_
-                    }
-
-                    icon {
-                        source: "/icons/event_repeat.svg"
-                        color: (checked_)
-                               ? properties.checkedButtonColor
-                               : "white"
-                    }
-
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: (checked)
-                                  ? "Hide history pane"
-                                  : "Show history pane"
-                    ToolTip.delay: 300
-
-                    Image {
-                        id: historyToolButtonOverlay
-                        anchors {
-                            left: parent.horizontalCenter
-                            right: parent.right
-                            top: parent.verticalCenter
-                            bottom: parent.bottom
-                            leftMargin: 4
-                            topMargin: 4
+                            bookmarksContainer.visible = checked_
                         }
 
-                        source: "/icons/search.svg"
+                        icon {
+                            source: "/icons/bookmarks.svg"
+                            color: (checked_)
+                                   ? YaycProperties.checkedButtonColor
+                                   : YaycProperties.iconColor
+                        }
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: (checked_)
+                                      ? "Hide bookmarks pane"
+                                      : "Show bookmarks pane"
+                                      ? "Hide bookmarks pane"
+                                      : "Show bookmarks pane"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+
+                        Image {
+                            id: bookmarksToolButtonOverlay
+                            anchors {
+                                left: parent.horizontalCenter
+                                right: parent.right
+                                top: parent.verticalCenter
+                                bottom: parent.bottom
+                                leftMargin: 4
+                                topMargin: 4
+                            }
+
+                            source: "/icons/search.svg"
+                            enabled: true
+                            visible: parent.searching
+                            z: parent.z + 1
+
+                            layer.enabled: true
+                            layer.effect: ColorOverlay {
+                                source: bookmarksToolButtonOverlay
+                                anchors.fill: bookmarksToolButtonOverlay
+                                color: YaycProperties.iconColor
+                                visible: true
+                            }
+                        }
+                    }
+
+                    ToolButton {
+                        text: "History"
+                        id: historyToolButton
                         enabled: true
-                        visible: parent.searching
-                        z: parent.z + 1
+                        checkable: false
+                        property bool checked_: false // bypassing built in checkable to make it tristate
+                        property bool searching: false
+                        onClicked: {
+                            if (checked_)
+                                if (!searching)
+                                    searching = true
+                                else
+                                    checked_ = searching = false
+                            else
+                                checked_ = true
 
-                        layer.enabled: true
-                        layer.effect: ColorOverlay {
-                            source: historyToolButtonOverlay
-                            anchors.fill: historyToolButtonOverlay
-                            color: "white"
-                            visible: true
+                            historyContainer.visible = checked_
+                        }
+
+                        icon {
+                            source: "/icons/event_repeat.svg"
+                            color: (checked_)
+                                   ? YaycProperties.checkedButtonColor
+                                   : YaycProperties.iconColor
+                        }
+
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: (checked_)
+                                      ? "Hide history pane"
+                                      : "Show history pane"
+                                      ? "Hide history pane"
+                                      : "Show history pane"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+
+                        Image {
+                            id: historyToolButtonOverlay
+                            anchors {
+                                left: parent.horizontalCenter
+                                right: parent.right
+                                top: parent.verticalCenter
+                                bottom: parent.bottom
+                                leftMargin: 4
+                                topMargin: 4
+                            }
+
+                            source: "/icons/search.svg"
+                            enabled: true
+                            visible: parent.searching
+                            z: parent.z + 1
+
+                            layer.enabled: true
+                            layer.effect: ColorOverlay {
+                                source: historyToolButtonOverlay
+                                anchors.fill: historyToolButtonOverlay
+                                color: YaycProperties.iconColor
+                                visible: true
+                            }
                         }
                     }
+
+                    ToolButton {
+                        id: reloadButton
+                        property bool wevLoading: webEngineView ? webEngineView.loading : false
+                        property int itemAction: wevLoading ? WebEngineView.Stop : WebEngineView.Reload
+                        text: webEngineView ? webEngineView.action(itemAction).text : ""
+                        enabled: webEngineView ? webEngineView.action(itemAction).enabled : false
+                        onClicked: if (webEngineView) webEngineView.action(itemAction).trigger()
+                        icon.source: "/icons/" + (wevLoading ? "cancel.svg" : "refresh.svg")
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: wevLoading ? "Stop" : "Reload"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                    }
+
+                    ToolButton {
+                        id: buttonHome
+                        onClicked: root.url = "https://www.youtube.com"
+                        icon.source: "/icons/home.svg"
+                        display: AbstractButton.IconOnly
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Go to YouTube Home"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                    }
                 }
-
-                ToolButton {
-                    id: reloadButton
-                    property int itemAction: webEngineView.loading ? WebEngineView.Stop : WebEngineView.Reload
-                    text: webEngineView.action(itemAction).text
-                    enabled: webEngineView.action(itemAction).enabled
-                    onClicked: webEngineView.action(itemAction).trigger()
-                    icon.source: "/icons/" + (webEngineView.loading ? "cancel.svg" : "refresh.svg")
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: (webEngineView.loading) ? "Stop" : "Reload"
-                    ToolTip.delay: 300
-                }
-
-                TextField {
+                Item {
                     Layout.fillWidth: true
-
-                    text: root.url
-                    selectByMouse: true
-                    onEditingFinished: {}
-                    onAccepted: {
-                        if (text == root.url)
-                            return
-                        root.url = text
-                    }
+                    Layout.fillHeight: true
+                    id: webViewToolsContainer
                 }
-                ToolButton {
-                    id: buttonAddVideo
-                    text: "Add"
-                    enabled: false
-                    visible: true
-                    onClicked: {
-                        timePuller.addCurrentVideo()
-                    }
-                    onPressAndHold: {
-                        if (currentVideoAdded)
-                            toolBar.contextMenu.setKey(webEngineView.key)
-                            toolBar.contextMenu.open()
-                    }
+                RowLayout {
+                    id: rightStaticTools
 
-                    property bool currentVideoAdded: isCurrentVideoAdded(webEngineView.key,
-                                                                         root.addedVideoTrigger)
-                    property int workingDirPresent: webEngineView.keyHasWorkingDir
-
-                    icon {
-                        source: "/icons/add.svg"
-                        color: (currentVideoAdded)
-                               ? (enabled)
-                                 ? properties.addedTextColor
-                                 : properties.addedDisabledTextColor
-                               : (enabled)
-                                 ? "white"
-                                 : properties.disabledTextColor
-                    }
-
-                    Image {
-                        visible: parent.workingDirPresent == 2
-                        anchors {
-                            fill: parent
-                            rightMargin: 12
-                            topMargin: 12
-                            bottomMargin: 4
-                            leftMargin: 4
-                        }
-
-                        source: "qrc:/images/workingdirpresent.png"
-                        opacity: .5
-                    }
-                    Image {
-                        visible: parent.workingDirPresent == 1
-                        anchors {
-                            fill: parent
-                            rightMargin: 12
-                            topMargin: 12
-                            bottomMargin: 4
-                            leftMargin: 4
-                        }
-
-                        source: "qrc:/images/workingdirpresentempty.png"
-                        opacity: .5
-                    }
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: (currentVideoAdded)
-                                  ? "Video already bookmarked"
-                                  : "Add Video to Bookmarks"
-                    ToolTip.delay: 300
-
-                }
-                ToolButton {
-                    id: buttonStarVideo
-                    text: "Star"
-                    enabled: buttonAddVideo.currentVideoAdded
-                    visible: true
-                    onClicked: {
-                        fileSystemModel.starEntry(webEngineView.key, !starred)
-                        triggerStarred()
-                    }
-
-                    function isStarred(key, counter) {
-                        return enabled &&
-                                fileSystemModel.isStarred(key)
-                    }
-
-                    property int _starredTrigger: 0;
-                    function triggerStarred() { _starredTrigger += 1 }
-                    property bool starred: isStarred(webEngineView.key, _starredTrigger)
-
-                    icon {
-                        source: "/icons/"+(buttonStarVideo.starred
-                                                ? "star_fill.svg" : "star.svg")
-                    }
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: (starred)
-                                  ? "Unstar current video"
-                                  : "Star current video"
-                    ToolTip.delay: 300
-                }
-                ToolButton {
-                    id: buttonCopyLink
-                    text: "Copy"
-                    enabled: true //root.addVideoEnabled
-                    visible: true
-                    TextEdit{
-                        id: copyLinkClipboardProxy
-                        visible: false
-                    }
-                    onClicked: {
-                        copyLinkClipboardProxy.text = root.url
-                        copyLinkClipboardProxy.selectAll();
-                        copyLinkClipboardProxy.copy()
-                        copyLinkClipboardProxy.text = ""
-                    }
-                    icon.source: "/icons/content_copy.svg"
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Copy URL to Clipboard"
-                    ToolTip.delay: 300
-                }
-
-                ToolButton {
-                    id: buttonToggleGuide
-                    text: "Toggle Guide panel"
-                    enabled: webEngineView.isYoutubeHome
-                    visible: true
-                    checkable: true
-                    checked: false
-
-                    onCheckedChanged: {
-                        timePuller.clickGuideButton()
-                    }
-
-                    icon.source: "/icons/menu.svg"
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Toggle Guide panel"
-                    ToolTip.delay: 300
-                }
-
-                ToolButton {
-                    id: buttonToggleJS
-                    text: "Activate/Deactivate custom script"
-                    enabled: settings.customScript !== ""
-                    visible: enabled
-                    checkable: true
-                    checked: true
-
-                    onCheckedChanged: {
-                        timePuller.clickGuideButton()
-                    }
-
-                    icon.source: "/icons/js.svg"
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Toggle custom script"
-                    ToolTip.delay: 300
-                }
-
-                ToolButton {
-                    id: buttonSpeed
-                    enabled: webEngineView.isYoutubeVideo
-                    visible: true
-                    checkable: true
-
-                    onCheckedChanged: {
-                        if (checked) {
-                            ToolTip.toolTip.close()
-                            playbackRateMenu.open()
-                        } else {
-                            playbackRateMenu.close()
-                        }
-                    }
-
-                    icon.source: "/icons/speed.svg"
-
-                    display: (text !== "1.00")
-                             ? AbstractButton.TextUnderIcon
-                             : AbstractButton.IconOnly
-                    text: (timePuller.playbackRate) ? timePuller.playbackRate.toFixed(2) : "1.00"
-                    spacing: -6
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Set playback rate"
-                    ToolTip.delay: 300
-                }
-
-                ToolButton {
-                    id: buttonPlayPause
-                    enabled: webEngineView.isYoutubeVideo && (timePuller.playerState !== -1)
-                    visible: true
-                    checkable: false
-
-                    onClicked: {
-                        var scriptToRun
-                        if (timePuller.playerState === 1 && webEngineView.key !== "")
-                            scriptToRun = internals.getPauseVideoScript(webEngineView.isShorts)
-// Br0ken, try https://stackoverflow.com/a/58581660/962856, because .click() also doesn't work
-//                        else if (timePuller.playerState === -1)
-//                            scriptToRun = internals.getPlayNextVideoScript(utilities.isYoutubeShortsUrl(root.url))
-                        else
-                            scriptToRun = internals.getPlayVideoScript(webEngineView.isShorts)
-
-//                        console.log(timePuller.playerState, scriptToRun)
-                        webEngineView.runJavaScript(scriptToRun)
-                    }
-
-                    icon.source: (timePuller.playerState === 1)
-                                    ? "/icons/pause.svg"
-                                    : "/icons/play_arrow.svg"
-
-                    display: AbstractButton.IconOnly
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: (timePuller.playerState === 1)
-                                    ? "Pause video"
-                                    : "Play video"
-                    ToolTip.delay: 300
-                }
-
-                MouseArea {
-                    height: sliderVolume.height
-                    width: sliderVolume.implicitWidth
-                    hoverEnabled: true
-                    property bool hovered: false
-                    onEntered: hovered = true
-                    onExited: hovered = false
-                    Slider {
-                        id: sliderVolume
-                        enabled: webEngineView.isYoutubeVideo
-                        implicitWidth: 130
-                        anchors.centerIn: parent
-
-                        value: 0
-                        from: 0
-                        stepSize: 1
-                        to: 100
-                        snapMode: Slider.SnapAlways
-                        property real userValue: -1
-
-                        function setVolume() {
-                            var newVolume = (userValue >= 0) ? userValue : value
-
-                            var scriptToRun = internals.getVolumeSetterScript(newVolume, utilities.isYoutubeShortsUrl(root.url))
-                            webEngineView.runJavaScript(scriptToRun)
-                        }
-
-                        onUserValueChanged: {
-                            setVolume()
-                        }
-
-                        onValueChanged: {
-                            setVolume()
-                        }
-
-                        onMoved: {
-                            userValue = value
-                        }
-
-                        ToolTip {
-                            parent: sliderVolume.handle
-                            visible: sliderVolume.pressed || sliderVolume.parent.hovered
-                            text: sliderVolume.value.toFixed(0)
-                        }
-                    }
-                }
-
-                ToolButton {
-                    id: settingsButton
-                    text: "Settings"
-                    icon.source: "/icons/settings.svg"
-                    display: AbstractButton.IconOnly
-
-                    onClicked: {
-                        root.firstRun = false
-                        settingsGlitter.enabled = false
-                        settingsMenu.open()
-                    }
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Open Settings Panel"
-                    ToolTip.delay: 300
-                    AnimatedImage {
-                        id: settingsGlitter
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            top: parent.top
-                            bottom: parent.bottom
-                            leftMargin: 2
-                            rightMargin: 2
-                            topMargin: 2
-                            bottomMargin: 2
-                        }
-
-                        source: "/images/glitter-2.webp"
-                        enabled: root.firstRun
-                        playing: enabled
+                    ToolButton {
+                        id: buttonToggleJS
+                        text: "Activate/Deactivate custom script"
+                        enabled: settings.customScript !== ""
                         visible: enabled
-                        speed: 0.5
+                        checkable: true
+                        checked: true
 
-                        layer.enabled: true
-                        layer.mipmap: true
-                        layer.effect: ShaderEffect {
-                            fragmentShader: "
-                                uniform lowp sampler2D source; // this item
-                                uniform lowp float qt_Opacity; // inherited opacity of this item
-                                varying highp vec2 qt_TexCoord0;
-                                void main() {
-                                    lowp vec4 p = texture2D(source, qt_TexCoord0);
-                                    if (p.a < .1)
-                                        gl_FragColor = vec4(0, 0, 0, 0);
-                                    else
-                                        gl_FragColor = vec4(1, 0.9, 0, p.a);
-                                }"
+                        icon.source: "/icons/js.svg"
+                        display: AbstractButton.IconOnly
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Toggle custom script"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                    }
+
+                    ToolButton {
+                        id: settingsButton
+                        text: "Settings"
+                        icon.source: "/icons/settings.svg"
+                        display: AbstractButton.IconOnly
+
+                        onClicked: {
+                            root.firstRun = false
+                            settingsGlitter.enabled = false
+                            settingsMenu.open()
+                        }
+
+                        hoverEnabled: true
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Open Settings Panel"
+                        ToolTip.delay: 300
+                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                        AnimatedImage {
+                            id: settingsGlitter
+                            anchors {
+                                left: parent.left
+                                right: parent.right
+                                top: parent.top
+                                bottom: parent.bottom
+                                leftMargin: 2
+                                rightMargin: 2
+                                topMargin: 2
+                                bottomMargin: 2
+                            }
+
+                            source: "/images/glitter-2.webp"
+                            enabled: root.firstRun
+                            playing: enabled
+                            visible: enabled
+                            speed: 0.5
+
+                            layer.enabled: true
+                            layer.mipmap: true
+                            // TODO: fix this -- QTBUG-87402
+    //                        layer.effect: ShaderEffect {
+    //                            fragmentShader: "
+    //                                uniform lowp sampler2D source; // this item
+    //                                uniform lowp float qt_Opacity; // inherited opacity of this item
+    //                                varying highp vec2 qt_TexCoord0;
+    //                                void main() {
+    //                                    lowp vec4 p = texture2D(source, qt_TexCoord0);
+    //                                    if (p.a < .1)
+    //                                        gl_FragColor = vec4(0, 0, 0, 0);
+    //                                    else
+    //                                        gl_FragColor = vec4(1, 0.9, 0, p.a);
+    //                                }"
+    //                        }
                         }
                     }
-                }
+                } // RowLayout right static tools
             }
         }
     } // header
 
-    Menu {
-        id: playbackRateMenu
-        y: 0 + toolBar.height
-        x: buttonSpeed.x + buttonSpeed.width - width
-        width: 48
-        visible: false
-        ColumnLayout {
-            width: parent.width
-            Repeater {
-                model: internals.videoSpeeds
-
-
-                ToolButton {
-
-                    height: playbackRateMenu.width
-                    width: height
-                    enabled: true
-                    checkable: false
-                    checked: timePuller.playbackRate.toFixed(2) === text
-
-                    z: playbackRateMenu.z + 5
-
-                    text: internals.videoSpeeds[index]
-
-                    display: AbstractButton.TextOnly
-
-                    onClicked: {
-                        buttonSpeed.checked = false
-                        var scriptToRun = internals.getPlaybackRateSetterScript(
-                                    text, utilities.isYoutubeShortsUrl(root.url)
-                                 )
-    //                    console.log(scriptToRun)
-                        webEngineView.runJavaScript(scriptToRun)
-                    }
-
-                    hoverEnabled: true
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Set playback rate to " + text
-                    ToolTip.delay: 300
-
-                }
-            }
-        }
-    }
 
     Dialog {
         id: proxyMenu
@@ -1694,17 +978,17 @@ Item {
         modal: true
 
         header: Item {
-                    width: aboutContainer.width
-                    height: properties.fsH3 * 1.5
-                    Label {
-                        anchors {
-                            topMargin: 4
-                            centerIn: parent
-                        }
-                        text: "<b>Proxy Settings</b>"
-                        font.pixelSize: properties.fsH3
-                    }
+            width: aboutContainer.width
+            height: YaycProperties.fsH3 * 1.5
+            Label {
+                anchors {
+                    topMargin: 4
+                    centerIn: parent
                 }
+                text: "<b>Proxy Settings</b>"
+                font.pixelSize: YaycProperties.fsH3
+            }
+        }
         footer: DialogButtonBox {
             standardButtons: DialogButtonBox.Ok | DialogButtonBox.Cancel
         }
@@ -1713,64 +997,64 @@ Item {
         property string proxyHost: ""
         property int proxyPort: 0
 
-       GridLayout {
-           anchors.fill: parent
-           columns: 2
+        GridLayout {
+            anchors.fill: parent
+            columns: 2
 
-           Label {
-               text: "Proxy Type:"
-           }
+            Label {
+                text: "Proxy Type:"
+            }
 
-           ComboBox {
-               id: proxyTypeComboBox
-               model: ["None", "HTTP", "SOCKS5"]
-               Layout.fillWidth: true
-               onCurrentTextChanged: {
-                   proxyMenu.proxyType = currentText.toLowerCase()
-               }
-           }
+            ComboBox {
+                id: proxyTypeComboBox
+                model: ["None", "HTTP", "SOCKS5"]
+                Layout.fillWidth: true
+                onCurrentTextChanged: {
+                    proxyMenu.proxyType = currentText.toLowerCase()
+                }
+            }
 
-           GroupBox {
-               id: proxySettingsGroup
-               Layout.columnSpan: 2
-               Layout.fillWidth: true
-               enabled: proxyMenu.proxyType !== "none"
+            GroupBox {
+                id: proxySettingsGroup
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                enabled: proxyMenu.proxyType !== "none"
 
-               GridLayout {
-                   anchors.fill: parent
-                   columns: 2
+                GridLayout {
+                    anchors.fill: parent
+                    columns: 2
 
-                   Label {
-                       text: "Host:"
-                   }
+                    Label {
+                        text: "Host:"
+                    }
 
-                   TextField {
-                       id: hostTextField
-                       Layout.fillWidth: true
-                       placeholderText: "Enter proxy host"
-                       onTextChanged: proxyMenu.proxyHost = text
-                   }
+                    TextField {
+                        id: hostTextField
+                        Layout.fillWidth: true
+                        placeholderText: "Enter proxy host"
+                        onTextChanged: proxyMenu.proxyHost = text
+                    }
 
-                   Label {
-                       text: "Port:"
-                   }
+                    Label {
+                        text: "Port:"
+                    }
 
-                   SpinBox {
-                       id: portSpinBox
-                       editable: true
-                       Layout.fillWidth: true
-                       from: 0
-                       to: 65535
-                       value: 0
-                       onValueChanged: proxyMenu.proxyPort = value
-                   }
-               }
-           }
-       }
+                    SpinBox {
+                        id: portSpinBox
+                        editable: true
+                        Layout.fillWidth: true
+                        from: 0
+                        to: 65535
+                        value: 0
+                        onValueChanged: proxyMenu.proxyPort = value
+                    }
+                }
+            }
+        }
 
-       onAccepted: {
-           utilities.setNetworkProxy(proxyType, proxyHost, proxyPort)
-       }
+        onAccepted: {
+            utilities.setNetworkProxy(proxyType, proxyHost, proxyPort)
+        }
 
         onRejected: {
             close()
@@ -1786,14 +1070,14 @@ Item {
         modal: true
         header: Item {
                     width: aboutContainer.width
-                    height: properties.fsH3 * 1.5
+                    height: YaycProperties.fsH3 * 1.5
                     Label {
                         anchors {
                             topMargin: 4
                             centerIn: parent
                         }
                         text: "<b>Settings</b>"
-                        font.pixelSize: properties.fsH3
+                        font.pixelSize: YaycProperties.fsH3
                     }
                 }
         footer: RowLayout {
@@ -1807,6 +1091,7 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
                 ToolTip.text: "Exit YAYC\nCtrl+Q does it too"
+                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
             Button {
                 Layout.alignment: Qt.AlignRight
@@ -1821,6 +1106,7 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
                 ToolTip.text: "Close settings"
+                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
         }
         ColumnLayout {
@@ -1832,23 +1118,25 @@ Item {
             }
             Rectangle {
                 id: settingsScrollViewContainer
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                } // ToDo: fix warning
+                Layout.fillWidth: true
 
-                height: 210
-                color: "transparent"
+                height: 260
+                color: YaycProperties.surfaceOverlayColor
                 border.color: "transparent"
-
+                radius: 6
 
                 ScrollView {
+                    id: scrollViewSettingsDirectories
                     anchors.fill: parent
                     clip: true
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
+                    Component.onCompleted: {
+                        scrollViewSettingsDirectories.contentItem.boundsBehavior = Flickable.StopAtBounds
+                    }
+
                     ColumnLayout {
-                        width: settingsScrollViewContainer.width
+                        width: settingsScrollViewContainer.width - scrollViewSettingsDirectories.ScrollBar.vertical.width
                         spacing: 16
                         GridLayout {
                             width: parent.width
@@ -1875,6 +1163,7 @@ Item {
                                     ToolTip {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
+                                        font.pixelSize: YaycProperties.fsP2
                                         text: "Bookmarks data path:\n" + root.youtubePath
                                         delay: 300
                                     }
@@ -1901,6 +1190,7 @@ Item {
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
                                 ToolTip.text: "Bookmarks data path:\n" + root.youtubePath
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
                                 flat: true
@@ -1915,6 +1205,7 @@ Item {
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
                                 ToolTip.text: "Clear bookmarks data path"
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
 
                             // history
@@ -1933,7 +1224,7 @@ Item {
                                 ColorOverlay {
                                     source: histimg
                                     anchors.fill: histimg
-                                    color: "white"
+                                    color: YaycProperties.iconColor
                                 }
 
                                 MouseArea {
@@ -1946,6 +1237,7 @@ Item {
                                     ToolTip {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
+                                        font.pixelSize: YaycProperties.fsP2
                                         text: "YouTube history path:\n" + root.historyPath
                                         delay: 300
                                     }
@@ -1972,6 +1264,7 @@ Item {
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
                                 ToolTip.text: "YouTube history path:\n" + root.historyPath
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
                                 flat: true
@@ -1986,6 +1279,7 @@ Item {
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
                                 ToolTip.text: "Clear YouTube history path"
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
 
                             // chromium profile
@@ -2007,7 +1301,8 @@ Item {
                                     ToolTip {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
-                                        text: "Chromium cookies path:\n" + root.profilePath
+                                        font.pixelSize: YaycProperties.fsP2
+                                        text: "Chromium cookies path:\n" + WebBrowsingProfiles.profilePath
                                         delay: 300
                                     }
                                 }
@@ -2020,7 +1315,8 @@ Item {
                                 Layout.columnSpan: 4
                                 Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignLeft
-                                text: (root.profilePath === "") ? "<undefined>" : root.profilePath
+                                text: (WebBrowsingProfiles.profilePath === "")
+                                      ? "<undefined>" : WebBrowsingProfiles.profilePath
                             }
                             Button {
                                 id: buttonOpenGProfile
@@ -2033,7 +1329,8 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Chromium cookies path:\n" + root.profilePath
+                                ToolTip.text: "Chromium cookies path:\n" + WebBrowsingProfiles.profilePath
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
                                 flat: true
@@ -2042,12 +1339,13 @@ Item {
                                 Layout.alignment: Qt.AlignVCenter
                                 Layout.leftMargin: -16
                                 Layout.rightMargin: 0
-                                onClicked: root.profilePath = ""
+                                onClicked: WebBrowsingProfiles.profilePath = ""
                                 hoverEnabled: true
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
                                 ToolTip.text: "Clear Chromium cookies path"
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                         } // GridLayout
                         GridLayout {
@@ -2056,69 +1354,6 @@ Item {
                             rowSpacing: 16
                             columnSpacing: 16
                             visible: root.debugMode
-
-                            // easylist
-                            Image {
-                                width: 32
-                                height: 32
-                                Layout.preferredWidth: width
-                                Layout.preferredHeight: height
-                                Layout.alignment: Qt.AlignVCenter
-                                source: "qrc:/images/ad-blocker-fi-128.png"
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    property bool hovered: false
-                                    onEntered:  hovered = true
-                                    onExited: hovered = false
-
-                                    ToolTip {
-                                        visible: parent.hovered
-                                        y: parent.height * 0.12
-                                        text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
-                                        delay: 300
-                                    }
-                                }
-                            }
-                            Label {
-                                text: "Easylist:"
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-                            Label {
-                                Layout.columnSpan: 4
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignLeft
-                                text: (root.easyListPath === "") ? "<undefined>" : root.easyListPath
-                            }
-                            Button {
-                                id: buttonOpenEasylist
-                                flat: true
-                                display: Button.IconOnly
-                                icon.source: "/icons/folder_open.svg"
-                                Layout.alignment: Qt.AlignVCenter
-                                onClicked: fileDialogEasylist.open()
-                                hoverEnabled: true
-
-                                ToolTip.visible: hovered
-                                ToolTip.delay: 300
-                                ToolTip.text: "easylist.txt path (find it at https://easylist.to/easylist/easylist.txt):\n" + root.profilePath
-                            }
-                            Button {
-                                flat: true
-                                display: Button.IconOnly
-                                icon.source: "/icons/delete_forever.svg"
-                                Layout.alignment: Qt.AlignVCenter
-                                Layout.leftMargin: -16
-                                Layout.rightMargin: 0
-                                onClicked: root.easyListPath = ""
-                                hoverEnabled: true
-
-                                ToolTip.visible: hovered
-                                ToolTip.delay: 300
-                                ToolTip.text: "Clear easylist path"
-                            }
-                            // easylist end
 
                             // external workdir
                             Item {
@@ -2136,7 +1371,7 @@ Item {
                                 ColorOverlay {
                                     source: extworkdirimg
                                     anchors.fill: extworkdirimg
-                                    color: "white"
+                                    color: YaycProperties.iconColor
                                 }
 
                                 MouseArea {
@@ -2149,6 +1384,7 @@ Item {
                                     ToolTip {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
+                                        font.pixelSize: YaycProperties.fsP2
                                         text: "Working directory for external executable:\n" + root.extWorkingDirPath
                                         delay: 300
                                     }
@@ -2176,6 +1412,7 @@ Item {
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
                                 ToolTip.text: "Working directory for external executable:\n" + root.extWorkingDirPath
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
                                 flat: true
@@ -2190,6 +1427,7 @@ Item {
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
                                 ToolTip.text: "Clear external executable working directory path"
+                                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             // external workdir end
 
@@ -2219,7 +1457,7 @@ Item {
                                         ColorOverlay {
                                             source: extcmdimg
                                             anchors.fill: extcmdimg
-                                            color: "white"
+                                            color: YaycProperties.iconColor
                                         }
                                     }
                                     Label {
@@ -2233,9 +1471,9 @@ Item {
                                         width: 80
                                         focus: true
                                         selectByMouse: true
-                                        font.pixelSize: properties.fsP1
+                                        font.pixelSize: YaycProperties.fsP1
                                         cursorVisible: true
-                                        color: properties.textColor
+                                        color: YaycProperties.textColor
 
                                         text: modelData.name
                                         onTextChanged: {
@@ -2245,24 +1483,22 @@ Item {
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
                                         ToolTip.text: "Name of the external command on the menu:\n" + extCmdName.text
-
+                                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                     TextField {
                                         id: extCmdCmd
                                         focus: true
                                         selectByMouse: true
-                                        font.pixelSize: properties.fsP1
+                                        font.pixelSize: YaycProperties.fsP1
                                         cursorVisible: true
-                                        color: properties.textColor
+                                        color: YaycProperties.textColor
                                         Layout.fillWidth: true
-
-                                        width: parent.width - parent.spacing - extCmdName.width
 
                                         text: modelData.command
                                         onTextChanged: {
                                             if (utilities.executableExists(text)) {
                                                 root.externalCommands[index].command = text
-                                                color = properties.textColor
+                                                color = YaycProperties.textColor
                                             } else {
                                                 color = "firebrick"
                                             }
@@ -2271,7 +1507,7 @@ Item {
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
                                         ToolTip.text: "External command to trigger through context menu:\n" + extCmdCmd.text
-
+                                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                     Button {
                                         flat: true
@@ -2289,6 +1525,7 @@ Item {
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
                                         ToolTip.text: "Clear external command"
+                                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                     Button {
                                         flat: true
@@ -2306,6 +1543,7 @@ Item {
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
                                         ToolTip.text: "Add another command"
+                                        ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                 }
                             }
@@ -2320,108 +1558,100 @@ Item {
                 width: settingsMain.width
                 height: settingsButtonsLayout.height
 
-                RowLayout {
+                ColumnLayout {
                     id: settingsButtonsLayout
-                    anchors.centerIn: parent
                     width: parent.width
                     spacing: 0
 
-                    Row {
-                        Layout.alignment: Qt.AlignLeft
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
                         CheckBox {
-                            Layout.alignment: Qt.AlignLeft
                             id: darkModeCheck
                             checked: root.darkMode
-                            text: qsTr("Dark mode\n(requires restart)")
-                            onCheckedChanged: {
-                                root.darkMode = checked
-                            }
+                            text: qsTr("Dark mode")
+                            onCheckedChanged: root.darkMode = checked
+                            hoverEnabled: true
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Toggle dark/light theme"
+                            ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                         CheckBox {
-
                             id: debugModeCHeck
                             checked: root.debugMode
-                            text: qsTr("Developer\nmode")
-                            onCheckedChanged: {
-                                root.debugMode = checked
-                            }
-                        }
-
-                        CheckBox {
-
-                            id: deleteStorageCheck
-                            visible: root.debugMode
-                            checked: root.removeStorageOnDelete
-                            text: qsTr("Delete\nstorage")
-                            onCheckedChanged: {
-                                root.removeStorageOnDelete = checked
-                            }
-
+                            text: qsTr("Advanced")
+                            onCheckedChanged: root.debugMode = checked
                             hoverEnabled: true
-
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
+                            ToolTip.text: "Show advanced settings and developer options"
+                            ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
-                        CheckBox {
-
-                            id: blankWhenHiddenCheck
-                            visible: root.debugMode
-                            checked: root.blankWhenHidden
-                            text: qsTr("Blank when\ninvisible")
-                            onCheckedChanged: {
-                                root.blankWhenHidden = checked
-                            }
-
-                            hoverEnabled: true
-
-                            ToolTip.visible: hovered
-                            ToolTip.delay: 300
-                            ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
-                        }
-                    }
-                    Row {
-                        Layout.alignment: Qt.AlignLRight
-                        Layout.rightMargin: -32
+                        Item { Layout.fillWidth: true }
                         Button {
                             id: buttonOpenProxyDialog
                             flat: true
-                            display: Button.TextOnly
-                            text: "Proxy\nSettings"
+                            text: "Proxy Settings"
                             onClicked: proxyMenu.open()
                             hoverEnabled: true
-
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
                             ToolTip.text: "Edit the proxy settings used to access the network"
+                            ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        visible: root.debugMode
+
+                        CheckBox {
+                            id: deleteStorageCheck
+                            checked: root.removeStorageOnDelete
+                            text: qsTr("Delete storage")
+                            onCheckedChanged: root.removeStorageOnDelete = checked
+                            hoverEnabled: true
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
+                            ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                        }
+                        CheckBox {
+                            id: blankWhenHiddenCheck
+                            checked: root.blankWhenHidden
+                            text: qsTr("Blank when invisible")
+                            onCheckedChanged: root.blankWhenHidden = checked
+                            hoverEnabled: true
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
+                            ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                         Button {
                             id: buttonOpenJSDialog
                             flat: true
-                            display: Button.TextOnly
-                            visible: root.debugMode
-                            text: "Custom\nScript"
+                            text: "Custom Script"
                             onClicked: customScriptDialog.open()
                             hoverEnabled: true
-
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
                             ToolTip.text: "Edit the custom script that is run after loading a video page"
+                            ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
+                        Item { Layout.fillWidth: true }
                         Button {
                             id: buttonResetSettings
                             flat: true
-                            visible: root.debugMode
-                            enabled: true
-                            display: Button.IconOnly
-                            icon.source: "/icons/restart.svg"
-                            text: "Custom\nScript"
-                            onClicked: utilities.clearSettings()
+                            text: "Clear Settings"
+                            onClicked: utilities.clearSettings(configFileUrl)
                             hoverEnabled: true
-
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Clear all settings (restarts YAYC)"
+                            ToolTip.text: "Erase all settings and restart YAYC"
+                            ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                     }
                 }
@@ -2436,10 +1666,9 @@ Item {
 
                 Rectangle {
                     id: newReleaseContainer
-                    visible: utilities.compareSemver(appVersion, root.lastestRemoteVersion) > 0
-                    color: (maNewVersion.hovered)
-                            ? Qt.rgba(1,1,1,0.1)
-                            : "transparent"
+                    visible: utilities.compareSemver(appVersion, root.lastestRemoteVersion) < 0
+
+                    color: (maNewVersion.hovered) ? YaycProperties.hoverOverlayColor : "transparent"
                     Layout.alignment: Qt.AlignCenter
 
                     width: settingsMenu.width * 0.55
@@ -2451,7 +1680,7 @@ Item {
                         color: "crimson"
                         font {
                             bold: true
-                            pixelSize: properties.fsH2
+                            pixelSize: YaycProperties.fsH2
                         }
                     }
                     MouseArea {
@@ -2462,7 +1691,7 @@ Item {
                         property bool hovered: false
                         onEntered: hovered = true
                         onExited: hovered = false
-                        onClicked: {
+                        onClicked: (mouse) => {
                             Qt.openUrlExternally(repositoryURL + "/releases");
                         }
                     }
@@ -2478,38 +1707,44 @@ Item {
                 ColumnLayout {
                     Row {
                         Layout.alignment: Qt.AlignLeft
-                        Image {
-                            id: infoimg
+                        Item {
                             width: 32
                             height: 32
                             anchors.verticalCenter: parent.verticalCenter
-                            source: "/icons/info.svg"
+                            Image {
+                                id: infoimg
+                                source: "/icons/info.svg"
+                                visible: false
+                                anchors.fill: parent
+                            }
                             ColorOverlay {
                                 source: infoimg
                                 anchors.fill: infoimg
-                                color: "white"
+                                color: YaycProperties.iconColor
                             }
                         }
                         Rectangle {
                             width: aboutRow.width + 16
                             height: buttonOpenGProfile.height
                             Layout.alignment: Qt.AlignLeft
-                            color: (maAbout.hovered) ? Qt.rgba(1,1,1,0.1) : "transparent"
+                            color: (maAbout.hovered) ? YaycProperties.hoverOverlayColor : "transparent"
                             Row {
                                 id: aboutRow
                                 anchors.centerIn: parent
                                 Label {
                                     id: aboutLabel
                                     text: "About "
-                                    font.pixelSize: properties.fsP1
+                                    font.pixelSize: YaycProperties.fsP1
                                 }
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
                                     source: "/images/yayc-inlined.png"
                                     fillMode: Image.PreserveAspectFit
-                                    height: properties.fsP1
+                                    height: YaycProperties.fsP1
                                     mipmap: true
                                     smooth: true
+                                    layer.enabled: true
+                                    layer.effect: ColorOverlay { color: YaycProperties.iconColor }
                                 }
                             }
                             MouseArea {
@@ -2528,29 +1763,32 @@ Item {
                     }
                     Row {
                         Layout.alignment: Qt.AlignLeft
-                        Image {
-                            id: helpImg
+                        Item {
                             width: 32
                             height: 32
-
                             anchors.verticalCenter: parent.verticalCenter
-                            source: "/icons/help.svg"
+                            Image {
+                                id: helpImg
+                                source: "/icons/help.svg"
+                                visible: false
+                                anchors.fill: parent
+                            }
                             ColorOverlay {
                                 source: helpImg
                                 anchors.fill: helpImg
-                                color: "white"
+                                color: YaycProperties.iconColor
                             }
                         }
                         Rectangle {
                             width: helpLabel.width + 16
                             height: buttonOpenGProfile.height
                             Layout.alignment: Qt.AlignLeft
-                            color: (maHelp.hovered) ? Qt.rgba(1,1,1,0.1) : "transparent"
+                            color: (maHelp.hovered) ? YaycProperties.hoverOverlayColor : "transparent"
                             Label {
                                 anchors.centerIn: parent
                                 id: helpLabel
                                 text: "Help"
-                                font.pixelSize: properties.fsP1
+                                font.pixelSize: YaycProperties.fsP1
                             }
                             MouseArea {
                                 id: maHelp
@@ -2560,7 +1798,7 @@ Item {
                                 property bool hovered: false
                                 onEntered: hovered = true
                                 onExited: hovered = false
-                                onClicked: {
+                                onClicked: (mouse) => {
                                     helpContainer.visible = true
                                 }
                             }
@@ -2576,7 +1814,7 @@ Item {
                     Layout.rightMargin: 8
                     radius: 6
                     color: (maDonate.hovered
-                            && donateButton.enabled) ? Qt.rgba(0.94,0.6,0.6,0.6)
+                            && donateButton.enabled) ? YaycProperties.hoverOverlayColor
                                                      : "transparent"
                     width: donateButton.width + 6
                     height: donateButton.height + 6
@@ -2597,7 +1835,7 @@ Item {
                             property bool hovered: false
                             onEntered: hovered = true
                             onExited: hovered = false
-                            onClicked: {
+                            onClicked: (mouse) => {
                                 Qt.openUrlExternally(root.donateUrl)
                             }
                         }
@@ -2616,7 +1854,7 @@ Item {
         modal: true
         header: Item {
             width: aboutContainer.width
-            height: properties.fsH3 * 1.5
+            height: YaycProperties.fsH3 * 1.5
             Row {
                 anchors.centerIn: parent
                 topPadding: 8
@@ -2627,16 +1865,18 @@ Item {
                         source: "/images/yayc-inlined.png"
                         anchors.centerIn: parent
                         fillMode: Image.PreserveAspectFit
-                        height: properties.fsH2
+                        height: YaycProperties.fsH2
                         mipmap: true
                         smooth: true
+                        layer.enabled: true
+                        layer.effect: ColorOverlay { color: YaycProperties.iconColor }
                     }
                 }
 
                 Label {
                     id: aboutTitleVersion
                     text: "  v"+appVersion
-                    font.pixelSize: properties.fsH2
+                    font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
             }
@@ -2671,10 +1911,12 @@ Item {
                             source: "/images/yayc-square.png"
                             sourceSize: Qt.size(parent.width - 32, parent.height - 32)
                             smooth: true
+                            layer.enabled: true
+                            layer.effect: ColorOverlay { color: YaycProperties.iconColor }
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
+                                onClicked: (mouse) => {
                                     Qt.openUrlExternally(repositoryURL)
                                 }
                             }
@@ -2688,11 +1930,11 @@ Item {
                         Layout.alignment: Qt.AlignCenter
                         Label {
                             text: "Licensed under  "
-                            font.pixelSize: properties.fsP2 * 1.05
+                            font.pixelSize: YaycProperties.fsP2 * 1.05
                         }
 
                         Image {
-                            height: properties.fsP2
+                            height: YaycProperties.fsP2
                             fillMode: Image.PreserveAspectFit
                             source: "/images/by-nc-sa_15.svg"
                             smooth: true
@@ -2702,7 +1944,7 @@ Item {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
+                                onClicked: (mouse) => {
                                     Qt.openUrlExternally(repositoryURL + '/blob/master/LICENSE')
                                 }
                             }
@@ -2723,7 +1965,7 @@ Item {
                                 right: parent.right
                             }
 
-                            font.pixelSize: properties.fsP1
+                            font.pixelSize: YaycProperties.fsP1
                             wrapMode: Text.WordWrap
                             text:
     "YAYC is your modern YouTube client, to help with the "
@@ -2736,7 +1978,7 @@ Item {
                         text: "Changelog"
                         font {
                             bold: true
-                            pixelSize: properties.fsH4
+                            pixelSize: YaycProperties.fsH4
                         }
                     }
                     Rectangle {
@@ -2748,7 +1990,7 @@ Item {
                             anchors.fill: parent
 
                             TextArea {
-                                font.pixelSize: properties.fsP1
+                                font.pixelSize: YaycProperties.fsP1
                                 wrapMode: Text.WordWrap
                                 textFormat: Text.MarkdownText
                                 readOnly: true
@@ -2767,7 +2009,7 @@ Item {
                                 text: 'Want to help? '
                                 font {
                                     bold: true
-                                    pixelSize: properties.fsH4
+                                    pixelSize: YaycProperties.fsH4
                                 }
                             }
                             Label {
@@ -2775,12 +2017,12 @@ Item {
                                 text: '<a href="' + repositoryURL + '/issues">Get involved</a>'
                                 font {
                                     bold: true
-                                    pixelSize: properties.fsH4
+                                    pixelSize: YaycProperties.fsH4
                                 }
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
+                                    onClicked: (mouse) => {
                                         Qt.openUrlExternally(
                                         labelIssues.linkAt(labelIssues.width * 0.5,
                                                            labelIssues.height * 0.5))
@@ -2791,7 +2033,7 @@ Item {
                                 text: ' or '
                                 font {
                                     bold: true
-                                    pixelSize: properties.fsH4
+                                    pixelSize: YaycProperties.fsH4
                                 }
                                 enabled: donateButton.enabled
                                 visible: enabled
@@ -2803,13 +2045,13 @@ Item {
                                 text: '<a href="'+root.donateUrl+'">make a donation</a>!'
                                 font {
                                     bold: true
-                                    pixelSize: properties.fsH4
+                                    pixelSize: YaycProperties.fsH4
                                 }
                                 onLinkActivated: Qt.openUrlExternally(link)
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
+                                    onClicked: (mouse) => {
                                         Qt.openUrlExternally(
                                         labelDonation.linkAt(labelDonation.width * 0.5,
                                                              labelDonation.height * 0.5))
@@ -2836,13 +2078,13 @@ Item {
         modal: true
         header: Item {
             width: helpContainer.width
-            height: properties.fsH3 * 1.5
+            height: YaycProperties.fsH3 * 1.5
             Row {
                 anchors.centerIn: parent
                 topPadding: 8
                 Label {
                     text: "Help Center"
-                    font.pixelSize: properties.fsH2
+                    font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
             }
@@ -2896,14 +2138,14 @@ Item {
                         visible: maHelpImage.hovered
                         y: parent.height * 0.12
                         contentItem: Text{
-                            color: "white"
+                            color: YaycProperties.textColor
                             font.family: mainFont.name
-                            font.pixelSize: properties.fsP1
+                            font.pixelSize: YaycProperties.fsP2
                             text: helpContainer.tooltips[index]
                         }
                         background: Rectangle {
-                            color: Qt.rgba(.1,.1,.1,0.65)
-                            border.color: Qt.rgba(1,1,1,0.15)
+                            color: YaycProperties.tooltipBgColor
+                            border.color: YaycProperties.tooltipBorderColor
                             radius: height * .15
                         }
                     }
@@ -2936,13 +2178,13 @@ Item {
 
         header: Item {
             width: customScriptDialog.width
-            height: properties.fsH3 * 1.5
+            height: YaycProperties.fsH3 * 1.5
             Row {
                 anchors.centerIn: parent
                 topPadding: 8
                 Label {
                     text: "Custom JS script"
-                    font.pixelSize: properties.fsH2
+                    font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
             }
@@ -2985,6 +2227,7 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
                 ToolTip.text: "Set a custom JavaScript to be run on every video page"
+                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
             Button {
                 Layout.alignment: Qt.AlignRight
@@ -2999,6 +2242,7 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
                 ToolTip.text: "Abort"
+                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
         } // RowLayout
     } // customScriptDialog
@@ -3013,14 +2257,14 @@ Item {
         modal: true
         header: Item {
             width: disclaimerContainer.width
-            height: properties.fsH3 * 1.5
+            height: YaycProperties.fsH3 * 1.5
             Row {
                 anchors.centerIn: parent
                 topPadding: 8
 
                 Label {
                     text: "Disclaimer"
-                    font.pixelSize: properties.fsH2
+                    font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
             }
@@ -3043,6 +2287,7 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
                 ToolTip.text: "Accept the conditions and limitation of liability"
+                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
             Button {
                 Layout.alignment: Qt.AlignRight
@@ -3054,6 +2299,7 @@ Item {
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
                 ToolTip.text: "Exit"
+                ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
         }
 
@@ -3072,7 +2318,7 @@ Item {
                             anchors.fill: parent
 
                             TextArea {
-                                font.pixelSize: properties.fsP1
+                                font.pixelSize: YaycProperties.fsP1
                                 wrapMode: Text.WordWrap
                                 textFormat: Text.MarkdownText
                                 readOnly: true
@@ -3148,9 +2394,9 @@ Item {
                     verticalCenter: parent.verticalCenter
                 }
                 selectByMouse: true
-                font.pixelSize: properties.fsP1
+                font.pixelSize: YaycProperties.fsP1
                 cursorVisible: true
-                color: properties.textColor
+                color: YaycProperties.textColor
             }
         }
 
@@ -3220,9 +2466,9 @@ Item {
                     verticalCenter: parent.verticalCenter
                 }
                 selectByMouse: true
-                font.pixelSize: properties.fsP1
+                font.pixelSize: YaycProperties.fsP1
                 cursorVisible: true
-                color: properties.textColor
+                color: YaycProperties.textColor
             }
         }
 
@@ -3231,80 +2477,53 @@ Item {
         }
     } // addVideoDialog
 
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogVideos
-        nameFilters: []
         title: "Please choose a directory to store videos"
-        selectExisting: true
-        selectFolder: true
 
         onAccepted: {
             fileDialogVideos.close()
-            var path = String(fileDialogVideos.fileUrl)
+            var path = String(fileDialogVideos.selectedFolder)
             root.youtubePath = root.deUrlizePath(path)
         }
         onRejected: {
         }
     }
 
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogHistory
-        nameFilters: []
         title: "Please choose a directory to store history"
-        selectExisting: true
-        selectFolder: true
 
         onAccepted: {
             fileDialogHistory.close()
-            var path = String(fileDialogHistory.fileUrl)
+            var path = String(fileDialogHistory.selectedFolder)
             root.historyPath = root.deUrlizePath(path)
         }
         onRejected: {
         }
     }
 
-    QQD.FileDialog {
-        id: fileDialogEasylist
-        nameFilters: []
-        title: "Please choose easylist.txt"
-        selectExisting: true
-        selectFolder: false
-
-        onAccepted: {
-            fileDialogEasylist.close()
-            var path = String(fileDialogEasylist.fileUrl)
-            root.easyListPath = root.deUrlizePath(path)
-            requestInterceptor.setEasyListPath(root.easyListPath)
-        }
-        onRejected: {
-        }
-    }
-
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogExtWorkingDir
-        nameFilters: []
         title: "Please choose a working directory to run the external application"
-        selectExisting: true
-        selectFolder: true
+
         onAccepted: {
             fileDialogExtWorkingDir.close()
-            var path = String(fileDialogExtWorkingDir.fileUrl)
+            var path = String(fileDialogExtWorkingDir.selectedFolder)
             root.extWorkingDirPath = root.deUrlizePath(path)
         }
         onRejected: {
         }
     }
 
-    QQD.FileDialog {
+    QQD.FolderDialog {
         id: fileDialogProfile
-        nameFilters: []
         title: "Please choose a directory for your Google profile"
-        selectExisting: true
-        selectFolder: true
+
         onAccepted: {
             fileDialogProfile.close()
-            var path = String(fileDialogProfile.fileUrl)
-            root.profilePath = root.deUrlizePath(path)
+            var path = String(fileDialogProfile.selectedFolder)
+            WebBrowsingProfiles.profilePath = root.deUrlizePath(path)
         }
         onRejected: {
         }
