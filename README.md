@@ -87,12 +87,13 @@ For screenshots and illustrations, visit [https://yayc.stream/#usage](https://ya
 
 **The use of this project's code, documentation, or any associated materials for training artificial intelligence models is explicitly prohibited under the terms of this project's [license](LICENSE), for both commercial and non-commercial purposes.**
 
-This prohibition applies to all forms of AI/ML training, including but not limited to:
+This prohibition applies to all forms of AI/ML training and indexing, including but not limited to:
 - Large language models (LLMs)
 - Code generation models
-- Any other machine learning system
+- Retrieval-Augmented Generation (RAG) systems, embedding databases, and vector stores
+- Any other machine learning or AI-assisted system
 
-This applies regardless of whether the training is performed by automated crawlers, scraping tools, or manual collection.
+This applies regardless of whether the code is used for direct model training, fine-tuning, embedding generation, retrieval indexing, or any other form of ingestion into an AI system, and regardless of whether it is performed by automated crawlers, scraping tools, or manual collection.
 
 **Any entity — individual, organization, or automated system — that uses this code or its contents for AI training purposes is in direct violation of the license and is therefore legally liable under the applicable copyright law.**
 
