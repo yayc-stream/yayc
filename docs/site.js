@@ -81,7 +81,7 @@ $(document).ready(function (){
 
     //links going to other sections nicely scroll
 	$(".container a").each(function(){
-        if ($(this).attr("href").charAt(0) == '#'){
+        if ($(this).attr("href").charAt(0) == '#' && !$(this).hasClass('screenshot-thumb') && !$(this).closest('.lightbox').length){
             $(this).on('click', function(event) {
         		event.preventDefault();
                 var target = $(event.target).closest("a");

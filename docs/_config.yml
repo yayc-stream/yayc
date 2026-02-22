@@ -15,7 +15,7 @@ markdown: kramdown
 
 ### content configuration ###
 title:       "YAYC: Yet Another YouTube Client"
-keywords:    "YouTube, desktop, Qt5, QtWebEngine, QML"
+keywords:    "YouTube, desktop, Qt6, QtWebEngine, QML"
 description: "YAYC is a modern desktop YouTube Client"
 source_link: "https://github.com/yayc-stream/yayc"
 favicon:     "img/favicon.ico"
@@ -26,12 +26,13 @@ google_analytics_key: G-JXCEB3V99Y
 ### template colors, used site-wide via css ###
 colors:
   black:     '#111111'
-  white:     '#f8f8f8'
+  white:     '#e8e8e8'
   blue:      '#49a7e9'
   green:     '#9bcf2f'
   purple:    '#c869bf'
   orange:    '#fab125'
   turquoise: '#0fbfcf'
+  accent:    '#cc3333'
 
 kramdown:
   auto_ids:  false
