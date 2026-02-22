@@ -86,7 +86,8 @@ disclaimer.prefix = /
 
 RESOURCES += disclaimer
 
-OTHER_FILES += LICENSE README.md CHANGELOG.md APPVERSION DONATE DISCLAIMER.md\
+OTHER_FILES += LICENSE APPVERSION DONATE\
+               $$files($$PWD/*.md, false)\
                $$files($$PWD/docs/*, true)\
                $$files($$PWD/tests/*, true)
 
