@@ -81,10 +81,19 @@ Notes:
 - If no history directory is specified, history won't be saved.
 - If no Google profile directory is specified, YAYC will operate in Inkognito mode, and logging into your Google account won't be remembered at next app restart.
 
-![Screenshot](docs/img/0_startup.png)
+For screenshots and illustrations, visit [https://yayc.stream/#usage](https://yayc.stream/#usage).
 
-![Screenshot](docs/img/1_settings.png)
- 
-![Screenshot](docs/img/2_bookmarks_context_menu.png)
+## AI Training Prohibition
 
-![Screenshot](docs/img/3_bookmarks_drag_drop.png)
+**The use of this project's code, documentation, or any associated materials for training artificial intelligence models is explicitly prohibited under the terms of this project's [license](LICENSE), for both commercial and non-commercial purposes.**
+
+This prohibition applies to all forms of AI/ML training, including but not limited to:
+- Large language models (LLMs)
+- Code generation models
+- Any other machine learning system
+
+This applies regardless of whether the training is performed by automated crawlers, scraping tools, or manual collection.
+
+**Any entity — individual, organization, or automated system — that uses this code or its contents for AI training purposes is in direct violation of the license and is therefore legally liable under the applicable copyright law.**
+
+See the full [LICENSE](LICENSE) for details.
