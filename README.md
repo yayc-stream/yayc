@@ -5,7 +5,7 @@
 [![Releases](https://img.shields.io/github/release/yayc-stream/yayc.svg)](https://github.com/yayc-stream/yayc/releases)
 [![Github all releases](https://img.shields.io/github/downloads/yayc-stream/yayc/total.svg)](https://GitHub.com/yayc-stream/yayc/releases/)
 
-A YouTube client built with Qt5/QML.
+A YouTube client intially built with Qt5/QML, now Qt6/QML.
 It sports bookmarks support, progress tracking, and more.
 It is intended to help managing video queues and playlists, sparing the user from having
 to use many browser tabs or windows to keep track of multiple content.
@@ -23,6 +23,44 @@ to use many browser tabs or windows to keep track of multiple content.
 - `OpenSSL`
 
 ## Build instructions
+
+### Provisioning
+
+#### Windows
+
+Building YAYC on Windows requires Qt6 and Visual Studio 2019 or 2022 (optionally QtCreator).
+Visual Studio 2019 (community) can be obtained for free from Microsoft (https://visualstudio.microsoft.com/vs/older-downloads/)
+Latest version of Qt6 (6.10) can be installed through the Qt online installer (https://www.qt.io/download-qt-installer).
+OpenSSL now appears included by default by the Qt online installer.
+
+#### Linux
+
+Building YAYC on linux requires Qt6 and a gcc compiler toolchain.
+On debian-based distributions the c++ toolchain can usually be installed with
+```
+apt install build-essential
+```
+
+Qt6 can be obtained through the Qt online installer (see above) or through your linux distribution package manager.
+On debian-based distributions (ubuntu, mint, etc.) for example:
+```
+apt install libqt6webchannel6 libqt6webenginequick6 libqt6webenginequickdelegatesqml6 qt6-webengine-private-dev qt6-webengine-dev-tools libqt6webengine6-data libqt6network6 qml6-module-qtquick-controls qml6-module-qtquick-nativestyle libqt6quickcontrols2-6 libqt6quickcontrols2impl6 qml6-module-qtquick qml6-module-qtquick-dialogs qml6-module-qtquick-layouts qml6-module-qtquick-localstorage qml6-module-qtquick-window qml6-module-qtquick-templates qml6-module-qtwebchannel qml6-module-qt-labs-settings qml6-module-qt-labs-platform qml6-module-qtquick-dialogs libqt6core5compat6 qml6-module-qt5compat-graphicaleffects qt6-5compat-dev openssl 
+```
+
+Note: YAYC has been tested with Qt 6.8 and Qt 6.10. 
+Earlier Qt6 versions are untested and with several known issues, limitations and missing component or features, 
+and will most likely not be suitable for building YAYC.
+If your distribution ships an earlier version of Qt6, it is recommended to use the Qt online installer.
+
+
+### Building
+
+```
+qmake6 CONFIG+=release
+make
+```
+
+## Build instructions (older versions based on Qt5)
 
 ### Provisioning
 

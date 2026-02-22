@@ -1,3 +1,35 @@
+## YAYC v1.4.0 (2026.02) -- Paquito
+
+### ✨ New Features
+
+- Ported to Qt6 (uses Qt 6.10)
+- Added context menu option to move a video where the last one was moved
+- Added a home button to load youtube home
+- Added a toggle button to remove youtube category bar on the main page
+- Added a toggle button to switch PIP on/off
+- Added a menu to change the video quality
+- Added a slider to configure the number of columns in youtube home's miniature grid
+- Run external command now runs also for categories, recursively
+
+### 🐞 Bug fixes
+
+- Fixed QtQuickControls1 TreeView glitches by porting YAYC to Qt6
+- Fixed scrollbar gliching on/after searching/filtering
+- Changing the youtube page scaling will now correctly show the new scale in an ephemeral overlay
+- Ctrl+Q fixed for Windows
+- Fixed settings clearance through the UI dialog
+- Fixed Light/Dark theme
+- Fixed command line options
+- Fixed macOS support
+- Fixed moving or deleting videos or categories
+- Various internal fixes
+
+### ⚠️ Known Issues
+
+- Drag and drop is currently not able to pan the TreeView or to automatically expand categories.
+- Building YAYC from sources using Qt6 binaries from the Qt online installer will cause YAYC to
+  miss extra codecs.  This will cause some videos, specifically live streams, to not play.
+
 ## YAYC v1.3.0 (2024.06) -- Limes
 
 ### ✨ New Features
