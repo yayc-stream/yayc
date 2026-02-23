@@ -4,7 +4,7 @@ QT += webchannel qml
 QT += webenginecore webenginewidgets webenginequick webenginequickdelegatesqml
 QT += core5compat
 
-CONFIG += c++17
+CONFIG += c++20
 CONFIG += qtquickcompiler
 macos {
     CONFIG += universal
