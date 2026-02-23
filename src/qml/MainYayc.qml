@@ -83,7 +83,22 @@ Item {
 
     QLP.SystemTrayIcon {
         visible: true
-        icon.source: "qrc:/images/yayc-alt.png"
+        icon.source: {
+            if (!root.webEngineView)
+                return "qrc:/images/yayc-alt-grey.png"
+            if (root.webEngineView.isYoutubeVideo
+                    && root.webEngineView.timePuller.playerState === 1)
+                return "qrc:/images/yayc-alt-red.png"
+            return "qrc:/images/yayc-alt.png"
+        }
+        tooltip: {
+            if (!root.webEngineView)
+                return "YAYC"
+            if (root.webEngineView.isYoutubeVideo
+                    && root.webEngineView.timePuller.playerState === 1)
+                return "YAYC - Playing"
+            return "YAYC - Idle"
+        }
         menu: QLP.Menu {
             QLP.MenuItem {
                 text: (win.visibility == Window.Hidden)
