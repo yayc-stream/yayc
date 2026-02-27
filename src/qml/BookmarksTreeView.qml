@@ -541,9 +541,9 @@ Rectangle {
             bottom: parent.bottom
         }
 
-        model: (viewContainer.model !== null)
+        model: (viewContainer.model !== null && viewContainer.model !== undefined)
                ? viewContainer.model.sortFilterProxyModel : null
-        rootIndex: (viewContainer.model !== null)
+        rootIndex: (viewContainer.model !== null && viewContainer.model !== undefined)
                    ? viewContainer.model.rootPathIndex : fileSystemModel.nullIndex
         selectionMode: TableView.SingleSelection
 

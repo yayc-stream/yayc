@@ -320,7 +320,8 @@ Menu {
                 visible: true
                 height: enabled ? implicitHeight : 0
                 onClicked: {
-                    if (rootItem.categoryIndex !== undefined) {
+                    if (rootItem.categoryIndex !== undefined
+                            && rootItem.categoryIndex !== null) {
                         rootItem.model.enqueueCategoryExternalApp(
                                     rootItem.categoryIndex,
                                     rootItem.externalCommands[index].command,
