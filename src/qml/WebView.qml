@@ -71,6 +71,14 @@ Item {
         triggerVideoAdded()
     }
 
+    Connections {
+        target: fileSystemModel
+        function onVersionBumped(key) {
+            if (key === webEngineView.key)
+                triggerWorkingDir()
+        }
+    }
+
     onWindowHiddenChanged: {
         if (!root.blankWhenHidden || isYoutubeVideo)
             return

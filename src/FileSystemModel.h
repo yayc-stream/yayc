@@ -73,6 +73,8 @@ class FileSystemModel : public QFileSystemModel {
     bool m_extAppRunning{false};
     int m_extAppTotal{0};
     int m_extAppCompleted{0};
+    QHash<QString, int> m_versions;
+    QString m_currentExtAppKey;
 
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
@@ -109,6 +111,7 @@ public:
         CreatedRole = Qt::UserRole + 12,
         KeyRole = Qt::UserRole + 13,
         IsDirRole = Qt::UserRole + 14,
+        VersionRole = Qt::UserRole + 15,
     };
     Q_ENUM(Roles)
 
@@ -118,6 +121,8 @@ public:
     Q_INVOKABLE QString title(const QString &key) const;
     Q_INVOKABLE bool isVideoBookmarked(const QString &key);
     Q_INVOKABLE QString creationDate(const QString &key) const;
+    Q_INVOKABLE void bumpVersion(const QString &key);
+    Q_INVOKABLE void bumpVersion(const QModelIndex &idx);
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
@@ -182,6 +187,7 @@ signals:
     void firstInitializationCompleted(const QString &rootPath);
     void lastDestinationCategoryChanged();
     void extAppProgressChanged();
+    void versionBumped(const QString &key);
 
 private:
     void addThumbnail(const QString &key, const QByteArray &thumbnailData);

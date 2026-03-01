@@ -598,7 +598,7 @@ Rectangle {
             property bool initialized: qmodelindex !== undefined
 
             required property string key // from KeyRole
-            property int revision: 0
+            required property int version // from VersionRole
 
             property real duration: {
                 if (!viewContainer.historyView
@@ -636,21 +636,21 @@ Rectangle {
                     if (playing) {
                         viewContainer.heartbeat
                     }
-                    revision // force re-evaluation on metadata change
+                    version // force re-evaluation on metadata change
                     return viewContainer.model.videoIconUrl(key)
                 }
                 return ""
             }
             property bool starred: {
                 if (!treeViewDelegate.isDirectory) {
-                    revision // force re-evaluation on metadata change
+                    version // force re-evaluation on metadata change
                     return viewContainer.model.isStarred(key)
                 }
                 return false
             }
             property int hasWorkingDir: {
                 if (!treeViewDelegate.isDirectory && viewContainer.extWorkingDirExists) {
-                    revision // force re-evaluation on metadata change
+                    version // force re-evaluation on metadata change
                     return viewContainer.model.hasWorkingDir(key, viewContainer.extWorkingDirPath)
                 }
                 return 0
@@ -829,11 +829,9 @@ Rectangle {
 
                 function contextualAction() {
                     if (treeViewDelegate.isDirectory) {
-                        viewContainer.contextMenu.targetDelegate = null
                         viewContainer.contextMenu.setCategoryIndex(treeViewDelegate.qmodelindex)
                         viewContainer.contextMenu.popup()
                     } else {
-                        viewContainer.contextMenu.targetDelegate = treeViewDelegate
                         viewContainer.contextMenu.setVideoIndex(treeViewDelegate.qmodelindex)
                         viewContainer.contextMenu.popup()
                     }
