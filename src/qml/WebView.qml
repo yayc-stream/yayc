@@ -258,6 +258,11 @@ Item {
         registeredObjects: [root.timePuller]
     }
 
+    function seekBy(deltaSec) {
+        if (webEngineView.isYoutubeVideo)
+            runScript(WebEngineInternals.getSeekByScript(deltaSec, webEngineView.isShorts))
+    }
+
     function runScript(s) {
         webEngineView.runJavaScript(s)
     }

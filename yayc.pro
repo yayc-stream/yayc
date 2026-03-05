@@ -38,6 +38,7 @@ HEADERS += \
         src/ThumbnailFetcher.h \
         src/RequestInterceptor.h \
         src/YaycUtilities.h \
+        src/KeyInterceptor.h \
         src/qqmlsettings.h
 
 qml.files = $$files($$PWD/src/qml/*.qml)

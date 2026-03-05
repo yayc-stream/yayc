@@ -209,6 +209,22 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
         return res;
     }
 
+    function getSeekByScript(deltaSec, isShorts) {
+        var res = "
+        setTimeout(function() {
+" + getPlayer(isShorts) +
+"            var t = ytplayer.getCurrentTime() + " + deltaSec + ";
+            ytplayer.seekTo(t, true);
+            var mp = document.getElementById('movie_player');
+            if (mp && mp.classList.contains('ytp-autohide')) {
+                mp.classList.remove('ytp-autohide');
+                setTimeout(function() { mp.classList.add('ytp-autohide'); }, 1500);
+            }
+        }, 100);
+"
+        return res;
+    }
+
     function getQualitySetterScript(quality, isShorts) {
         var res = "
         setTimeout(function() {

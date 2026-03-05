@@ -81,6 +81,22 @@ Item {
         }
     }
 
+    Binding {
+        target: keyInterceptor
+        property: "playerActive"
+        value: webEngineView
+               && webEngineView.isYoutubeVideo
+               && webEngineView.timePuller.playerState === 1
+    }
+
+    Connections {
+        target: keyInterceptor
+        function onSeekRequested(deltaSec) {
+            if (webEngineView)
+                webEngineView.seekBy(deltaSec)
+        }
+    }
+
     QLP.SystemTrayIcon {
         visible: true
         icon.source: {
