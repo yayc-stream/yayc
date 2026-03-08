@@ -4,7 +4,7 @@ QT += webchannel qml
 QT += webenginecore webenginewidgets webenginequick webenginequickdelegatesqml
 QT += core5compat
 
-CONFIG += c++17
+CONFIG += c++20
 CONFIG += qtquickcompiler
 macos {
     CONFIG += universal
@@ -38,6 +38,7 @@ HEADERS += \
         src/ThumbnailFetcher.h \
         src/RequestInterceptor.h \
         src/YaycUtilities.h \
+        src/KeyInterceptor.h \
         src/qqmlsettings.h
 
 qml.files = $$files($$PWD/src/qml/*.qml)

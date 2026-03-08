@@ -81,9 +81,40 @@ Item {
         }
     }
 
+    Binding {
+        target: keyInterceptor
+        property: "playerActive"
+        value: webEngineView
+               && webEngineView.isYoutubeVideo
+               && webEngineView.timePuller.playerState === 1
+    }
+
+    Connections {
+        target: keyInterceptor
+        function onSeekRequested(deltaSec) {
+            if (webEngineView)
+                webEngineView.seekBy(deltaSec)
+        }
+    }
+
     QLP.SystemTrayIcon {
         visible: true
-        icon.source: "qrc:/images/yayc-alt.png"
+        icon.source: {
+            if (!root.webEngineView)
+                return "qrc:/images/yayc-alt-grey.png"
+            if (root.webEngineView.isYoutubeVideo
+                    && root.webEngineView.timePuller.playerState === 1)
+                return "qrc:/images/yayc-alt-red.png"
+            return "qrc:/images/yayc-alt.png"
+        }
+        tooltip: {
+            if (!root.webEngineView)
+                return "YAYC"
+            if (root.webEngineView.isYoutubeVideo
+                    && root.webEngineView.timePuller.playerState === 1)
+                return "YAYC - Playing"
+            return "YAYC - Idle"
+        }
         menu: QLP.Menu {
             QLP.MenuItem {
                 text: (win.visibility == Window.Hidden)
@@ -1100,7 +1131,6 @@ Item {
                 Layout.rightMargin: 8
                 text: qsTr("Close")
                 onClicked: {
-                    root.externalCommands = root.externalCommands // hack to push notifications
                     settingsMenu.close()
                 }
 
@@ -1478,8 +1508,10 @@ Item {
                                         color: YaycProperties.textColor
 
                                         text: modelData.name
-                                        onTextChanged: {
-                                            root.externalCommands[index].name = text
+                                        onEditingFinished: {
+                                            var cmds = root.externalCommands.slice()
+                                            cmds[index] = Object.assign({}, cmds[index], {name: text})
+                                            root.externalCommands = cmds
                                         }
 
                                         ToolTip.visible: hovered
@@ -1497,9 +1529,11 @@ Item {
                                         Layout.fillWidth: true
 
                                         text: modelData.command
-                                        onTextChanged: {
+                                        onEditingFinished: {
                                             if (utilities.executableExists(text)) {
-                                                root.externalCommands[index].command = text
+                                                var cmds = root.externalCommands.slice()
+                                                cmds[index] = Object.assign({}, cmds[index], {command: text})
+                                                root.externalCommands = cmds
                                                 color = YaycProperties.textColor
                                             } else {
                                                 color = "firebrick"

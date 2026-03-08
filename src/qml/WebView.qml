@@ -71,6 +71,14 @@ Item {
         triggerVideoAdded()
     }
 
+    Connections {
+        target: fileSystemModel
+        function onVersionBumped(key) {
+            if (key === webEngineView.key)
+                triggerWorkingDir()
+        }
+    }
+
     onWindowHiddenChanged: {
         if (!root.blankWhenHidden || isYoutubeVideo)
             return
@@ -248,6 +256,11 @@ Item {
     WebChannel {
         id : web_channel
         registeredObjects: [root.timePuller]
+    }
+
+    function seekBy(deltaSec) {
+        if (webEngineView.isYoutubeVideo)
+            runScript(WebEngineInternals.getSeekByScript(deltaSec, webEngineView.isShorts))
     }
 
     function runScript(s) {

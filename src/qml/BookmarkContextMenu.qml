@@ -40,39 +40,11 @@ Menu {
     property bool isHistoryView: true
     property var parentView: null  // It's null when spawned from the + button in the toolbar
     property var parentContainer: null
-    property var targetDelegate: null
     required property bool extWorkingDirExists
     required property string extWorkingDirPath
     required property var externalCommands
     required property bool removeStorageOnDelete
     required property bool extCommandEnabled
-
-    onClosed: targetDelegate = null
-
-    function bumpDelegate() {
-        if (targetDelegate) targetDelegate.revision++
-    }
-
-    function bumpDelegateDelayed(delayMs) {
-        var delegate = targetDelegate
-        if (!delegate) return
-        var remaining = 4
-        var timer = Qt.createQmlObject(
-            'import QtQuick; Timer { interval: ' + delayMs
-            + '; running: true; repeat: true }', rootItem)
-        timer.triggered.connect(function() {
-            try {
-                if (delegate)
-                    delegate.revision++
-            } catch(e) {}
-            if (--remaining <= 0) {
-                timer.stop()
-                timer.destroy()
-            } else {
-                timer.interval = delayMs * 10
-            }
-        })
-    }
 
     onOpened: {
         // workaround for the submenu occasionally showing opened
@@ -206,7 +178,7 @@ Menu {
                 return
             var starred = rootItem.model.isStarred(rootItem.key)
             rootItem.model.starEntry(rootItem.key, !starred)
-            rootItem.bumpDelegate()
+            rootItem.model.bumpVersion(rootItem.key)
         }
         icon.source: "/icons/"+(fileSystemModel.isStarred(rootItem.key)
                                 ? "star_fill.svg" : "star.svg")
@@ -223,7 +195,7 @@ Menu {
                 return
             var viewed = rootItem.model.isViewed(rootItem.key)
             rootItem.model.viewEntry(rootItem.key, !viewed)
-            rootItem.bumpDelegate()
+            rootItem.model.bumpVersion(rootItem.key)
         }
         icon.source: "/icons/"+(fileSystemModel.isViewed(rootItem.key)
                                 ? "check_circle_fill.svg" : "check_circle.svg")
@@ -266,8 +238,7 @@ Menu {
     }
     MenuItem {
         text: "Open containing folder"
-        enabled: (rootItem.targetDelegate ? rootItem.targetDelegate.revision >= 0 : true)
-                 && (rootItem.deleteVideoItem || !rootItem.parentView)
+        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
                  && rootItem.extWorkingDirExists
                  && rootItem.model.hasWorkingDir(
                      rootItem.key,
@@ -284,8 +255,7 @@ Menu {
     }
     MenuItem {
         text: "Delete storage data"
-        enabled: (rootItem.targetDelegate ? rootItem.targetDelegate.revision >= 0 : true)
-                 && (rootItem.deleteVideoItem || !rootItem.parentView)
+        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
                  && rootItem.extWorkingDirExists
                  && rootItem.model.hasWorkingDir(
                      rootItem.key,
@@ -296,7 +266,6 @@ Menu {
             rootItem.model.deleteStorage(
                         rootItem.key,
                         rootItem.extWorkingDirPath)
-            rootItem.bumpDelegateDelayed(500)
         }
         icon.source: "/icons/delete_forever.svg"
         display: MenuItem.TextBesideIcon
@@ -320,7 +289,8 @@ Menu {
                 visible: true
                 height: enabled ? implicitHeight : 0
                 onClicked: {
-                    if (rootItem.categoryIndex !== undefined) {
+                    if (rootItem.categoryIndex !== undefined
+                            && rootItem.categoryIndex !== null) {
                         rootItem.model.enqueueCategoryExternalApp(
                                     rootItem.categoryIndex,
                                     rootItem.externalCommands[index].command,
@@ -331,7 +301,6 @@ Menu {
                                     rootItem.externalCommands[index].command,
                                     rootItem.extWorkingDirPath)
                     }
-                    rootItem.bumpDelegateDelayed(1000)
                 }
                 icon.source: "/icons/extension.svg"
                 display: MenuItem.TextBesideIcon

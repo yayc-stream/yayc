@@ -25,6 +25,7 @@ In addition to the above,
 #include "ThumbnailFetcher.h"
 #include "RequestInterceptor.h"
 #include "YaycUtilities.h"
+#include "KeyInterceptor.h"
 #include "qqmlsettings.h"
 
 #include <QGuiApplication>
@@ -211,8 +212,11 @@ int main(int argc, char *argv[])
         engine.rootContext()->setContextProperty("historyModel", historyModel);
 
         YaycUtilities *utilities = new YaycUtilities(&engine);
+        KeyInterceptor *keyInterceptor = new KeyInterceptor(&engine);
+        app.installEventFilter(keyInterceptor);
 
         engine.rootContext()->setContextProperty("utilities", utilities);
+        engine.rootContext()->setContextProperty("keyInterceptor", keyInterceptor);
         engine.rootContext()->setContextProperty("appVersion", QString(appVersion()) );
         engine.rootContext()->setContextProperty("repositoryURL", repositoryURL );
         engine.rootContext()->setContextProperty("configFileUrl", configFileUrl);

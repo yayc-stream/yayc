@@ -1,3 +1,20 @@
+## YAYC v1.5.0 (2026.03) -- Skye (R.I.P.)
+
+### ✨ New Features
+
+- Tray icon now changes when a video is playing or the app is sleeping
+- Arrow keys now work also when the player isn't in focus
+
+### 🐞 Bug fixes
+
+- Fixed (or rather mitigated) a couple of QtWebEngine issues by upgrading to Qt 6.11.0rc from 6.10.1
+- Fixed sync between toolbar + button and TreeView
+
+### ⚠️ Known Issues
+
+- Same as for v1.4
+- Easylist support dropped
+
 ## YAYC v1.4.0 (2026.02) -- Paquito
 
 ### ✨ New Features

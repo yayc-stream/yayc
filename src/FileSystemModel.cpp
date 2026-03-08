@@ -359,6 +359,10 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
         }
         case IsDirRole:
             return isDir(index);
+        case VersionRole:
+            if (!isDir(index))
+                return m_versions.value(itemKey(index), 0);
+            return 0;
         case ContentNameRole:
         case QFileSystemModel::FileNameRole:
         case Qt::DisplayRole: {
@@ -430,6 +434,7 @@ QHash<int, QByteArray> FileSystemModel::roleNames() const
     result.insert(ContentNameRole, QByteArrayLiteral("contentName"));
     result.insert(KeyRole, QByteArrayLiteral("key"));
     result.insert(IsDirRole, QByteArrayLiteral("isDirectory"));
+    result.insert(VersionRole, QByteArrayLiteral("version"));
     return result;
 }
 
@@ -518,6 +523,19 @@ void FileSystemModel::openInExternalApp(const QString &key,
     }
 }
 
+void FileSystemModel::bumpVersion(const QString &key) {
+    if (!m_ready || key.isEmpty() || !m_cache.contains(key))
+        return;
+    ++m_versions[key];
+    auto idx = index(m_cache.value(key).filePath());
+    emit dataChanged(idx, idx, {VersionRole});
+    emit versionBumped(key);
+}
+
+void FileSystemModel::bumpVersion(const QModelIndex &idx) {
+    bumpVersion(keyFromViewItem(idx));
+}
+
 void FileSystemModel::enqueueExternalApp(const QString &key,
                                          const QString &extCommand,
                                          const QString &extWorkingDirRoot) {
@@ -564,10 +582,12 @@ void FileSystemModel::processNextExtAppRequest() {
     }
     m_extAppRunning = true;
     auto job = m_extAppQueue.dequeue();
+    m_currentExtAppKey = job.key;
 
     QDir d(job.workingDir);
     if (!d.exists()) return processNextExtAppRequest();
     if (!d.exists(job.key) && !d.mkdir(job.key)) return processNextExtAppRequest();
+    bumpVersion(job.key);
 
     QString url = m_cache.value(job.key).url(false).toString();
 
@@ -580,15 +600,13 @@ void FileSystemModel::processNextExtAppRequest() {
     m_extAppProcess->setStandardOutputFile(QProcess::nullDevice());
     m_extAppProcess->setStandardErrorFile(QProcess::nullDevice());
     m_extAppProcess->start(job.command, {url});
-
-    auto idx = index(m_cache.value(job.key).filePath());
-    emit dataChanged(idx, idx);
 }
 
 void FileSystemModel::onExtAppFinished(int exitCode, QProcess::ExitStatus status) {
     Q_UNUSED(exitCode)
     Q_UNUSED(status)
     m_extAppCompleted++;
+    bumpVersion(m_currentExtAppKey);
     emit extAppProgressChanged();
     processNextExtAppRequest();
 }
@@ -655,6 +673,7 @@ void FileSystemModel::deleteStorage(const QString &key,
         QDir d(extWorkingDirRoot);
         if (d.exists() && d.exists(key)) {
             QDir(d.filePath(key)).removeRecursively();
+            bumpVersion(key);
         }
     }
 }
