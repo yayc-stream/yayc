@@ -938,10 +938,15 @@ void FileSystemModel::moveEntry(const QString &key, const QDir &d) {
     m_cache[key].moveLocation(d);
 }
 
-bool FileSystemModel::addCategory(const QString &name) {
+bool FileSystemModel::addCategory(const QString &name, QModelIndex parentDir) {
     if (!m_ready)
         return false;
-    QDir d(rootPath());
+    parentDir = m_proxyModel->mapToSource(parentDir);
+    QDir d(parentDir.isValid() && isDir(parentDir)
+               ? filePath(parentDir)
+               : rootPath());
+    if (!d.exists())
+        return false;
     return d.mkdir(name);
 }
 

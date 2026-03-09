@@ -2387,7 +2387,11 @@ Item {
     Dialog {
         id: addCategoryDialog
         modal: true
-        title: "Create new category"
+        property var parentCategoryIndex: undefined
+        property string parentCategoryName: ""
+        title: parentCategoryName !== ""
+               ? "Create new category in \"" + parentCategoryName + "\""
+               : "Create new category"
         width: 450
         height: 180
         padding: 16
@@ -2401,16 +2405,22 @@ Item {
         }
 
         onAccepted: {
-            var res = fileSystemModel.addCategory(newCategoryInput.text)
+            var res = (parentCategoryIndex !== undefined && parentCategoryIndex !== null)
+                      ? fileSystemModel.addCategory(newCategoryInput.text, parentCategoryIndex)
+                      : fileSystemModel.addCategory(newCategoryInput.text)
             if (res) {
 
             } else {
                 console.log("Failed creating new category ", newCategoryInput.text)
             }
             newCategoryInput.text = ""
+            parentCategoryIndex = undefined
+            parentCategoryName = ""
         }
         onRejected: {
             newCategoryInput.text = ""
+            parentCategoryIndex = undefined
+            parentCategoryName = ""
         }
 
         Rectangle {
@@ -2429,6 +2439,7 @@ Item {
                     right: parent.right
                     verticalCenter: parent.verticalCenter
                 }
+                onAccepted: addCategoryDialog.accept()
                 selectByMouse: true
                 font.pixelSize: YaycProperties.fsP1
                 cursorVisible: true
