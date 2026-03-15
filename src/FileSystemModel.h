@@ -166,7 +166,7 @@ public slots:
     bool moveEntry(QModelIndex item, QModelIndex destinationDir);
     void moveEntry(const QString &key, const QString &ds);
     void moveEntry(const QString &key, const QDir &d);
-    bool addCategory(const QString &name);
+    bool addCategory(const QString &name, QModelIndex parentDir = QModelIndex());
     bool updateEntry(const QString &key, const QString &title, const QString &channelURL,
                      const QString &channelAvatarURL, const QString &channelName,
                      const qreal duration = 0., const qreal position = 0.);

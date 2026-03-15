@@ -501,6 +501,8 @@ Rectangle {
         acceptedButtons: Qt.RightButton
         onClicked: (mouse) => {
             if (mouse.button === Qt.RightButton) {
+                parent.contextMenu.categoryIndex = undefined
+                parent.contextMenu.categoryName = ""
                 parent.contextMenu.deleteCategoryItem = parent.contextMenu.deleteVideoItem = false
                 parent.contextMenu.popup()
             }
@@ -808,7 +810,7 @@ Rectangle {
                         return
 
                     hovered = false
-                    if (typeof(drag.source.key) === "undefined") { // moving category
+                    if (drag.source.key === "") { // moving category
                         viewContainer.model.moveEntry(drag.source.qmodelindex, treeViewDelegate.qmodelindex)
                     } else {
                         viewContainer.model.moveVideo(drag.source.key, treeViewDelegate.qmodelindex)
@@ -829,7 +831,7 @@ Rectangle {
 
                 function contextualAction() {
                     if (treeViewDelegate.isDirectory) {
-                        viewContainer.contextMenu.setCategoryIndex(treeViewDelegate.qmodelindex)
+                        viewContainer.contextMenu.setCategoryIndex(treeViewDelegate.qmodelindex, treeViewDelegate.display)
                         viewContainer.contextMenu.popup()
                     } else {
                         viewContainer.contextMenu.setVideoIndex(treeViewDelegate.qmodelindex)

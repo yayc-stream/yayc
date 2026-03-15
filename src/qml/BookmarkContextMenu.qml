@@ -51,10 +51,13 @@ Menu {
         extAppMenu.close()
     }
 
-    function setCategoryIndex(idx) {
+    property string categoryName: ""
+
+    function setCategoryIndex(idx, name) {
         if (parentView)
             parentView.contextedKey = ""
         categoryIndex = idx
+        categoryName = name || ""
         videoIndex = undefined
         deleteCategoryItem = true
         deleteVideoItem = false
@@ -101,6 +104,8 @@ Menu {
         enabled: !rootItem.isHistoryView && rootItem.parentView
         height: enabled ? implicitHeight : 0
         onClicked: {
+            addCategoryDialog.parentCategoryIndex = rootItem.categoryIndex
+            addCategoryDialog.parentCategoryName = rootItem.categoryName
             addCategoryDialog.open()
         }
         icon.source: "/icons/create_new_folder.svg"

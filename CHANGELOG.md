@@ -1,3 +1,18 @@
+## YAYC v1.6.0 (2026.03) -- Winston
+
+### ✨ New Features
+
+- Categories can now be created inside other categories
+
+### 🐞 Bug fixes
+
+- Using proper QtWebEngine build on Linux, that works with YouTube lives
+- Fixed issues with bookmarks/categories (creating/moving)
+
+### ⚠️ Known Issues
+
+- Same as for v1.5
+
 ## YAYC v1.5.0 (2026.03) -- Skye (R.I.P.)
 
 ### ✨ New Features
