@@ -82,6 +82,7 @@ Item {
     onWindowHiddenChanged: {
         if (!root.blankWhenHidden || isYoutubeVideo)
             return
+
         if (windowHidden) {
             // store && change
             previousUrl = url

@@ -435,6 +435,7 @@ QHash<int, QByteArray> FileSystemModel::roleNames() const
     result.insert(KeyRole, QByteArrayLiteral("key"));
     result.insert(IsDirRole, QByteArrayLiteral("isDirectory"));
     result.insert(VersionRole, QByteArrayLiteral("version"));
+    result.insert(TitleRole, QByteArrayLiteral("videoTitle"));
     return result;
 }
 

@@ -555,7 +555,8 @@ Item {
 
                     // Desired state: profile exists AND (window visible OR audio playing)
                     property bool shouldBeActive: WebBrowsingProfiles.profile !== null
-                                                   && (!root.windowHidden || webViewWrapper.videoPlaying)
+                                                   && (webViewWrapper.videoPlaying
+                                                       || (!root.windowHidden || root.blankWhenHidden))
                     onShouldBeActiveChanged: {
                         if (shouldBeActive) {
                             webEngineViewLoaderDeactivateTimer.stop()

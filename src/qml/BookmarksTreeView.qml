@@ -626,7 +626,7 @@ Rectangle {
                 }
                 return 0
             }
-            property string title: (viewContainer.model && !treeViewDelegate.isDirectory) ? viewContainer.model.title(key) : "" // with key it doesn't update, somehow
+            required property string videoTitle
             property bool playing: (!treeViewDelegate.isDirectory)
                                    ? (viewContainer.webEngineViewKey === key)
                                    : false
@@ -673,7 +673,7 @@ Rectangle {
                          && ma.containsMouse
                          && !treeViewDelegate.isDirectory
 
-                text: treeViewDelegate.title + "\n"
+                text: treeViewDelegate.videoTitle + "\n"
                       + "Added " + treeViewDelegate.creationDate
                       + "  -- Duration "
                       + treeViewDelegate.duration
@@ -770,7 +770,7 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
                         anchors.verticalCenter: parent.verticalCenter
-                        text: treeViewDelegate.isDirectory ? display : title
+                        text: treeViewDelegate.isDirectory ? display : videoTitle
                         elide: Text.ElideRight
                         color: (!treeViewDelegate.isDirectory
                                 // && !treeViewDelegate.shorts
