@@ -175,7 +175,9 @@ public slots:
     void updateChannelAvatar(const QString &channelKey, const QByteArray avatar);
     bool addEntry(const QString &key, const QString &title, const QString &channelURL,
                   const QString &channelAvatarURL, const QString &channelName,
-                  const qreal duration = 0., const qreal position = 0.);
+                  const qreal duration = 0., const qreal position = 0.,
+                  const QString &destination = QString());
+    void setLastDestinationCategory(QModelIndex categoryIndex);
 
 signals:
     void filesAdded(const QVariantList &addedPaths);

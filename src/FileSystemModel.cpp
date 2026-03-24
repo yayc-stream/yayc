@@ -948,7 +948,15 @@ bool FileSystemModel::addCategory(const QString &name, QModelIndex parentDir) {
                : rootPath());
     if (!d.exists())
         return false;
-    return d.mkdir(name);
+    if (!d.mkdir(name))
+        return false;
+    QString newPath = d.absoluteFilePath(name);
+    if (m_lastDestination != newPath) {
+        m_lastDestination = newPath;
+        m_lastDestinationName = name;
+        emit lastDestinationCategoryChanged();
+    }
+    return true;
 }
 
 bool FileSystemModel::updateEntry(const QString &key,
@@ -1011,12 +1019,17 @@ bool FileSystemModel::addEntry(const QString &key,
                                const QString &channelAvatarURL,
                                const QString &channelName,
                                const qreal duration,
-                               const qreal position) {
+                               const qreal position,
+                               const QString &destination) {
     if (!hasValidRoot())
         return false;
 
+    QDir targetDir = (!destination.isEmpty() && QDir(destination).exists())
+                         ? QDir(destination)
+                         : rootDirectory();
+
     if (!m_cache.contains(key))
-        m_cache.insert(key, VideoMetadata(key, rootDirectory()));
+        m_cache.insert(key, VideoMetadata(key, targetDir));
     if (!m_cache.value(key).hasThumbnail()) {
         fetchThumbnail(key);
     }
@@ -1040,6 +1053,22 @@ bool FileSystemModel::addEntry(const QString &key,
 
     m_cache[key].saveFile();
     return true;
+}
+
+void FileSystemModel::setLastDestinationCategory(QModelIndex categoryIndex) {
+    if (!m_ready)
+        return;
+    auto index = m_proxyModel->mapToSource(categoryIndex);
+    if (!index.isValid() || !isDir(index))
+        return;
+    QDir d(filePath(index));
+    if (!d.exists())
+        return;
+    if (m_lastDestination != d.path()) {
+        m_lastDestination = d.path();
+        m_lastDestinationName = d.dirName();
+        emit lastDestinationCategoryChanged();
+    }
 }
 
 void FileSystemModel::addThumbnail(const QString &key, const QByteArray &thumbnailData) {

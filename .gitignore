@@ -28,6 +28,7 @@ ui_*.h
 Makefile*
 *build-*
 /bin
+/features
 
 # QtCreator
 

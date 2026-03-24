@@ -89,12 +89,24 @@ Menu {
                  && rootItem.deleteVideoItem
                  && rootItem.model
                  && rootItem.model.lastDestinationCategoryName !== ""
-        visible: true
+        visible: enabled
         height: enabled ? implicitHeight : 0
         onClicked: {
             let lastDst = rootItem.model.lastDestinationCategory
             console.log(lastDst)
             let res = rootItem.model.moveEntry(rootItem.key, lastDst)
+        }
+        icon.source: "/icons/move.svg"
+        display: MenuItem.TextBesideIcon
+    }
+    MenuItem {
+        text: "Set as destination"
+        enabled: !rootItem.isHistoryView && rootItem.parentView
+                 && rootItem.deleteCategoryItem
+        visible: enabled
+        height: enabled ? implicitHeight : 0
+        onClicked: {
+            rootItem.model.setLastDestinationCategory(rootItem.categoryIndex)
         }
         icon.source: "/icons/move.svg"
         display: MenuItem.TextBesideIcon
