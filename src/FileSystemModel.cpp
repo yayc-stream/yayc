@@ -542,7 +542,20 @@ void FileSystemModel::enqueueExternalApp(const QString &key,
                                          const QString &extWorkingDirRoot) {
     if (!m_ready || !key.size() || !m_cache.contains(key))
         return;
-    m_extAppQueue.enqueue({key, extCommand, extWorkingDirRoot});
+    m_extAppQueue.enqueue({key, extCommand, extWorkingDirRoot, {}});
+    m_extAppTotal = m_extAppQueue.size() + m_extAppCompleted;
+    emit extAppProgressChanged();
+    if (!m_extAppRunning)
+        processNextExtAppRequest();
+}
+
+void FileSystemModel::enqueueExternalApp(const QString &key,
+                                         const QString &url,
+                                         const QString &extCommand,
+                                         const QString &extWorkingDirRoot) {
+    if (!m_ready || !key.size())
+        return;
+    m_extAppQueue.enqueue({key, extCommand, extWorkingDirRoot, url});
     m_extAppTotal = m_extAppQueue.size() + m_extAppCompleted;
     emit extAppProgressChanged();
     if (!m_extAppRunning)
@@ -566,7 +579,7 @@ void FileSystemModel::enqueueCategoryExternalApp(
     for (const auto &f : files) {
         const QString &key = f.baseName();
         if (m_cache.contains(key))
-            m_extAppQueue.enqueue({key, extCommand, extWorkingDirRoot});
+            m_extAppQueue.enqueue({key, extCommand, extWorkingDirRoot, {}});
     }
     m_extAppTotal = m_extAppQueue.size();
     m_extAppCompleted = 0;
@@ -588,9 +601,12 @@ void FileSystemModel::processNextExtAppRequest() {
     QDir d(job.workingDir);
     if (!d.exists()) return processNextExtAppRequest();
     if (!d.exists(job.key) && !d.mkdir(job.key)) return processNextExtAppRequest();
-    bumpVersion(job.key);
+    if (m_cache.contains(job.key))
+        bumpVersion(job.key);
 
-    QString url = m_cache.value(job.key).url(false).toString();
+    QString url = job.url.isEmpty()
+                  ? m_cache.value(job.key).url(false).toString()
+                  : job.url;
 
     if (!m_extAppProcess) {
         m_extAppProcess = new QProcess(this);

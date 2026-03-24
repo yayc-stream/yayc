@@ -34,9 +34,10 @@ In addition to the above,
 class ThumbnailFetcher;
 
 struct ExtAppJob {
-    QString key;
-    QString command;
-    QString workingDir;
+    QString key;        // video ID, used for working dir creation and cache lookup
+    QString command;    // external app executable to launch
+    QString workingDir; // root directory under which a per-video subfolder is created
+    QString url;        // if set, passed directly to the command; otherwise resolved from cache via key
 };
 
 // Helper functions
@@ -136,6 +137,7 @@ public slots:
     void openInExternalApp(QModelIndex item, const QString &extCommand, const QString &extWorkingDirRoot);
     void openInExternalApp(const QString &key, const QString &extCommand, const QString &extWorkingDirRoot);
     void enqueueExternalApp(const QString &key, const QString &extCommand, const QString &extWorkingDirRoot);
+    void enqueueExternalApp(const QString &key, const QString &url, const QString &extCommand, const QString &extWorkingDirRoot);
     void enqueueCategoryExternalApp(QModelIndex categoryItem, const QString &extCommand, const QString &extWorkingDirRoot);
     bool deleteEntry(QModelIndex item, const QString &extWorkingDirRoot = "", bool deleteStorage_ = false);
     bool deleteEntry(const QString &key

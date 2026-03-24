@@ -550,6 +550,36 @@ Item {
                     display: MenuItem.TextBesideIcon
                 }
             }
+            Menu {
+                id: webViewExtAppMenu
+                title: "Launch in external app"
+                enabled: root.extCommandEnabled
+                        && webEngineView.contextMenu.linkIsVideo
+                height: enabled ? implicitHeight : 0
+
+                Repeater {
+                    model: (webViewExtAppMenu.enabled)
+                            ? root.externalCommands
+                            : undefined
+                    MenuItem {
+                        text: (root.externalCommands[index])
+                                ? root.externalCommands[index].name
+                                : ""
+                        enabled: true
+                        visible: true
+                        height: enabled ? implicitHeight : 0
+                        onClicked: {
+                            fileSystemModel.enqueueExternalApp(
+                                        webEngineView.contextMenu.requestedKey,
+                                        webEngineView.contextMenu.requestedLink.toString(),
+                                        root.externalCommands[index].command,
+                                        root.extWorkingDirPath)
+                        }
+                        icon.source: "/icons/extension.svg"
+                        display: MenuItem.TextBesideIcon
+                    }
+                }
+            }
         }
 
         function isValidHttpUrl(url) {
