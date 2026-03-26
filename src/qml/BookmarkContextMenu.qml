@@ -295,7 +295,8 @@ Menu {
     // ToDo: add Menu for tagging
     Menu {
         id: extAppMenu
-        title: "Launch in external app"
+        title: "Launch in"
+        icon.source: "/icons/function.svg"
         enabled: rootItem.extCommandEnabled
         height: enabled ? implicitHeight : 0
 
