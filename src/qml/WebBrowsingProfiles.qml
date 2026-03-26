@@ -37,7 +37,13 @@ QtObject {
             })();
         `
 
-        return [ webChannelScript, userScript, cssScript ]
+        let adSkipScript = WebEngine.script()
+        adSkipScript.name = "AutoSkipAd"
+        adSkipScript.injectionPoint = WebEngineScript.Deferred
+        adSkipScript.worldId = WebEngineScript.MainWorld
+        adSkipScript.sourceCode = WebEngineInternals.script_autoSkipAd
+
+        return [ webChannelScript, userScript, cssScript, adSkipScript ]
     }
 
     function recreateProfiles() {

@@ -40,6 +40,7 @@ Item {
     required property real wevZoomFactorVideo
     property int homeGridColumns: 4
     property bool blankWhenHidden: false
+    property bool autoSkipAd: false
     property bool showCategoryBar: true
     required property string customScript
     required property string profilePath // if empty, the webengineview profile will turn itself "off the record"
@@ -144,6 +145,19 @@ Item {
         property bool guideButtonChecked
         property string videoQuality: ""
         property var availableQualityLevels: []
+        property real skipAdX: -1
+        property real skipAdY: -1
+        property int skipAdSeq: 0
+
+        onSkipAdSeqChanged: {
+            var x = skipAdX * webEngineView.zoomFactor
+            var y = skipAdY * webEngineView.zoomFactor
+            if (x > 0 && y > 0
+                    && x < webEngineView.width && y < webEngineView.height) {
+                console.log('[yayc-adskip] simulating click at', x, y)
+                utilities.simulateClick(webEngineView, x, y)
+            }
+        }
 
         function clickGuideButton() {
             if (webEngineView.isYoutubeHome || webEngineView.isYoutubeChannel) {
@@ -363,6 +377,7 @@ Item {
         // }
 
         onJavaScriptConsoleMessage: function(level, message, lineNumber, sourceID) {
+            // console.log(message)
             return;
             // // Suppress preload warnings from YouTube
             // if (message.includes("preloaded using link preload"))
@@ -407,6 +422,8 @@ Item {
             if (loadingInfo.status === WebEngineView.LoadSucceededStatus) {
                 root.applyCategoryBarVisibility()
                 root.applyHomeGridColumns()
+                if (root.autoSkipAd)
+                    runScript("window.__yayc_autoSkipAdEnabled = true")
             }
         }
 
@@ -948,6 +965,25 @@ Item {
             hoverEnabled: true
             ToolTip.visible: hovered
             ToolTip.text: "Set video quality"
+            ToolTip.delay: 300
+        }
+        ToolButton {
+            id: buttonAutoSkipAd
+            visible: true
+            checkable: true
+            checked: root.autoSkipAd
+
+            onCheckedChanged: {
+                root.autoSkipAd = checked
+                runScript("window.__yayc_autoSkipAdEnabled = " + checked)
+            }
+
+            icon.source: "/icons/step_over.svg"
+            display: AbstractButton.IconOnly
+
+            hoverEnabled: true
+            ToolTip.visible: hovered
+            ToolTip.text: "Auto skip ads"
             ToolTip.delay: 300
         }
         ToolButton {

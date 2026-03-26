@@ -40,6 +40,9 @@ In addition to the above,
 #include <QNetworkProxy>
 #include <QStyleHints>
 #include <QGuiApplication>
+#include <QQuickItem>
+#include <QQuickWindow>
+#include <QMouseEvent>
 #include <QtWebEngineQuick/qquickwebengineprofile.h>
 
 // Static member definitions
@@ -354,6 +357,22 @@ void YaycUtilities::openInBrowser(const QString &key, const QString &extWorkingD
             QDesktopServices::openUrl(QUrl::fromLocalFile(d.filePath(key)));
         }
     }
+}
+
+void YaycUtilities::simulateClick(QQuickItem *item, double x, double y)
+{
+    if (!item || !item->window())
+        return;
+    QPointF localPos(x, y);
+    QPointF scenePos = item->mapToScene(localPos);
+    QPointF globalPos = item->window()->mapToGlobal(scenePos.toPoint());
+
+    QCoreApplication::postEvent(item->window(),
+        new QMouseEvent(QEvent::MouseButtonPress, scenePos, globalPos,
+                        Qt::LeftButton, Qt::LeftButton, Qt::NoModifier));
+    QCoreApplication::postEvent(item->window(),
+        new QMouseEvent(QEvent::MouseButtonRelease, scenePos, globalPos,
+                        Qt::LeftButton, Qt::NoButton, Qt::NoModifier));
 }
 
 void YaycUtilities::onSocketConnected()

@@ -168,6 +168,7 @@ Item {
     property bool debugMode: false
     property bool removeStorageOnDelete: false
     property bool blankWhenHidden: false
+    property bool autoSkipAd: false
     property bool showCategoryBar: true
     property int homeGridColumns: 4
     property int maxRecentDestinations: 5
@@ -248,6 +249,7 @@ Item {
         property alias wevZoomFactorVideo: root.wevZoomFactorVideo
         property alias removeStorageOnDelete: root.removeStorageOnDelete
         property alias blankWhenHidden: root.blankWhenHidden
+        property alias autoSkipAd: root.autoSkipAd
         property alias showCategoryBar: root.showCategoryBar
         property alias homeGridColumns: root.homeGridColumns
         property alias maxRecentDestinations: root.maxRecentDestinations
@@ -615,6 +617,7 @@ Item {
                         externalCommands: root.externalCommands
                         removeStorageOnDelete: root.removeStorageOnDelete
                         extCommandEnabled: root.extCommandEnabled
+                        autoSkipAd: root.autoSkipAd
                     }
 
                     // Keep videoPlaying in sync for Loader active condition
@@ -692,6 +695,10 @@ Item {
                     function onHomeGridColumnsChanged() {
                         if (root.homeGridColumns !== webEngineView.homeGridColumns)
                             root.homeGridColumns = webEngineView.homeGridColumns
+                    }
+                    function onAutoSkipAdChanged() {
+                        if (root.autoSkipAd !== webEngineView.autoSkipAd)
+                            root.autoSkipAd = webEngineView.autoSkipAd
                     }
                     function onZoomFactorChanged() {
                         syncZoomFactor()

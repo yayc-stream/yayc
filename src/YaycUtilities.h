@@ -25,6 +25,8 @@ In addition to the above,
 #include <QNetworkAccessManager>
 #include <QDateTime>
 
+class QQuickItem;
+
 class YaycUtilities : public QObject {
     Q_OBJECT
 public:
@@ -78,6 +80,7 @@ public:
                                             const QString &proxyHost,
                                             int proxyPort);
     Q_INVOKABLE static void setColorScheme(bool darkMode);
+    Q_INVOKABLE void simulateClick(QQuickItem *item, double x, double y);
 
     static bool isShortVideo(const QString &fkey);
     static void openInBrowser(const QString &key, const QString &extWorkingDirRoot);
