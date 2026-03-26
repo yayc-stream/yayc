@@ -531,7 +531,7 @@ Item {
             }
             Menu {
                 id: webViewExtAppMenu
-                title: "Launch in external app"
+                title: "Launch in"
                 icon.source: "/icons/function.svg"
                 enabled: root.extCommandEnabled
                         && webEngineView.contextMenu.linkIsVideo
