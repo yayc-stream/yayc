@@ -1677,15 +1677,6 @@ Item {
                             ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
-                        Label {
-                            text: "Max destinations:"
-                            Layout.leftMargin: 8
-                        }
-                        SpinBox {
-                            from: 1; to: 99
-                            value: root.maxRecentDestinations
-                            onValueModified: root.maxRecentDestinations = value
-                        }
                         Button {
                             id: buttonOpenJSDialog
                             flat: true
@@ -1708,6 +1699,29 @@ Item {
                             ToolTip.delay: 300
                             ToolTip.text: "Erase all settings and restart YAYC"
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                        }
+                    }
+
+                    RowLayout {
+                        spacing: 8
+                        visible: root.debugMode
+
+                        Label {
+                            text: "Max destinations"
+                        }
+                        Slider {
+                            id: maxDestSlider
+                            implicitWidth: parent.parent.width * .3
+                            from: 1; to: 10; stepSize: 1
+                            snapMode: Slider.SnapAlways
+                            value: root.maxRecentDestinations
+                            onMoved: root.maxRecentDestinations = value
+
+                            ToolTip {
+                                parent: maxDestSlider.handle
+                                visible: maxDestSlider.hovered || maxDestSlider.pressed
+                                text: maxDestSlider.value.toString()
+                            }
                         }
                     }
                 }
