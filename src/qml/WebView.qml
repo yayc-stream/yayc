@@ -156,6 +156,7 @@ Item {
                     && x < webEngineView.width && y < webEngineView.height) {
                 console.log('[yayc-adskip] simulating click at', x, y)
                 utilities.simulateClick(webEngineView, x, y)
+                adSkipResumeTimer.restart()
             }
         }
 
@@ -267,6 +268,12 @@ Item {
             root.triggerVideoAdded()
         }
     } // timePuller
+
+    Timer {
+        id: adSkipResumeTimer
+        interval: 500
+        onTriggered: root.runScript(WebEngineInternals.getPlayVideoScript(webEngineView.isShorts))
+    }
 
     WebChannel {
         id : web_channel
@@ -469,6 +476,7 @@ Item {
             Menu {
                 id: addToCategoryMenu
                 title: webEngineView.contextMenu.videoAdded ? "Added" : "Add to..."
+                icon.source: "/icons/add.svg"
                 enabled: webEngineView.contextMenu.linkIsVideo
                          && !webEngineView.contextMenu.videoAdded
                 visible: webEngineView.contextMenu.linkIsVideo
@@ -503,9 +511,6 @@ Item {
             }
             Repeater {
                 model: [
-                    WebEngineView.Back,
-                    WebEngineView.Forward,
-                    WebEngineView.Reload,
                     WebEngineView.Copy,
                     WebEngineView.Paste,
                     WebEngineView.Cut,
@@ -516,9 +521,6 @@ Item {
                     enabled: webEngineView.action(modelData).enabled
                     onClicked: webEngineView.action(modelData).trigger()
                     icon.source: switch(modelData) {
-                                 case WebEngineView.Back:"/icons/arrow_back.svg";break;
-                                 case WebEngineView.Forward:"/icons/arrow_forward.svg";break;
-                                 case WebEngineView.Reload:"/icons/refresh.svg";break;
                                  case WebEngineView.Copy:"/icons/content_copy.svg";break;
                                  case WebEngineView.Paste:"/icons/content_paste.svg";break;
                                  case WebEngineView.Cut:"/icons/content_cut.svg";break;
@@ -530,6 +532,7 @@ Item {
             Menu {
                 id: webViewExtAppMenu
                 title: "Launch in external app"
+                icon.source: "/icons/function.svg"
                 enabled: root.extCommandEnabled
                         && webEngineView.contextMenu.linkIsVideo
                 height: enabled ? implicitHeight : 0
