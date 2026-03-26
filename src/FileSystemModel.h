@@ -59,8 +59,13 @@ class FileSystemModel : public QFileSystemModel {
     QScopedPointer<NoDirSortProxyModel> m_proxyModel;
     QString m_contextPropertyName;
     QModelIndex m_nullIndex;
-    QString m_lastDestination;
-    QString m_lastDestinationName;
+    struct DestinationCategory {
+        QString path;
+        QString name;
+        bool operator==(const DestinationCategory &o) const { return path == o.path; }
+    };
+    int m_maxRecentDestinations = 5;
+    QList<DestinationCategory> m_recentDestinations;
 
     EmptyIconProvider m_emptyIconProvider;
     QDir m_root;
@@ -80,8 +85,9 @@ class FileSystemModel : public QFileSystemModel {
     Q_PROPERTY(QVariant sortFilterProxyModel READ sortFilterProxyModel NOTIFY sortFilterProxyModelChanged)
     Q_PROPERTY(QVariant rootPathIndex READ rootPathIndex NOTIFY rootPathIndexChanged)
     Q_PROPERTY(QVariant nullIndex MEMBER m_nullIndex CONSTANT)
-    Q_PROPERTY(QString lastDestinationCategory MEMBER m_lastDestination NOTIFY lastDestinationCategoryChanged)
-    Q_PROPERTY(QString lastDestinationCategoryName MEMBER m_lastDestinationName NOTIFY lastDestinationCategoryChanged)
+    Q_PROPERTY(QString bookmarksRootPath READ rootPath NOTIFY rootPathIndexChanged)
+    Q_PROPERTY(QVariantList recentDestinations READ recentDestinations NOTIFY recentDestinationsChanged)
+    Q_PROPERTY(int maxRecentDestinations READ maxRecentDestinations WRITE setMaxRecentDestinations NOTIFY maxRecentDestinationsChanged)
     Q_PROPERTY(int extAppQueueTotal READ extAppQueueTotal NOTIFY extAppProgressChanged)
     Q_PROPERTY(int extAppQueueCompleted READ extAppQueueCompleted NOTIFY extAppProgressChanged)
     Q_PROPERTY(bool extAppQueueRunning READ extAppQueueRunning NOTIFY extAppProgressChanged)
@@ -89,6 +95,9 @@ class FileSystemModel : public QFileSystemModel {
 public:
     QVariant rootPathIndex() const;
     QVariant sortFilterProxyModel() const;
+    QVariantList recentDestinations() const;
+    int maxRecentDestinations() const;
+    void setMaxRecentDestinations(int max);
 
     explicit FileSystemModel(QString contextPropertyName,
                              bool bookmarks,
@@ -124,6 +133,7 @@ public:
     Q_INVOKABLE QString creationDate(const QString &key) const;
     Q_INVOKABLE void bumpVersion(const QString &key);
     Q_INVOKABLE void bumpVersion(const QModelIndex &idx);
+    Q_INVOKABLE QString categoryName(const QString &key) const;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
@@ -189,7 +199,8 @@ signals:
     void searchInTitlesChanged();
     void searchInChannelNamesChanged();
     void firstInitializationCompleted(const QString &rootPath);
-    void lastDestinationCategoryChanged();
+    void recentDestinationsChanged();
+    void maxRecentDestinationsChanged();
     void extAppProgressChanged();
     void versionBumped(const QString &key);
 
@@ -200,6 +211,7 @@ private:
                     const QString &channelName, const QString &channelAvatarURL);
     QString itemKey(const QModelIndex &index) const;
     void fetchThumbnail(const QString &key);
+    void pushRecentDestination(const QString &path, const QString &name);
     void processNextExtAppRequest();
     void onExtAppFinished(int exitCode, QProcess::ExitStatus status);
 

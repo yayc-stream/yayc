@@ -449,80 +449,40 @@ Item {
             property string requestedKey: utilities.getVideoID(requestedLink)
             property bool linkIsVideo: requestedKey !== ""
             property bool videoAdded: linkIsVideo && fileSystemModel.isVideoBookmarked(requestedKey)
-            MenuItem {
-                text: webEngineView.contextMenu.videoAdded ? "Added" : "Add"
-                enabled: webEngineView.contextMenu.linkIsVideo && !webEngineView.contextMenu.videoAdded
-
-                property bool storagePresent: webEngineView.contextMenu.videoAdded
-                property bool workingDirPresent: webEngineView.contextMenu.videoAdded
-                                                 && root.extWorkingDirExists
-                                                 && fileSystemModel.hasWorkingDir(webEngineView.contextMenu.requestedKey,
-                                                                                  root.extWorkingDirPath)
-                icon {
-                    source: "/icons/add.svg"
-                    color: (webEngineView.contextMenu.videoAdded) // ToDo: deduplicate
-                           ? (enabled)
-                             ? YaycProperties.addedTextColor
-                             : YaycProperties.addedDisabledTextColor
-                           : (enabled)
-                             ? "white"
-                             : YaycProperties.disabledTextColor
-                }
-
-                Image {
-                    visible: parent.workingDirPresent > 0
-                    anchors {
-                        left: parent.left
-                        top: parent.top
-                        bottom: parent.bottom
-                        leftMargin: 12
-                        topMargin: 12
-                        bottomMargin: 4
-                    }
-
-                    source: (parent.workingDirPresent == 2)
-                                ? "qrc:/images/workingdirpresent.png"
-                                : "qrc:/images/workingdirpresentempty.png"
-                    opacity: .7
-                }
-
-                onClicked: {
-                    var key = webEngineView.contextMenu.requestedKey
-                    if (key !== "") {
-                        fileSystemModel.addEntry(
-                                    key,
-                                    webEngineView.contextMenu.requestedLinkText,
-                                    "",
-                                    "",
-                                    "")
-                        root.triggerVideoAdded()
-                    }
-                }
-                display: MenuItem.TextBesideIcon
-            }
-            MenuItem {
-                text: "Add to " + fileSystemModel.lastDestinationCategoryName
-                enabled: fileSystemModel.lastDestinationCategoryName !== ""
-                         && webEngineView.contextMenu.linkIsVideo
+            Menu {
+                id: addToCategoryMenu
+                title: webEngineView.contextMenu.videoAdded ? "Added" : "Add to..."
+                enabled: webEngineView.contextMenu.linkIsVideo
                          && !webEngineView.contextMenu.videoAdded
-                visible: enabled
-                height: visible && enabled ? implicitHeight : 0
+                visible: webEngineView.contextMenu.linkIsVideo
+                height: visible ? implicitHeight : 0
 
-                icon {
-                    source: "/icons/move.svg"
-                    color: enabled ? "white" : YaycProperties.disabledTextColor
-                }
-
-                onClicked: {
-                    var key = webEngineView.contextMenu.requestedKey
-                    if (key !== "") {
-                        fileSystemModel.addEntry(key, webEngineView.contextMenu.requestedLinkText,
-                                                 "", "", "", 0, 0,
-                                                 fileSystemModel.lastDestinationCategory)
-                        root.triggerVideoAdded()
+                MenuItem {
+                    text: "/"
+                    onClicked: {
+                        var key = webEngineView.contextMenu.requestedKey
+                        if (key !== "") {
+                            fileSystemModel.addEntry(key, webEngineView.contextMenu.requestedLinkText,
+                                                     "", "", "")
+                            root.triggerVideoAdded()
+                        }
                     }
                 }
-                display: MenuItem.TextBesideIcon
+                Repeater {
+                    model: (addToCategoryMenu.enabled) ? fileSystemModel.recentDestinations : undefined
+                    MenuItem {
+                        required property var modelData
+                        text: modelData.name
+                        onClicked: {
+                            var key = webEngineView.contextMenu.requestedKey
+                            if (key !== "") {
+                                fileSystemModel.addEntry(key, webEngineView.contextMenu.requestedLinkText,
+                                                         "", "", "", 0, 0, modelData.path)
+                                root.triggerVideoAdded()
+                            }
+                        }
+                    }
+                }
             }
             Repeater {
                 model: [
@@ -694,7 +654,8 @@ Item {
             enabled: false
             visible: true
             onClicked: {
-                root.timePuller.addCurrentVideo()
+                if (!currentVideoAdded)
+                    addToToolbarMenu.popup()
             }
             onPressAndHold: {
                 if (currentVideoAdded) {
@@ -708,6 +669,27 @@ Item {
                                            root.addedVideoTrigger)
             property int workingDirPresent : (webEngineView.isYoutubeVideo)
                     ? webEngineView.keyHasWorkingDir : 0
+
+            function addToDestination(destinationPath) {
+                if (!utilities.isYoutubeVideoUrl(root.url))
+                    return
+                var k = utilities.getVideoID(root.timePuller.videoID,
+                                             root.timePuller.vendor,
+                                             root.timePuller.shorts)
+                if (webEngineView.key !== k)
+                    return
+                fileSystemModel.addEntry(webEngineView.key,
+                                         root.timePuller.videoTitle,
+                                         root.timePuller.channelURL,
+                                         root.timePuller.channelAvatar,
+                                         root.timePuller.channelName,
+                                         root.timePuller.videoDuration,
+                                         root.timePuller.videoPosition,
+                                         destinationPath)
+                if (k !== "" && root.timePuller.shorts)
+                    fileSystemModel.viewEntry(webEngineView.key, true)
+                root.triggerVideoAdded()
+            }
 
             icon {
                 source: "/icons/add.svg"
@@ -751,47 +733,25 @@ Item {
             hoverEnabled: true
             ToolTip.visible: hovered
             ToolTip.text: (currentVideoAdded)
-                          ? "Video already bookmarked"
+                          ? "Bookmarked in: " + fileSystemModel.categoryName(webEngineView.key)
                           : "Add Video to Bookmarks"
             ToolTip.delay: 300
 
-        }
-        ToolButton {
-            id: buttonAddToCategory
-            text: "Add to " + fileSystemModel.lastDestinationCategoryName
-            enabled: webEngineView.isYoutubeVideo
-                     && !buttonAddVideo.currentVideoAdded
-            visible: fileSystemModel.lastDestinationCategoryName !== ""
-            onClicked: {
-                if (!utilities.isYoutubeVideoUrl(root.url))
-                    return
-                var k = utilities.getVideoID(root.timePuller.videoID,
-                                             root.timePuller.vendor,
-                                             root.timePuller.shorts)
-                if (webEngineView.key !== k)
-                    return
-                fileSystemModel.addEntry(webEngineView.key,
-                                         root.timePuller.videoTitle,
-                                         root.timePuller.channelURL,
-                                         root.timePuller.channelAvatar,
-                                         root.timePuller.channelName,
-                                         root.timePuller.videoDuration,
-                                         root.timePuller.videoPosition,
-                                         fileSystemModel.lastDestinationCategory)
-                if (k !== "" && root.timePuller.shorts)
-                    fileSystemModel.viewEntry(webEngineView.key, true)
-                root.triggerVideoAdded()
+            Menu {
+                id: addToToolbarMenu
+                MenuItem {
+                    text: "/"
+                    onClicked: root.timePuller.addCurrentVideo()
+                }
+                Repeater {
+                    model: fileSystemModel.recentDestinations
+                    MenuItem {
+                        required property var modelData
+                        text: modelData.name
+                        onClicked: buttonAddVideo.addToDestination(modelData.path)
+                    }
+                }
             }
-            icon {
-                source: "/icons/move.svg"
-                color: enabled ? "white" : YaycProperties.disabledTextColor
-            }
-            display: AbstractButton.IconOnly
-
-            hoverEnabled: true
-            ToolTip.visible: hovered
-            ToolTip.text: text
-            ToolTip.delay: 300
         }
         ToolButton {
             id: buttonStarVideo

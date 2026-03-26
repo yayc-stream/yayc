@@ -49,6 +49,7 @@ Menu {
     onOpened: {
         // workaround for the submenu occasionally showing opened
         extAppMenu.close()
+        moveToMenu.close()
     }
 
     property string categoryName: ""
@@ -81,23 +82,27 @@ Menu {
         deleteVideoItem = true
     }
 
-    MenuItem {
-        text: (rootItem.model)
-                ? "Move to " + rootItem.model.lastDestinationCategoryName
-                : ""
-        enabled: rootItem.parentView
-                 && rootItem.deleteVideoItem
+    Menu {
+        id: moveToMenu
+        title: "Move to..."
+        icon.source: "/icons/move.svg"
+        enabled: rootItem.deleteVideoItem
                  && rootItem.model
-                 && rootItem.model.lastDestinationCategoryName !== ""
         visible: enabled
         height: enabled ? implicitHeight : 0
-        onClicked: {
-            let lastDst = rootItem.model.lastDestinationCategory
-            console.log(lastDst)
-            let res = rootItem.model.moveEntry(rootItem.key, lastDst)
+
+        MenuItem {
+            text: "/"
+            onClicked: rootItem.model.moveEntry(rootItem.key, rootItem.model.bookmarksRootPath)
         }
-        icon.source: "/icons/move.svg"
-        display: MenuItem.TextBesideIcon
+        Repeater {
+            model: (moveToMenu.enabled) ? rootItem.model.recentDestinations : undefined
+            MenuItem {
+                required property var modelData
+                text: modelData.name
+                onClicked: rootItem.model.moveEntry(rootItem.key, modelData.path)
+            }
+        }
     }
     MenuItem {
         text: "Set as destination"

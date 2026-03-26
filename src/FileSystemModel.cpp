@@ -299,6 +299,13 @@ QString FileSystemModel::title(const QString &key) const {
     return m_cache.value(key).title;
 }
 
+QString FileSystemModel::categoryName(const QString &key) const {
+    if (!m_ready || !key.size() || !m_cache.contains(key))
+        return QString();
+    const auto &dirName = m_cache.value(key).parent.dirName();
+    return (m_cache.value(key).parent.path() == rootPath()) ? "/" : dirName;
+}
+
 bool FileSystemModel::isVideoBookmarked(const QString &key) {
     if (!m_ready || !key.size())
         return false;
@@ -882,11 +889,7 @@ bool FileSystemModel::moveVideo(const QString &key, QModelIndex destinationDir) 
         return false;
     }
 
-    if (m_lastDestination != d.path()) {
-        m_lastDestination = d.path();
-        m_lastDestinationName = d.dirName();
-        emit lastDestinationCategoryChanged();
-    }
+    pushRecentDestination(d.path(), d.dirName());
     QTimer::singleShot(0, this, [this, key, d]() { moveEntry(key, d); });
     return true;
 }
@@ -908,11 +911,7 @@ bool FileSystemModel::moveEntry(QModelIndex item, QModelIndex destinationDir) {
         qWarning() << "Destination directory doesn't exist";
         return false;
     }
-    if (m_lastDestination != d.path()) {
-        m_lastDestination = d.path();
-        m_lastDestinationName = d.dirName();
-        emit lastDestinationCategoryChanged();
-    }
+    pushRecentDestination(d.path(), d.dirName());
     if (isDir(index)) {
         QDir f(filePath(index));
         if (!f.exists()) {
@@ -967,11 +966,7 @@ bool FileSystemModel::addCategory(const QString &name, QModelIndex parentDir) {
     if (!d.mkdir(name))
         return false;
     QString newPath = d.absoluteFilePath(name);
-    if (m_lastDestination != newPath) {
-        m_lastDestination = newPath;
-        m_lastDestinationName = name;
-        emit lastDestinationCategoryChanged();
-    }
+    pushRecentDestination(newPath, name);
     return true;
 }
 
@@ -1080,11 +1075,43 @@ void FileSystemModel::setLastDestinationCategory(QModelIndex categoryIndex) {
     QDir d(filePath(index));
     if (!d.exists())
         return;
-    if (m_lastDestination != d.path()) {
-        m_lastDestination = d.path();
-        m_lastDestinationName = d.dirName();
-        emit lastDestinationCategoryChanged();
+    pushRecentDestination(d.path(), d.dirName());
+}
+
+void FileSystemModel::pushRecentDestination(const QString &path, const QString &name) {
+    DestinationCategory dc{path, name};
+    if (!m_recentDestinations.isEmpty() && m_recentDestinations.first() == dc)
+        return;
+    m_recentDestinations.removeAll(dc);
+    m_recentDestinations.prepend(dc);
+    if (m_recentDestinations.size() > m_maxRecentDestinations)
+        m_recentDestinations.resize(m_maxRecentDestinations);
+    emit recentDestinationsChanged();
+}
+
+QVariantList FileSystemModel::recentDestinations() const {
+    QVariantList result;
+    for (const auto &dc : m_recentDestinations) {
+        if (QDir(dc.path).exists())
+            result.append(QVariantMap{{"path", dc.path}, {"name", dc.name}});
     }
+    return result;
+}
+
+int FileSystemModel::maxRecentDestinations() const {
+    return m_maxRecentDestinations;
+}
+
+void FileSystemModel::setMaxRecentDestinations(int max) {
+    max = qMax(1, max);
+    if (m_maxRecentDestinations == max)
+        return;
+    m_maxRecentDestinations = max;
+    if (m_recentDestinations.size() > max) {
+        m_recentDestinations.resize(max);
+        emit recentDestinationsChanged();
+    }
+    emit maxRecentDestinationsChanged();
 }
 
 void FileSystemModel::addThumbnail(const QString &key, const QByteArray &thumbnailData) {

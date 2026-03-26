@@ -170,6 +170,7 @@ Item {
     property bool blankWhenHidden: false
     property bool showCategoryBar: true
     property int homeGridColumns: 4
+    property int maxRecentDestinations: 5
     property real wevZoomFactor
     property real wevZoomFactorVideo
     property real volume: 0
@@ -200,6 +201,7 @@ Item {
     }
 
     Binding { target: YaycProperties; property: "isDarkMode"; value: root.darkMode }
+    Binding { target: fileSystemModel; property: "maxRecentDestinations"; value: root.maxRecentDestinations }
     onDarkModeChanged: {
         utilities.setColorScheme(root.darkMode)
         if (root.settingsLoaded && webEngineView)
@@ -248,6 +250,7 @@ Item {
         property alias blankWhenHidden: root.blankWhenHidden
         property alias showCategoryBar: root.showCategoryBar
         property alias homeGridColumns: root.homeGridColumns
+        property alias maxRecentDestinations: root.maxRecentDestinations
         property alias volume: root.volume
         property alias userSpecifiedVolume: root.userSpecifiedVolume
         property alias guidePaneToggled: root.guideToggled
@@ -1666,6 +1669,15 @@ Item {
                             ToolTip.delay: 300
                             ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
+                        }
+                        Label {
+                            text: "Max destinations:"
+                            Layout.leftMargin: 8
+                        }
+                        SpinBox {
+                            from: 1; to: 99
+                            value: root.maxRecentDestinations
+                            onValueModified: root.maxRecentDestinations = value
                         }
                         Button {
                             id: buttonOpenJSDialog
