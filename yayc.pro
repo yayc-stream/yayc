@@ -13,7 +13,12 @@ macos {
 #unix:!android: CONFIG += use_lld_linker # fix for QTBUG-80964
 
 #No debug output in release mode
-CONFIG(release): DEFINES += QT_NO_DEBUG_OUTPUT
+CONFIG(release, debug|release) {
+    DEFINES += QT_NO_DEBUG_OUTPUT
+    message("Building in RELEASE mode")
+} else {
+    message("Building in DEBUG mode")
+}
 
 SOURCES += \
         src/main.cpp \

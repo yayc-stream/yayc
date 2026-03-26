@@ -94,7 +94,12 @@ int main(int argc, char *argv[])
     qputenv("QTWEBENGINE_ENABLE_LINUX_ACCESSIBILITY", "0");
     // qunsetenv("AT_SPI_BUS_ADDRESS");  // Disable AT-SPI D-Bus connection
     // qputenv("NO_AT_BRIDGE", "1");     // Another way to disable AT-SPI
+#ifdef QT_NO_DEBUG_OUTPUT
     qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-accessibility --log-level=3");
+#else
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-accessibility --log-level=0");
+#endif
+
 
     int currentExitCode = 0;
     QStringList args;
@@ -180,6 +185,8 @@ int main(int argc, char *argv[])
                                                        "qmldebug=true\n"
                                                        "*.fatal=true\n"
                                                        ));
+#else
+        qDebug() << "DEBUG build!";
 #endif
 
         // for the roles enums

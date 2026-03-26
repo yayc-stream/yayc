@@ -162,8 +162,7 @@ QString YaycUtilities::getVideoID(QUrl url) const
     const QString surl = url.toString();
     Platform::Vendor vendor = Platform::urlToVendor(url);
     if (vendor == Platform::UNK) {
-        Q_UNREACHABLE();
-        qWarning("Unknown Video platform");
+        qWarning() << "Unknown Video platform for :" << url;
         return {};
     }
     if (vendor == Platform::YTB) {
@@ -179,7 +178,7 @@ QString YaycUtilities::getVideoID(QUrl url) const
             return {};
         }
     }
-    Q_UNREACHABLE();
+    qWarning() << "getVideoID error: "<<url;
     return {};
 }
 
