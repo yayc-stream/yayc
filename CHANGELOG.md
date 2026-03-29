@@ -1,3 +1,19 @@
+## YAYC v1.7.0 (2026.03) -- Maxie
+
+### ✨ New Features
+
+- Auto-skip ads option
+- Multiple last destinations for moving bookmarks, with option to preload last destinations.
+- Possibility to run external commands on arbitrary video links without needing to bookmark them first
+
+### 🐞 Bug fixes
+
+- Several stability improvements
+
+### ⚠️ Known Issues
+
+- Same as for v1.6
+
 ## YAYC v1.6.0 (2026.03) -- Winston
 
 ### ✨ New Features
