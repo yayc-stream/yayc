@@ -70,7 +70,61 @@ $.extend($.easing,
 })( jQuery );
 
 
+// Fetch latest release from GitHub and populate download links
+function populateReleaseLinks() {
+    var apiUrl = 'https://api.github.com/repos/yayc-stream/yayc/releases/latest';
+
+    var assetMap = {
+        windows: [
+            { pattern: /win-x64-portable\.zip$/, label: 'Portable (ZIP)' },
+            { pattern: /win-x64\.exe$/, label: 'Installer (EXE)' }
+        ],
+        macos: [
+            { pattern: /universal\.dmg$/, label: 'Universal Binary (DMG)', suffix: ' - Intel & Apple Silicon' }
+        ],
+        linux: [
+            { pattern: /\.AppImage$/, label: 'AppImage', suffix: ' - Universal Linux' },
+            { pattern: /_amd64\.deb$/, label: 'Debian Package', suffix: ' - Ubuntu/Debian' },
+            { pattern: /linux-x86_64\.tar\.xz$/, label: 'Tarball', suffix: ' - Generic Linux' }
+        ]
+    };
+
+    $.getJSON(apiUrl, function(release) {
+        var version = release.tag_name.replace(/^yayc-/, '');
+        $('#release-version').text(version);
+
+        var assets = release.assets;
+
+        $.each(assetMap, function(platform, patterns) {
+            var $list = $('#release-' + platform);
+            var items = [];
+            $.each(patterns, function(_, entry) {
+                $.each(assets, function(_, asset) {
+                    if (entry.pattern.test(asset.name)) {
+                        var html = '<li><strong>' + entry.label + '</strong>: ' +
+                            '<a href="' + asset.browser_download_url + '">' + asset.name + '</a>' +
+                            (entry.suffix || '') + '</li>';
+                        items.push(html);
+                    }
+                });
+            });
+            if (items.length) {
+                $list.html(items.join(''));
+            } else {
+                $list.html('<li>No assets found</li>');
+            }
+        });
+    }).fail(function() {
+        $('#release-version').text('unavailable');
+        $('#release-windows, #release-macos, #release-linux').html(
+            '<li>Could not load releases. Visit <a href="https://github.com/yayc-stream/yayc/releases">GitHub Releases</a>.</li>'
+        );
+    });
+}
+
 $(document).ready(function (){
+
+    populateReleaseLinks();
 
     $('nav li a').navScroller();
 
