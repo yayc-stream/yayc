@@ -32,14 +32,12 @@ Item {
     property alias url: webEngineView.url
     property alias profile: webEngineView.profile
     property alias key: webEngineView.key
-    property url previousUrl
     property alias volume: sliderVolume.value
     property alias userSpecifiedVolume: sliderVolume.userValue
     property bool muted: false
     required property real wevZoomFactor
     required property real wevZoomFactorVideo
     property int homeGridColumns: 4
-    property bool blankWhenHidden: false
     property bool autoSkipAd: false
     property bool showCategoryBar: true
     required property string customScript
@@ -77,21 +75,6 @@ Item {
         function onVersionBumped(key) {
             if (key === webEngineView.key)
                 triggerWorkingDir()
-        }
-    }
-
-    onWindowHiddenChanged: {
-        if (!root.blankWhenHidden || isYoutubeVideo)
-            return
-
-        if (windowHidden) {
-            // store && change
-            previousUrl = url
-            url = "about:blank"
-        } else {
-            // restore
-            url = previousUrl
-            previousUrl = ""
         }
     }
 
@@ -551,7 +534,7 @@ Item {
                         onClicked: {
                             fileSystemModel.enqueueExternalApp(
                                         webEngineView.contextMenu.requestedKey,
-                                        webEngineView.contextMenu.requestedLink.toString(),
+                                        utilities.normalizeVideoUrl(webEngineView.contextMenu.requestedLink),
                                         root.externalCommands[index].command,
                                         root.extWorkingDirPath)
                         }

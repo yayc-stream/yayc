@@ -199,6 +199,62 @@ QString YaycUtilities::getVideoID(const QString &key, const QString &sVendor, bo
     return {};
 }
 
+// youtu.be short links are handled asynchronously via resolveAndNormalizeUrl(),
+// because we can't tell from the URL alone whether the video is a standard video
+// or a Short. A HEAD request to youtu.be follows the redirect to the actual
+// youtube.com URL (watch?v= or shorts/), giving us the correct form.
+QString YaycUtilities::normalizeVideoUrl(QUrl url) const
+{
+    url = removeWww(url);
+    const QString surl = url.toString();
+    if (isYoutubeStandardUrl(surl)) {
+        const QStringView stripped = QStringView{surl}.mid(standardVideoPattern.size());
+        const int idx = stripped.indexOf('&');
+        return standardVideoPattern + stripped.mid(0, idx).toString();
+    } else if (isYoutubeShortsUrl(surl)) {
+        const QStringView stripped = QStringView{surl}.mid(shortsVideoPattern.size());
+        const int idx = stripped.indexOf('?');
+        return shortsVideoPattern + stripped.mid(0, idx).toString();
+    }
+    return url.toString();
+}
+
+static bool isYoutuBeShortLink(const QUrl &url)
+{
+    const QString host = url.host().toLower();
+    return (host == QLatin1String("youtu.be") || host == QLatin1String("www.youtu.be"));
+}
+
+void YaycUtilities::resolveAndNormalizeUrl(QUrl url)
+{
+    if (isYoutuBeShortLink(url)) {
+        QNetworkRequest request(url);
+        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
+                             QNetworkRequest::AlwaysNetwork);
+        request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                             QNetworkRequest::UserVerifiedRedirectPolicy);
+        QNetworkReply *reply = m_nam.head(std::move(request));
+        connect(reply, &QNetworkReply::redirected, reply, &QNetworkReply::redirectAllowed);
+        connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onUrlResolveFinished);
+        return;
+    }
+    emit videoUrlResolved(normalizeVideoUrl(url));
+}
+
+void YaycUtilities::onUrlResolveFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+    if (reply) {
+        reply->deleteLater();
+        if (reply->error() == QNetworkReply::NoError) {
+            emit videoUrlResolved(normalizeVideoUrl(reply->url()));
+        } else {
+            qWarning() << "youtu.be resolve failed:" << reply->errorString();
+            emit videoUrlResolved({});
+        }
+    }
+}
+
 QString YaycUtilities::getChangelog()
 {
     static QString changelog;

@@ -58,6 +58,8 @@ public:
 
     Q_INVOKABLE QString getVideoID(QUrl url) const;
     Q_INVOKABLE QString getVideoID(const QString &key, const QString &sVendor, bool isShorts) const;
+    Q_INVOKABLE QString normalizeVideoUrl(QUrl url) const;
+    Q_INVOKABLE void resolveAndNormalizeUrl(QUrl url);
 
     Q_INVOKABLE QString getChangelog();
     Q_INVOKABLE QString getDisclaimer();
@@ -91,6 +93,7 @@ signals:
     void latestVersion(const QString &);
     void donateETag(const QString &);
     void donateUrl(const QString &);
+    void videoUrlResolved(const QString &normalizedUrl);
 
 public slots:
     void onSocketConnected();
@@ -98,6 +101,7 @@ public slots:
     void onReplyFinished();
     void onDonateEtagReplyFinished();
     void onDonateReplyFinished();
+    void onUrlResolveFinished();
 
 protected:
     QTcpSocket *tcpSocket;

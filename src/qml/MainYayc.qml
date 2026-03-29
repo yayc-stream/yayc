@@ -33,15 +33,11 @@ Item {
 
     property var webEngineView: webEngineViewLoader.item
     property url url: "https://youtube.com"
-    property url previousUrl: ""
     property bool filesystemModelReady: false
     property bool windowHidden: win.hidden
 
     function prepareQuit() {
-        // the setting is an alias for reloading purposes
-        if (root.windowHidden && root.blankWhenHidden && root.previousUrl !== "") {
-            settings.lastUrl = root.previousUrl // ToDo: try to save/restore position too
-        } else if (webEngineView) {
+        if (webEngineView) {
             settings.lastUrl = webEngineView.timePuller.getCurrentVideoURLWithPosition()
         }
         syncAll()
@@ -303,6 +299,7 @@ Item {
         utilities.latestVersion.connect(onLatestVersionFound)
         utilities.donateETag.connect(onDonateETag)
         utilities.donateUrl.connect(onDonateUrl)
+        utilities.videoUrlResolved.connect(addVideoDialog.addVideo)
 
         // Re-enable (maybe) after fixing the connections after deletion/re-instantiation of these models
         // fileSystemModel.directoryLoaded.connect(onFSmodelDirectoryLoaded)
@@ -558,10 +555,11 @@ Item {
                     anchors.fill: parent
                     asynchronous: true
 
-                    // Desired state: profile exists AND (window visible OR audio playing)
+                    // Desired state: profile exists AND (window visible OR playing OR unload-on-hide disabled)
                     property bool shouldBeActive: WebBrowsingProfiles.profile !== null
                                                    && (webViewWrapper.videoPlaying
-                                                       || (!root.windowHidden || root.blankWhenHidden))
+                                                       || !root.windowHidden
+                                                       || !root.blankWhenHidden)
                     onShouldBeActiveChanged: {
                         if (shouldBeActive) {
                             webEngineViewLoaderDeactivateTimer.stop()
@@ -593,7 +591,6 @@ Item {
                         // User navigation / slider changes break these bindings,
                         // but webViewSync pull Connections keeps root in sync.
                         url: root.url
-                        previousUrl: root.previousUrl
                         profile: WebBrowsingProfiles.profile
                         volume: root.volume
                         userSpecifiedVolume: root.userSpecifiedVolume
@@ -671,10 +668,6 @@ Item {
                     function onUrlChanged() {
                         if (root.url !== webEngineView.url)
                             root.url = webEngineView.url
-                    }
-                    function onPreviousUrlChanged() {
-                        if (root.previousUrl !== webEngineView.previousUrl)
-                            root.previousUrl = webEngineView.previousUrl
                     }
                     function onVolumeChanged() {
                         if (root.volume !== webEngineView.volume)
@@ -1674,7 +1667,7 @@ Item {
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Controls whether to change the URL to about:blank when YAYC is minimized to save CPU"
+                            ToolTip.text: "Controls whether to unload the web view when YAYC is hidden and no video is playing"
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                         Button {
@@ -2495,21 +2488,20 @@ Item {
         padding: 16
         anchors.centerIn: parent
 
-        function addVideo(u) {
-            if (!utilities.isYoutubeVideoUrl(u)) {
-                // Q_UNREACHABLE
+        function addVideo(normalizedUrl) {
+            if (!utilities.isYoutubeVideoUrl(normalizedUrl)) {
                 console.log("Wrong URL fed!")
                 return;
             }
-            if (utilities.isYoutubeShortsUrl(u)) {
-                fileSystemModel.addEntry(utilities.getVideoID(u),
+            if (utilities.isYoutubeShortsUrl(normalizedUrl)) {
+                fileSystemModel.addEntry(utilities.getVideoID(normalizedUrl),
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url
                                          ""  // channel name
                                          )
             } else {
-                fileSystemModel.addEntry(utilities.getVideoID(u),
+                fileSystemModel.addEntry(utilities.getVideoID(normalizedUrl),
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url
@@ -2522,7 +2514,7 @@ Item {
         onAccepted: {
             var videoUrl = newVideoInput.text;
             newVideoInput.clear()
-            addVideoDialog.addVideo(videoUrl)
+            utilities.resolveAndNormalizeUrl(videoUrl)
             close()
         }
         onRejected: {
