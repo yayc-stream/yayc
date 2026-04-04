@@ -450,41 +450,105 @@ Item {
             }
         }
 
-        property Menu contextMenu: Menu {
+        component CtxClipboardActions: Repeater {
+            model: [
+                WebEngineView.Copy,
+                WebEngineView.Paste,
+                WebEngineView.Cut,
+                WebEngineView.CopyLinkToClipboard,
+            ]
+            MenuItem {
+                text: webEngineView.action(modelData).text
+                enabled: webEngineView.action(modelData).enabled
+                onClicked: webEngineView.action(modelData).trigger()
+                icon.source: switch(modelData) {
+                             case WebEngineView.Copy:"/icons/content_copy.svg";break;
+                             case WebEngineView.Paste:"/icons/content_paste.svg";break;
+                             case WebEngineView.Cut:"/icons/content_cut.svg";break;
+                             case WebEngineView.CopyLinkToClipboard:"/icons/add_link.svg";break;
+                             }
+                display: MenuItem.TextBesideIcon
+            }
+        }
+
+        component CtxExtAppsMenu: Menu {
+            id: extAppsMenu
+            required property string ctxKey
+            required property url ctxLink
+            required property bool ctxIsVideo
+            title: "Launch in"
+            icon.source: "/icons/function.svg"
+            enabled: root.extCommandEnabled && ctxIsVideo
+            height: enabled ? implicitHeight : 0
+            Repeater {
+                model: extAppsMenu.enabled ? root.externalCommands : undefined
+                MenuItem {
+                    text: (root.externalCommands[index])
+                            ? root.externalCommands[index].name : ""
+                    enabled: true; visible: true
+                    height: enabled ? implicitHeight : 0
+                    onClicked: fileSystemModel.enqueueExternalApp(
+                                extAppsMenu.ctxKey,
+                                utilities.normalizeVideoUrl(extAppsMenu.ctxLink),
+                                root.externalCommands[index].command,
+                                root.extWorkingDirPath)
+                    icon.source: "/icons/extension.svg"
+                    display: MenuItem.TextBesideIcon
+                }
+            }
+        }
+
+        property Menu _ctxMenuAdded: Menu {
             property url requestedLink: ""
             property string requestedLinkText: ""
             property string requestedKey: utilities.getVideoID(requestedLink)
             property bool linkIsVideo: requestedKey !== ""
-            property bool videoAdded: linkIsVideo && fileSystemModel.isVideoBookmarked(requestedKey)
-            Menu {
-                id: addToCategoryMenu
-                title: webEngineView.contextMenu.videoAdded ? "Added" : "Add to..."
+
+            MenuItem {
+                text: "Added (" + fileSystemModel.categoryName(webEngineView._ctxMenuAdded.requestedKey) + ")"
                 icon.source: "/icons/add.svg"
-                enabled: webEngineView.contextMenu.linkIsVideo
-                         && !webEngineView.contextMenu.videoAdded
-                visible: webEngineView.contextMenu.linkIsVideo
+                enabled: false
+            }
+            CtxClipboardActions {}
+            CtxExtAppsMenu {
+                ctxKey: webEngineView._ctxMenuAdded.requestedKey
+                ctxLink: webEngineView._ctxMenuAdded.requestedLink
+                ctxIsVideo: webEngineView._ctxMenuAdded.linkIsVideo
+            }
+        }
+
+        property Menu _ctxMenuNotAdded: Menu {
+            property url requestedLink: ""
+            property string requestedLinkText: ""
+            property string requestedKey: utilities.getVideoID(requestedLink)
+            property bool linkIsVideo: requestedKey !== ""
+
+            Menu {
+                title: "Add to..."
+                icon.source: "/icons/add.svg"
+                visible: webEngineView._ctxMenuNotAdded.linkIsVideo
                 height: visible ? implicitHeight : 0
 
                 MenuItem {
                     text: "/"
                     onClicked: {
-                        var key = webEngineView.contextMenu.requestedKey
+                        var key = webEngineView._ctxMenuNotAdded.requestedKey
                         if (key !== "") {
-                            fileSystemModel.addEntry(key, webEngineView.contextMenu.requestedLinkText,
+                            fileSystemModel.addEntry(key, webEngineView._ctxMenuNotAdded.requestedLinkText,
                                                      "", "", "")
                             root.triggerVideoAdded()
                         }
                     }
                 }
                 Repeater {
-                    model: (addToCategoryMenu.enabled) ? fileSystemModel.recentDestinations : undefined
+                    model: fileSystemModel.recentDestinations
                     MenuItem {
                         required property var modelData
                         text: modelData.name
                         onClicked: {
-                            var key = webEngineView.contextMenu.requestedKey
+                            var key = webEngineView._ctxMenuNotAdded.requestedKey
                             if (key !== "") {
-                                fileSystemModel.addEntry(key, webEngineView.contextMenu.requestedLinkText,
+                                fileSystemModel.addEntry(key, webEngineView._ctxMenuNotAdded.requestedLinkText,
                                                          "", "", "", 0, 0, modelData.path)
                                 root.triggerVideoAdded()
                             }
@@ -492,56 +556,11 @@ Item {
                     }
                 }
             }
-            Repeater {
-                model: [
-                    WebEngineView.Copy,
-                    WebEngineView.Paste,
-                    WebEngineView.Cut,
-                    WebEngineView.CopyLinkToClipboard,
-                ]
-                MenuItem {
-                    text: webEngineView.action(modelData).text
-                    enabled: webEngineView.action(modelData).enabled
-                    onClicked: webEngineView.action(modelData).trigger()
-                    icon.source: switch(modelData) {
-                                 case WebEngineView.Copy:"/icons/content_copy.svg";break;
-                                 case WebEngineView.Paste:"/icons/content_paste.svg";break;
-                                 case WebEngineView.Cut:"/icons/content_cut.svg";break;
-                                 case WebEngineView.CopyLinkToClipboard:"/icons/add_link.svg";break;
-                                 }
-                    display: MenuItem.TextBesideIcon
-                }
-            }
-            Menu {
-                id: webViewExtAppMenu
-                title: "Launch in"
-                icon.source: "/icons/function.svg"
-                enabled: root.extCommandEnabled
-                        && webEngineView.contextMenu.linkIsVideo
-                height: enabled ? implicitHeight : 0
-
-                Repeater {
-                    model: (webViewExtAppMenu.enabled)
-                            ? root.externalCommands
-                            : undefined
-                    MenuItem {
-                        text: (root.externalCommands[index])
-                                ? root.externalCommands[index].name
-                                : ""
-                        enabled: true
-                        visible: true
-                        height: enabled ? implicitHeight : 0
-                        onClicked: {
-                            fileSystemModel.enqueueExternalApp(
-                                        webEngineView.contextMenu.requestedKey,
-                                        utilities.normalizeVideoUrl(webEngineView.contextMenu.requestedLink),
-                                        root.externalCommands[index].command,
-                                        root.extWorkingDirPath)
-                        }
-                        icon.source: "/icons/extension.svg"
-                        display: MenuItem.TextBesideIcon
-                    }
-                }
+            CtxClipboardActions {}
+            CtxExtAppsMenu {
+                ctxKey: webEngineView._ctxMenuNotAdded.requestedKey
+                ctxLink: webEngineView._ctxMenuNotAdded.requestedLink
+                ctxIsVideo: webEngineView._ctxMenuNotAdded.linkIsVideo
             }
         }
 
@@ -550,10 +569,15 @@ Item {
             return regEx.test(url);
         }
         onContextMenuRequested: (request) => {
-            webEngineView.contextMenu.requestedLink = request.linkUrl
-            webEngineView.contextMenu.requestedLinkText = request.linkText
-            request.accepted = true;
-            webEngineView.contextMenu.popup();
+            var link = request.linkUrl
+            var linkText = request.linkText
+            var key = utilities.getVideoID(link)
+            var isAdded = key !== "" && fileSystemModel.isVideoBookmarked(key)
+            var menu = isAdded ? webEngineView._ctxMenuAdded : webEngineView._ctxMenuNotAdded
+            menu.requestedLink = link
+            menu.requestedLinkText = linkText
+            request.accepted = true
+            menu.popup()
         }
 
         onLinkHovered: (hoveredUrl) => {
