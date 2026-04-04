@@ -203,6 +203,7 @@ signals:
     void maxRecentDestinationsChanged();
     void extAppProgressChanged();
     void versionBumped(const QString &key);
+    void structureChanged();
 
 private:
     void addThumbnail(const QString &key, const QByteArray &thumbnailData);

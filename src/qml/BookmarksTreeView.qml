@@ -112,6 +112,13 @@ Rectangle {
     onSearchInShortsChanged: if (model) model.sortFilterProxyModel.searchInShorts = viewContainer.searchInShorts
 
 
+    Connections {
+        target: viewContainer.model
+        function onStructureChanged() {
+            viewContainer.refreshLayout()
+        }
+    }
+
     function search() {
         viewContainer.model.sortFilterProxyModel.searchTerm = filterTF.text
         forceLayoutTimer.restart()

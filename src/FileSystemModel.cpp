@@ -338,30 +338,21 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
             if (isDir(index))
                 return QVariant(fileInfo(index).birthTime().toString(QStringLiteral("yyyyMMddhhmmss")));
             const QString &key = itemKey(index);
-            if (!m_cache.contains(key)) {
-                qWarning() << "key not found " << key << " " << fileInfo(index).baseName();
-                return {};
-            }
+            if (!m_cache.contains(key))
+                return QVariant(fileInfo(index).birthTime().toString(QStringLiteral("yyyy.MM.dd hh:mm")));
             return m_cache.value(key).creationDate.toString(QStringLiteral("yyyy.MM.dd hh:mm"));
         }
         case UrlStringRole: {
             if (isDir(index))
                 return {};
             const QString &key = itemKey(index);
-            if (!m_cache.contains(key)) {
-                qWarning() << "key not found " << key << " " << fileInfo(index).baseName();
+            if (!m_cache.contains(key))
                 return {};
-            }
             return m_cache.value(key).url();
         }
         case KeyRole: {
-            if (!isDir(index)) {
-                const QString &key = itemKey(index);
-                if (!m_cache.contains(key)) {
-                    return QFileSystemModel::data(index, role);
-                }
-                return key;
-            }
+            if (!isDir(index))
+                return itemKey(index);
             return {};
         }
         case IsDirRole:
@@ -375,13 +366,8 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
         case Qt::DisplayRole: {
             switch (index.column()) {
             case 0: {
-                if (!isDir(index)) {
-                    const QString &key = itemKey(index);
-                    if (!m_cache.contains(key)) {
-                        return QFileSystemModel::data(index, role);
-                    }
-                    return key;
-                }
+                if (!isDir(index))
+                    return itemKey(index);
                 return QFileSystemModel::data(index, role);
             }
             case 3:
@@ -394,7 +380,7 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
             if (!isDir(index)) {
                 const QString &key = itemKey(index);
                 if (!m_cache.contains(key))
-                    return {};
+                    return key; // fallback: show key until cache is populated
                 return m_cache.value(key).title;
             } else {
                 return QFileSystemModel::data(index, role);
@@ -675,7 +661,9 @@ bool FileSystemModel::deleteEntry(const QString &key,
         deleteStorage(key, extWorkingDirRoot);
 
     auto entry = m_cache.take(key);
-    return entry.eraseFile();
+    bool res = entry.eraseFile();
+    emit structureChanged();
+    return res;
 }
 
 void FileSystemModel::deleteStorage(QModelIndex item,
@@ -952,6 +940,7 @@ void FileSystemModel::moveEntry(const QString &key, const QDir &d) {
     if (!m_ready || !m_cache.contains(key))
         return;
     m_cache[key].moveLocation(d);
+    emit structureChanged();
 }
 
 bool FileSystemModel::addCategory(const QString &name, QModelIndex parentDir) {
@@ -967,6 +956,7 @@ bool FileSystemModel::addCategory(const QString &name, QModelIndex parentDir) {
         return false;
     QString newPath = d.absoluteFilePath(name);
     pushRecentDestination(newPath, name);
+    emit structureChanged();
     return true;
 }
 
@@ -1063,6 +1053,7 @@ bool FileSystemModel::addEntry(const QString &key,
     }
 
     m_cache[key].saveFile();
+    emit structureChanged();
     return true;
 }
 
@@ -1163,3 +1154,4 @@ QString FileSystemModel::itemKey(const QModelIndex &index) const {
 void FileSystemModel::fetchThumbnail(const QString &key) {
     ThumbnailFetcher::fetch(key);
 }
+
