@@ -2488,6 +2488,8 @@ Item {
         padding: 16
         anchors.centerIn: parent
 
+        property string destination: ""
+
         function addVideo(normalizedUrl) {
             if (!utilities.isYoutubeVideoUrl(normalizedUrl)) {
                 console.log("Wrong URL fed!")
@@ -2498,17 +2500,19 @@ Item {
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url
-                                         ""  // channel name
-                                         )
+                                         "", // channel name
+                                         0, 0,
+                                         addVideoDialog.destination)
             } else {
                 fileSystemModel.addEntry(utilities.getVideoID(normalizedUrl),
                                          "", // title
                                          "", // channel URL
                                          "", // channel Avatar url
                                          "", // channel name
-                                         1,
-                                         0) // ToDo: make it update
+                                         1, 0,
+                                         addVideoDialog.destination)
             }
+            addVideoDialog.destination = ""
         }
 
         onAccepted: {
@@ -2518,6 +2522,7 @@ Item {
             close()
         }
         onRejected: {
+            addVideoDialog.destination = ""
             newVideoInput.clear()
             close()
         }
