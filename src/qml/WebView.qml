@@ -114,6 +114,11 @@ Item {
         property real videoPosition: 0
         property real videoDuration: 0
         property string videoID
+        property string shortsSignal: ""
+        onShortsSignalChanged: {
+            if (shortsSignal !== "" && !shortsSignal.startsWith("ERR:"))
+                update()
+        }
         property string videoTitle
         property string channelURL
         property string channelName
@@ -174,6 +179,7 @@ Item {
 
         onVideoPositionChanged: {
             var k = utilities.getVideoID(videoID, vendor, shorts)
+
             if (webEngineView.key !== k) {
                 root.addVideoEnabled = false
                 return
@@ -209,6 +215,7 @@ Item {
                                         channelName,
                                         videoDuration,
                                         videoPosition)
+
             if (!historyModel.updateEntry(webEngineView.key,
                                           videoTitle,
                                           channelURL,

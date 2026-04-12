@@ -1053,9 +1053,30 @@ bool FileSystemModel::addEntry(const QString &key,
     }
 
     m_cache[key].saveFile();
+
+    // Pre-fetch the target directory so QQmlTreeModelToTableModel::expandPendingRows()
+    // sees rowCount()==0 + canFetchMore()==true and triggers a full load when expanded,
+    // rather than seeing a partial rowCount>0 and skipping fetchMore().
+    if (targetDir.absolutePath() != m_root.absolutePath()) {
+        const auto dirIdx = QFileSystemModel::index(targetDir.absolutePath());
+        if (dirIdx.isValid() && QFileSystemModel::canFetchMore(dirIdx))
+            QFileSystemModel::fetchMore(dirIdx);
+    }
+
     emit structureChanged();
     return true;
 }
+
+
+QString FileSystemModel::categoryPath(QModelIndex proxyIndex) const {
+    if (!m_ready)
+        return {};
+    auto index = m_proxyModel->mapToSource(proxyIndex);
+    if (!index.isValid() || !isDir(index))
+        return {};
+    return filePath(index);
+}
+
 
 void FileSystemModel::setLastDestinationCategory(QModelIndex categoryIndex) {
     if (!m_ready)

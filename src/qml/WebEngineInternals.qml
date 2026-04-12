@@ -122,15 +122,11 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
 "
 
     property string script_videoTimeShorts: "
-        var backend;
-        new QWebChannel(qt.webChannelTransport, function (channel) {
-            backend = channel.objects.backend;
-        });
-        setTimeout(function() {
+        function __yaycRunShorts(backend) {
+            try {
                 let activeShort = document.querySelector('ytd-reel-video-renderer');
                 let ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer();
                 let videoData = ytplayer.getVideoData();
-
                 backend.videoID = videoData.video_id;
                 backend.shorts = true;
                 backend.vendor = 'YTB';
@@ -152,7 +148,9 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
                 }
 
                 // Avatar not available in ytInitialPlayerResponse, keep DOM
-                backend.channelAvatar = activeShort.querySelector('.yt-spec-avatar-shape__image.ytCoreImageHost').src;
+                let avatarEl = activeShort.querySelector('img.ytCoreImageHost.ytSpecAvatarShapeImage')
+                              || activeShort.querySelector('.yt-spec-avatar-shape__image.ytCoreImageHost');
+                backend.channelAvatar = avatarEl ? avatarEl.src : '';
 
                 // Live playback state from player API
                 backend.videoDuration = ytplayer.getDuration();
@@ -163,7 +161,19 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
                 backend.muted = ytplayer.isMuted();
                 backend.videoQuality = ytplayer.getPlaybackQuality();
                 backend.availableQualityLevels = ytplayer.getAvailableQualityLevels();
-        }, 100);
+                backend.shortsSignal = videoData.video_id + ':' + ytplayer.getCurrentTime();
+            } catch(e) {
+                backend.shortsSignal = 'ERR:' + e.message;
+            }
+        }
+        if (window.__yaycBackend) {
+            setTimeout(function() { __yaycRunShorts(window.__yaycBackend); }, 100);
+        } else {
+            new QWebChannel(qt.webChannelTransport, function(channel) {
+                window.__yaycBackend = channel.objects.backend;
+                setTimeout(function() { __yaycRunShorts(window.__yaycBackend); }, 100);
+            });
+        }
     "
 
     function getPlaybackRateSetterScript(rate, isShorts) {

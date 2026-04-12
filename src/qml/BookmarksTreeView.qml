@@ -871,7 +871,6 @@ Rectangle {
                             treeView.collapse(treeViewDelegate.row)
                         else
                             treeView.expand(treeViewDelegate.row)
-                        viewContainer.refreshLayout()
                     }
                 }
             } // MouseArea ma

@@ -134,8 +134,7 @@ Menu {
         height: enabled ? implicitHeight : 0
         onClicked: {
             if (rootItem.deleteCategoryItem && rootItem.categoryIndex !== undefined) {
-                addVideoDialog.destination = rootItem.model.filePath(
-                    rootItem.model.sortFilterProxyModel.mapToSource(rootItem.categoryIndex))
+                addVideoDialog.destination = rootItem.model.categoryPath(rootItem.categoryIndex)
             } else {
                 addVideoDialog.destination = ""
             }

@@ -190,6 +190,7 @@ public slots:
                   const qreal duration = 0., const qreal position = 0.,
                   const QString &destination = QString());
     void setLastDestinationCategory(QModelIndex categoryIndex);
+    Q_INVOKABLE QString categoryPath(QModelIndex proxyIndex) const;
 
 signals:
     void filesAdded(const QVariantList &addedPaths);
