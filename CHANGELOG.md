@@ -1,3 +1,20 @@
+## YAYC v1.8.0 (2026.04) -- Spookie
+
+### ✨ New Features
+
+- Added support for adding youtu.be links (as opposed to only youtube.com)
+- Improvements to the Web View context menu
+
+### 🐞 Bug fixes
+
+- Several stability improvements
+- Multiple fixes to the filesystem model, and the treeviews, which should now hopefully stop glitching
+  or do so much less.
+
+### ⚠️ Known Issues
+
+- Same as for v1.7
+
 ## YAYC v1.7.0 (2026.03) -- Maxie
 
 ### ✨ New Features
