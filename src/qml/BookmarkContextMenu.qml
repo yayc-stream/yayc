@@ -144,6 +144,18 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
+        text: "Reload category"
+        enabled: !rootItem.isHistoryView && rootItem.parentView
+                 && rootItem.deleteCategoryItem
+        visible: enabled
+        height: enabled ? implicitHeight : 0
+        onClicked: {
+            rootItem.model.reloadCategory(rootItem.categoryIndex)
+        }
+        icon.source: "/icons/refresh.svg"
+        display: MenuItem.TextBesideIcon
+    }
+    MenuItem {
         text: "Delete category"
         enabled: !rootItem.isHistoryView && rootItem.parentView
                  && rootItem.deleteCategoryItem

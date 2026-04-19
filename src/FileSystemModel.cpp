@@ -1068,6 +1068,17 @@ bool FileSystemModel::addEntry(const QString &key,
 }
 
 
+void FileSystemModel::reloadCategory(QModelIndex proxyIndex) {
+    if (!m_ready)
+        return;
+    auto srcIdx = m_proxyModel->mapToSource(proxyIndex);
+    if (!srcIdx.isValid() || !isDir(srcIdx))
+        return;
+    const QString path = filePath(srcIdx);
+    QFileSystemModel::fetchMore(srcIdx);
+    emit categoryReloadRequested(path);
+}
+
 QString FileSystemModel::categoryPath(QModelIndex proxyIndex) const {
     if (!m_ready)
         return {};

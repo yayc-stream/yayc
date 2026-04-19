@@ -112,6 +112,8 @@ Rectangle {
     onSearchInShortsChanged: if (model) model.sortFilterProxyModel.searchInShorts = viewContainer.searchInShorts
 
 
+    property string pendingReloadPath: ""
+
     Connections {
         target: viewContainer.model
         function onStructureChanged() {
@@ -119,6 +121,21 @@ Rectangle {
         }
         function onDirectoryLoaded(path) {
             viewContainer.refreshLayout()
+            if (viewContainer.pendingReloadPath !== "" && path === viewContainer.pendingReloadPath) {
+                viewContainer.pendingReloadPath = ""
+                // find row for this path and collapse+expand to force adaptor rebuild
+                for (var r = 0; r < view.rows; r++) {
+                    var idx = view.index(r, 0)
+                    if (view.isExpanded(r) && viewContainer.model.filePath(viewContainer.model.sortFilterProxyModel.mapToSource(idx)) === path) {
+                        view.collapse(r)
+                        view.expand(r)
+                        break
+                    }
+                }
+            }
+        }
+        function onCategoryReloadRequested(path) {
+            viewContainer.pendingReloadPath = path
         }
     }
 

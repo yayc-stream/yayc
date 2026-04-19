@@ -191,6 +191,7 @@ public slots:
                   const QString &destination = QString());
     void setLastDestinationCategory(QModelIndex categoryIndex);
     Q_INVOKABLE QString categoryPath(QModelIndex proxyIndex) const;
+    Q_INVOKABLE void reloadCategory(QModelIndex proxyIndex);
 
 signals:
     void filesAdded(const QVariantList &addedPaths);
@@ -205,6 +206,7 @@ signals:
     void extAppProgressChanged();
     void versionBumped(const QString &key);
     void structureChanged();
+    void categoryReloadRequested(const QString &path);
 
 private:
     void addThumbnail(const QString &key, const QByteArray &thumbnailData);
