@@ -84,7 +84,7 @@ Menu {
 
     Menu {
         id: moveToMenu
-        title: "Move to..."
+        title: Localization.tr("Move to...")
         icon.source: "/icons/move.svg"
         enabled: rootItem.deleteVideoItem
                  && rootItem.model
@@ -105,7 +105,7 @@ Menu {
         }
     }
     MenuItem {
-        text: "Set as destination"
+        text: Localization.tr("Set as destination")
         enabled: !rootItem.isHistoryView && rootItem.parentView
                  && rootItem.deleteCategoryItem
         visible: enabled
@@ -117,7 +117,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Add category"
+        text: Localization.tr("Add category")
         enabled: !rootItem.isHistoryView && rootItem.parentView
         height: enabled ? implicitHeight : 0
         onClicked: {
@@ -129,7 +129,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Add video"
+        text: Localization.tr("Add video")
         enabled: !rootItem.isHistoryView && rootItem.parentView
         height: enabled ? implicitHeight : 0
         onClicked: {
@@ -144,7 +144,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Reload category"
+        text: Localization.tr("Reload category")
         enabled: !rootItem.isHistoryView && rootItem.parentView
                  && rootItem.deleteCategoryItem
         visible: enabled
@@ -156,7 +156,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Delete category"
+        text: Localization.tr("Delete category")
         enabled: !rootItem.isHistoryView && rootItem.parentView
                  && rootItem.deleteCategoryItem
         visible: true
@@ -172,7 +172,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Delete video" + ((rootItem.isHistoryView) ? " from History": "")
+        text: Localization.tr("Delete video") + ((rootItem.isHistoryView) ? " " + Localization.tr("from History"): "")
         enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
         visible: true
         height: enabled ? implicitHeight : 0
@@ -194,7 +194,7 @@ Menu {
             id: copyLinkClipboardProxy
             visible: false
         }
-        text: "Copy Link"
+        text: Localization.tr("Copy Link")
         enabled: rootItem.parentView && rootItem.deleteVideoItem
         visible: true
         height: enabled ? implicitHeight : 0
@@ -207,7 +207,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Toggle Star"
+        text: Localization.tr("Toggle Star")
         enabled: !rootItem.isHistoryView
                  && (rootItem.deleteVideoItem || !rootItem.parentView)
         visible: true
@@ -224,7 +224,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Toggle Viewed"
+        text: Localization.tr("Toggle Viewed")
         enabled: !rootItem.isHistoryView
                  && (rootItem.deleteVideoItem || !rootItem.parentView)
         visible: true
@@ -242,8 +242,8 @@ Menu {
     }
     MenuItem {
         text: (rootItem.parentView && rootItem.parentView.selectedKey !== rootItem.key)
-              ? "Cut"
-              : "Un-Cut"
+              ? Localization.tr("Cut")
+              : Localization.tr("Un-Cut")
         enabled:  !rootItem.isHistoryView && rootItem.parentView
                   && rootItem.deleteVideoItem
         visible: true
@@ -259,7 +259,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Paste"
+        text: Localization.tr("Paste")
         enabled: (!rootItem.isHistoryView && rootItem.parentView)
                  && rootItem.deleteCategoryItem
                  && (parentView && parentView.selectedKey !== "")
@@ -276,7 +276,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Open containing folder"
+        text: Localization.tr("Open containing folder")
         enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
                  && rootItem.extWorkingDirExists
                  && rootItem.model.hasWorkingDir(
@@ -293,7 +293,7 @@ Menu {
         display: MenuItem.TextBesideIcon
     }
     MenuItem {
-        text: "Delete storage data"
+        text: Localization.tr("Delete storage data")
         enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
                  && rootItem.extWorkingDirExists
                  && rootItem.model.hasWorkingDir(
@@ -312,7 +312,7 @@ Menu {
     // ToDo: add Menu for tagging
     Menu {
         id: extAppMenu
-        title: "Launch in"
+        title: Localization.tr("Launch in")
         icon.source: "/icons/function.svg"
         enabled: rootItem.extCommandEnabled
         height: enabled ? implicitHeight : 0

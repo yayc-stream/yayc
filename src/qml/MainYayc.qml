@@ -256,6 +256,7 @@ Item {
         property alias proxyPort: proxyMenu.proxyPort
         property alias proxyHost: proxyMenu.proxyHost
         property var splitView
+        property string language: "en"
 
         onLoadedChanged: {
             if (!loaded || root.settingsInitialized)
@@ -271,6 +272,9 @@ Item {
 
             // TODO: rework this
             timerSettings.start()
+
+            // Sync language setting with Localization singleton
+            Localization.language = settings.language
         }
 
         function updateWebEngineProfiles() {
@@ -282,6 +286,13 @@ Item {
         onCustomScriptChanged: settings.updateWebEngineProfiles()
         onCustomScriptEnabledChanged: settings.updateWebEngineProfiles()
         onProfilePathChanged: settings.updateWebEngineProfiles()
+    }
+
+    Connections {
+        target: Localization
+        function onLanguageChanged() {
+            settings.language = Localization.language
+        }
     }
 
     //FIXME figure the issue
@@ -632,7 +643,7 @@ Item {
                     visible: !webEngineViewLoader.item
                     Text {
                         anchors.centerIn: parent
-                        text: "Loading..."
+                        text: Localization.tr("Loading...")
                         color: YaycProperties.textColor
                         font.pixelSize: YaycProperties.fsH2
                     }
@@ -729,7 +740,7 @@ Item {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: "Go Back (long press for history)"
+                        ToolTip.text: Localization.tr("Go Back (long press for history)")
                         ToolTip.delay: 300
                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
 
@@ -751,7 +762,7 @@ Item {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: "Go Forward (long press for history)"
+                        ToolTip.text: Localization.tr("Go Forward (long press for history)")
                         ToolTip.delay: 300
                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
 
@@ -764,7 +775,7 @@ Item {
                     }
 
                     ToolButton {
-                        text: "Bookmarks"
+                        text: Localization.tr("Bookmarks")
                         id: bookmarksToolButton
                         enabled: true
                         checkable: false
@@ -827,7 +838,7 @@ Item {
                     }
 
                     ToolButton {
-                        text: "History"
+                        text: Localization.tr("History")
                         id: historyToolButton
                         enabled: true
                         checkable: false
@@ -914,7 +925,7 @@ Item {
                         display: AbstractButton.IconOnly
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: "Go to YouTube Home"
+                        ToolTip.text: Localization.tr("Go to YouTube Home")
                         ToolTip.delay: 300
                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                     }
@@ -929,7 +940,7 @@ Item {
 
                     ToolButton {
                         id: buttonToggleJS
-                        text: "Activate/Deactivate custom script"
+                        text: Localization.tr("Activate/Deactivate custom script")
                         enabled: settings.customScript !== ""
                         visible: enabled
                         checkable: true
@@ -940,14 +951,14 @@ Item {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: "Toggle custom script"
+                        ToolTip.text: Localization.tr("Toggle custom script")
                         ToolTip.delay: 300
                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                     }
 
                     ToolButton {
                         id: settingsButton
-                        text: "Settings"
+                        text: Localization.tr("Settings")
                         icon.source: "/icons/settings.svg"
                         display: AbstractButton.IconOnly
 
@@ -959,7 +970,7 @@ Item {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: "Open Settings Panel"
+                        ToolTip.text: Localization.tr("Open Settings Panel")
                         ToolTip.delay: 300
                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         AnimatedImage {
@@ -1022,7 +1033,7 @@ Item {
                     topMargin: 4
                     centerIn: parent
                 }
-                text: "<b>Proxy Settings</b>"
+                text: "<b>" + Localization.tr("Proxy Settings") + "</b>"
                 font.pixelSize: YaycProperties.fsH3
             }
         }
@@ -1039,7 +1050,7 @@ Item {
             columns: 2
 
             Label {
-                text: "Proxy Type:"
+                text: Localization.tr("Proxy Type") + ":"
             }
 
             ComboBox {
@@ -1062,18 +1073,18 @@ Item {
                     columns: 2
 
                     Label {
-                        text: "Host:"
+                        text: Localization.tr("Host") + ":"
                     }
 
                     TextField {
                         id: hostTextField
                         Layout.fillWidth: true
-                        placeholderText: "Enter proxy host"
+                        placeholderText: Localization.tr("Enter proxy host")
                         onTextChanged: proxyMenu.proxyHost = text
                     }
 
                     Label {
-                        text: "Port:"
+                        text: Localization.tr("Port") + ":"
                     }
 
                     SpinBox {
@@ -1113,7 +1124,7 @@ Item {
                             topMargin: 4
                             centerIn: parent
                         }
-                        text: "<b>Settings</b>"
+                        text: "<b>" + Localization.tr("Settings") + "</b>"
                         font.pixelSize: YaycProperties.fsH3
                     }
                 }
@@ -1127,7 +1138,7 @@ Item {
                 hoverEnabled: true
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
-                ToolTip.text: "Exit YAYC\nCtrl+Q does it too"
+                ToolTip.text: Localization.tr("Exit YAYC") + "\n" +  Localization.tr("Ctrl+Q does it too")
                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
             Button {
@@ -1141,7 +1152,7 @@ Item {
                 hoverEnabled: true
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
-                ToolTip.text: "Close settings"
+                ToolTip.text: Localization.tr("Close settings")
                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
         }
@@ -1200,13 +1211,13 @@ Item {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
                                         font.pixelSize: YaycProperties.fsP2
-                                        text: "Bookmarks data path:\n" + root.youtubePath
+                                        text: Localization.tr("Bookmarks data path") + ":\n" + root.youtubePath
                                         delay: 300
                                     }
                                 }
                             }
                             Label {
-                                text: "Bookmarks:"
+                                text: Localization.tr("Bookmarks") + ":"
                                 Layout.alignment: Qt.AlignVCenter
                             }
                             Label {
@@ -1225,7 +1236,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Bookmarks data path:\n" + root.youtubePath
+                                ToolTip.text: Localization.tr("Bookmarks data path") + ":\n" + root.youtubePath
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
@@ -1240,7 +1251,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Clear bookmarks data path"
+                                ToolTip.text: Localization.tr("Clear bookmarks data path")
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
 
@@ -1274,13 +1285,13 @@ Item {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
                                         font.pixelSize: YaycProperties.fsP2
-                                        text: "YouTube history path:\n" + root.historyPath
+                                        text: Localization.tr("YouTube history path") + ":\n" + root.historyPath
                                         delay: 300
                                     }
                                 }
                             }
                             Label {
-                                text: "History:"
+                                text: Localization.tr("History") + ":"
                                 Layout.alignment: Qt.AlignVCenter
                             }
                             Label {
@@ -1299,7 +1310,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "YouTube history path:\n" + root.historyPath
+                                ToolTip.text: Localization.tr("YouTube history path") + ":\n" + root.historyPath
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
@@ -1314,7 +1325,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Clear YouTube history path"
+                                ToolTip.text: Localization.tr("Clear YouTube history path")
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
 
@@ -1338,13 +1349,13 @@ Item {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
                                         font.pixelSize: YaycProperties.fsP2
-                                        text: "Chromium cookies path:\n" + WebBrowsingProfiles.profilePath
+                                        text: Localization.tr("Chromium cookies path") + ":\n" + WebBrowsingProfiles.profilePath
                                         delay: 300
                                     }
                                 }
                             }
                             Label {
-                                text: "Profile:"
+                                text: Localization.tr("Profile") + ":"
                                 Layout.alignment: Qt.AlignVCenter
                             }
                             Label {
@@ -1352,7 +1363,7 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignLeft
                                 text: (WebBrowsingProfiles.profilePath === "")
-                                      ? "<undefined>" : WebBrowsingProfiles.profilePath
+                                      ? "<" + Localization.tr("undefined") + ">" : WebBrowsingProfiles.profilePath
                             }
                             Button {
                                 id: buttonOpenGProfile
@@ -1365,7 +1376,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Chromium cookies path:\n" + WebBrowsingProfiles.profilePath
+                                ToolTip.text: Localization.tr("Chromium cookies path") + ":\n" + WebBrowsingProfiles.profilePath
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
@@ -1380,7 +1391,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Clear Chromium cookies path"
+                                ToolTip.text: Localization.tr("Clear Chromium cookies path")
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                         } // GridLayout
@@ -1421,20 +1432,20 @@ Item {
                                         visible: parent.hovered
                                         y: parent.height * 0.12
                                         font.pixelSize: YaycProperties.fsP2
-                                        text: "Working directory for external executable:\n" + root.extWorkingDirPath
+                                        text: Localization.tr("Working directory for external executable") + ":\n" + root.extWorkingDirPath
                                         delay: 300
                                     }
                                 }
                             }
                             Label {
-                                text: "Ext Working Dir:"
+                                text: Localization.tr("Ext Working Dir") + ":"
                                 Layout.alignment: Qt.AlignVCenter
                             }
                             Label {
                                 Layout.columnSpan: 4
                                 Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignLeft
-                                text: (!root.extWorkingDirExists) ? "<undefined>" : root.extWorkingDirPath
+                                text: (!root.extWorkingDirExists) ? "<" + Localization.tr("undefined") + ">" : root.extWorkingDirPath
                             }
                             Button {
                                 id: buttonOpenExternalWorkingDir
@@ -1447,7 +1458,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Working directory for external executable:\n" + root.extWorkingDirPath
+                                ToolTip.text: Localization.tr("Working directory for external executable") + ":\n" + root.extWorkingDirPath
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             Button {
@@ -1462,7 +1473,7 @@ Item {
 
                                 ToolTip.visible: hovered
                                 ToolTip.delay: 300
-                                ToolTip.text: "Clear external executable working directory path"
+                                ToolTip.text: Localization.tr("Clear external executable working directory path")
                                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                             }
                             // external workdir end
@@ -1498,7 +1509,7 @@ Item {
                                     }
                                     Label {
                                         visible: root.extWorkingDirExists
-                                        text: "External cmd:"
+                                        text: Localization.tr("External command") + ":"
                                         Layout.alignment: Qt.AlignVCenter
                                     }
 
@@ -1520,7 +1531,7 @@ Item {
 
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
-                                        ToolTip.text: "Name of the external command on the menu:\n" + extCmdName.text
+                                        ToolTip.text: Localization.tr("Name of the external command on the menu") + ":\n" + extCmdName.text
                                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                     TextField {
@@ -1546,7 +1557,7 @@ Item {
 
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
-                                        ToolTip.text: "External command to trigger through context menu:\n" + extCmdCmd.text
+                                        ToolTip.text: Localization.tr("External command to trigger through context menu") + ":\n" + extCmdCmd.text
                                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                     Button {
@@ -1564,7 +1575,7 @@ Item {
 
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
-                                        ToolTip.text: "Clear external command"
+                                        ToolTip.text: Localization.tr("Clear external command")
                                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                     Button {
@@ -1582,7 +1593,7 @@ Item {
 
                                         ToolTip.visible: hovered
                                         ToolTip.delay: 300
-                                        ToolTip.text: "Add another command"
+                                        ToolTip.text: Localization.tr("Add another command")
                                         ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                                     }
                                 }
@@ -1615,7 +1626,7 @@ Item {
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Toggle dark/light theme"
+                            ToolTip.text: Localization.tr("Toggle dark/light theme")
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                         CheckBox {
@@ -1626,19 +1637,41 @@ Item {
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Show advanced settings and developer options"
+                            ToolTip.text: Localization.tr("Show advanced settings and developer options")
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
+
+                        Label {
+                            text: Localization.tr("Language")
+                            Layout.leftMargin: 20
+                        }
+                        ComboBox {
+                            id: languageComboBox
+                            model: Localization.availableLanguages()
+                            displayText: Localization.displayName(currentText)
+                            Component.onCompleted: {
+                                const idx = model.indexOf(Localization.language)
+                                currentIndex = idx >= 0 ? idx : 0
+                            }
+                            onCurrentTextChanged: Localization.language = currentText
+                            delegate: ItemDelegate {
+                                text: Localization.displayName(modelData)
+                                width: parent.width
+                            }
+                            Layout.fillWidth: false
+                            Layout.preferredWidth: 120
+                        }
+
                         Item { Layout.fillWidth: true }
                         Button {
                             id: buttonOpenProxyDialog
                             flat: true
-                            text: "Proxy Settings"
+                            text: Localization.tr("Proxy Settings")
                             onClicked: proxyMenu.open()
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Edit the proxy settings used to access the network"
+                            ToolTip.text: Localization.tr("Edit the proxy settings used to access the network")
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                     }
@@ -1656,7 +1689,7 @@ Item {
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion"
+                            ToolTip.text: Localization.tr("Controls whether to erase related video data within the working directory for external executable (if specified) upon deletion")
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                         CheckBox {
@@ -1667,30 +1700,30 @@ Item {
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Controls whether to unload the web view when YAYC is hidden and no video is playing"
+                            ToolTip.text: Localization.tr("Controls whether to unload the web view when YAYC is hidden and no video is playing")
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                         Button {
                             id: buttonOpenJSDialog
                             flat: true
-                            text: "Custom Script"
+                            text: Localization.tr("Custom Script")
                             onClicked: customScriptDialog.open()
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Edit the custom script that is run after loading a video page"
+                            ToolTip.text: Localization.tr("Edit the custom script that is run after loading a video page")
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                         Item { Layout.fillWidth: true }
                         Button {
                             id: buttonResetSettings
                             flat: true
-                            text: "Clear Settings"
+                            text: Localization.tr("Clear Settings")
                             onClicked: utilities.clearSettings(configFileUrl)
                             hoverEnabled: true
                             ToolTip.visible: hovered
                             ToolTip.delay: 300
-                            ToolTip.text: "Erase all settings and restart YAYC"
+                            ToolTip.text: Localization.tr("Erase all settings and restart YAYC")
                             ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
                         }
                     }
@@ -1700,7 +1733,7 @@ Item {
                         visible: root.debugMode
 
                         Label {
-                            text: "Max destinations"
+                            text: Localization.tr("Max destinations")
                         }
                         Slider {
                             id: maxDestSlider
@@ -1739,7 +1772,7 @@ Item {
                     Label {
                         anchors.centerIn: parent
                         id: latestReleaseLabel
-                        text: "New release available: v" + root.lastestRemoteVersion
+                        text: Localization.tr("New release available") + ": v" + root.lastestRemoteVersion
                         color: "crimson"
                         font {
                             bold: true
@@ -1796,7 +1829,7 @@ Item {
                                 anchors.centerIn: parent
                                 Label {
                                     id: aboutLabel
-                                    text: "About "
+                                    text: Localization.tr("About")
                                     font.pixelSize: YaycProperties.fsP1
                                 }
                                 Image {
@@ -1850,7 +1883,7 @@ Item {
                             Label {
                                 anchors.centerIn: parent
                                 id: helpLabel
-                                text: "Help"
+                                text: Localization.tr("Help")
                                 font.pixelSize: YaycProperties.fsP1
                             }
                             MouseArea {
@@ -1938,7 +1971,7 @@ Item {
 
                 Label {
                     id: aboutTitleVersion
-                    text: "  v"+appVersion
+                    text: "v" + appVersion
                     font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
@@ -1992,7 +2025,7 @@ Item {
                     Row {
                         Layout.alignment: Qt.AlignCenter
                         Label {
-                            text: "Licensed under  "
+                            text: Localization.tr("Licensed under")
                             font.pixelSize: YaycProperties.fsP2 * 1.05
                         }
 
@@ -2031,14 +2064,13 @@ Item {
                             font.pixelSize: YaycProperties.fsP1
                             wrapMode: Text.WordWrap
                             text:
-    "YAYC is your modern YouTube client, to help with the "
-    + "organization of scheduled and viewed content, progress tracking, and more!"
+    Localization.tr("YAYC is your modern YouTube client, to help with the organization of scheduled and viewed content, progress tracking, and more!")
 
                         }
                     }
 
                     Label {
-                        text: "Changelog"
+                        text: Localization.tr("Changelog")
                         font {
                             bold: true
                             pixelSize: YaycProperties.fsH4
@@ -2069,7 +2101,7 @@ Item {
                         height: children[0].height
                         RowLayout {
                             Label {
-                                text: 'Want to help? '
+                                text: Localization.tr("Want to help?") + " "
                                 font {
                                     bold: true
                                     pixelSize: YaycProperties.fsH4
@@ -2077,7 +2109,7 @@ Item {
                             }
                             Label {
                                 id: labelIssues
-                                text: '<a href="' + repositoryURL + '/issues">Get involved</a>'
+                                text: '<a href="' + repositoryURL + '/issues">' + Localization.tr("Get involved") + '</a>'
                                 font {
                                     bold: true
                                     pixelSize: YaycProperties.fsH4
@@ -2093,7 +2125,7 @@ Item {
                                 }
                             }
                             Label {
-                                text: ' or '
+                                text: ' ' + Localization.tr("or") + ' '
                                 font {
                                     bold: true
                                     pixelSize: YaycProperties.fsH4
@@ -2105,7 +2137,7 @@ Item {
                                 id: labelDonation
                                 enabled: donateButton.enabled
                                 visible: enabled
-                                text: '<a href="'+root.donateUrl+'">make a donation</a>!'
+                                text: '<a href="'+root.donateUrl+'">' + Localization.tr("make a donation") + '</a>!'
                                 font {
                                     bold: true
                                     pixelSize: YaycProperties.fsH4
@@ -2146,7 +2178,7 @@ Item {
                 anchors.centerIn: parent
                 topPadding: 8
                 Label {
-                    text: "Help Center"
+                    text: Localization.tr("Help Center")
                     font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
@@ -2163,23 +2195,23 @@ Item {
             "/doc/3_bookmarks_drag_drop.png"
         ]
         property var tooltips: [
-            "YAYC main view consist of a left pane with the bookmarks,\n"
+            Localization.tr("YAYC main view consist of a left pane with the bookmarks,\n"
            +"a right pane with a youtube view, and a toolbar.\n"
            +"The toolbar consists of the common web browser controls,\n"
            +"plus a button to add the current video to bookmarks, a button\n"
-           +"to copy it to the clipboard, and a button to open Settings.",
+           +"to copy it to the clipboard, and a button to open Settings."),
 
-            "The Settings panel lets you select directories for where to store bookmarks,\n"
+            Localization.tr("The Settings panel lets you select directories for where to store bookmarks,\n"
            +"the viewing history, and the Google profile data, to automatically log you\n"
            +"in at every access. If the bookmarks directory isn't specified, bookmarks won't be\n"
            +"stored. If the history directory isn't specified, history won't be saved.\n"
-           +"If the Google profile directory isn't specified, YAYC will work in Inkognito mode.",
+           +"If the Google profile directory isn't specified, YAYC will work in Inkognito mode."),
 
-            "After set up, interaction can be performed through context menus (right click).\n"
-           +"There is a context menu in the bookmarks pane and a context menu in the YouTube pane.\n",
+            Localization.tr("After set up, interaction can be performed through context menus (right click).\n"
+           +"There is a context menu in the bookmarks pane and a context menu in the YouTube pane.\n"),
 
-            "Bookmarks management can be performed through drag and drop, cut and paste,\n"
-           +"and other operations offered by the context menu."
+            Localization.tr("Bookmarks management can be performed through drag and drop, cut and paste,\n"
+           +"and other operations offered by the context menu.")
         ]
         ColumnLayout {
             width: parent.width
@@ -2246,7 +2278,7 @@ Item {
                 anchors.centerIn: parent
                 topPadding: 8
                 Label {
-                    text: "Custom JS script"
+                    text: Localization.tr("Custom JS script")
                     font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
@@ -2289,7 +2321,7 @@ Item {
                 hoverEnabled: true
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
-                ToolTip.text: "Set a custom JavaScript to be run on every video page"
+                ToolTip.text: Localization.tr("Set a custom JavaScript to be run on every video page")
                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
             Button {
@@ -2304,7 +2336,7 @@ Item {
                 hoverEnabled: true
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
-                ToolTip.text: "Abort"
+                ToolTip.text: Localization.tr("Abort")
                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
         } // RowLayout
@@ -2326,7 +2358,7 @@ Item {
                 topPadding: 8
 
                 Label {
-                    text: "Disclaimer"
+                    text: Localization.tr("Disclaimer")
                     font.pixelSize: YaycProperties.fsH2
                     font.bold: true
                 }
@@ -2349,7 +2381,7 @@ Item {
                 hoverEnabled: true
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
-                ToolTip.text: "Accept the conditions and limitation of liability"
+                ToolTip.text: Localization.tr("Accept the conditions and limitation of liability")
                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
             Button {
@@ -2361,7 +2393,7 @@ Item {
                 hoverEnabled: true
                 ToolTip.visible: hovered
                 ToolTip.delay: 100
-                ToolTip.text: "Exit"
+                ToolTip.text: Localization.tr("Exit")
                 ToolTip.toolTip.font.pixelSize: YaycProperties.fsP2
             }
         }

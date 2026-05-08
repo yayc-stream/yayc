@@ -30,7 +30,8 @@ SOURCES += \
         src/ThumbnailFetcher.cpp \
         src/RequestInterceptor.cpp \
         src/YaycUtilities.cpp \
-        src/qqmlsettings.cpp
+        src/qqmlsettings.cpp \
+        src/Localization.cpp
 
 HEADERS += \
         src/Platform.h \
@@ -44,7 +45,8 @@ HEADERS += \
         src/RequestInterceptor.h \
         src/YaycUtilities.h \
         src/KeyInterceptor.h \
-        src/qqmlsettings.h
+        src/qqmlsettings.h \
+        src/Localization.h
 
 qml.files = $$files($$PWD/src/qml/*.qml)
 qml.base = $$PWD/src/qml
@@ -91,6 +93,12 @@ disclaimer.base = $$PWD/
 disclaimer.prefix = /
 
 RESOURCES += disclaimer
+
+i18n.files = $$files($$PWD/assets/i18n/*.json)
+i18n.base = $$PWD/
+i18n.prefix = /
+
+RESOURCES += i18n
 
 OTHER_FILES += LICENSE APPVERSION DONATE\
                $$files($$PWD/*.md, false)\

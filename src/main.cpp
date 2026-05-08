@@ -27,6 +27,7 @@ In addition to the above,
 #include "YaycUtilities.h"
 #include "KeyInterceptor.h"
 #include "qqmlsettings.h"
+#include "Localization.h"
 
 #include <QGuiApplication>
 #include <QApplication>
@@ -197,6 +198,7 @@ int main(int argc, char *argv[])
         qmlRegisterSingletonType(QUrl("qrc:/WebEngineInternals.qml"), "yayc", 1, 0, "WebEngineInternals");
         qmlRegisterSingletonType(QUrl("qrc:/YaycProperties.qml"), "yayc", 1, 0, "YaycProperties");
         qmlRegisterType<QQmlSettings>("yayc", 1, 0, "YaycSettings");
+        qmlRegisterSingletonType<Localization>("yayc", 1, 0, "Localization", Localization::create);
 
 
         QQmlApplicationEngine engine;

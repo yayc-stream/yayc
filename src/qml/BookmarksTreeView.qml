@@ -225,7 +225,7 @@ Rectangle {
 
                     hoverEnabled: true
                     ToolTip.visible: hovered
-                    ToolTip.text: "Clear search term"
+                    ToolTip.text: Localization.tr("Clear search term")
                     ToolTip.delay: 300
                 }
 
@@ -252,7 +252,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: "Search"
+                        ToolTip.text: Localization.tr("Search")
                         ToolTip.delay: 300
                     }
                     Row {
@@ -278,7 +278,7 @@ Rectangle {
                                 onExited: hovered = false
                                 hoverEnabled: true
                                 ToolTip.visible: hovered
-                                ToolTip.text: "Click to " + ((viewContainer.searchInTitles) ? "disable" : "enable") + " search in video titles"
+                                ToolTip.text: Localization.tr("Click to") + " " + ((viewContainer.searchInTitles) ? Localization.tr("disable") : Localization.tr("enable")) + " " + Localization.tr("search in video titles")
                                 ToolTip.delay: 300
                             }
                         }
@@ -304,7 +304,7 @@ Rectangle {
                                 onExited: hovered = false
                                 hoverEnabled: true
                                 ToolTip.visible: hovered
-                                ToolTip.text: "Click to " + ((viewContainer.searchInChannelNames) ? "disable" : "enable") + " search in channel names"
+                                ToolTip.text: Localization.tr("Click to") + " " + ((viewContainer.searchInChannelNames) ? Localization.tr("disable") : Localization.tr("enable")) + " " + Localization.tr("search in channel names")
                                 ToolTip.delay: 300
                             }
                         }
@@ -347,7 +347,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " unstarred"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("unstarred")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -367,7 +367,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " starred"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("starred")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -387,7 +387,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " unopened"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("unopened")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -407,7 +407,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " opened"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("opened")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -427,7 +427,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " unwatched"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("unwatched")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -447,7 +447,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " Watched"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("Watched")
                         ToolTip.delay: 300
 
                         Image {
@@ -475,7 +475,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " Shorts"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("Shorts")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -495,7 +495,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " videos with storage data"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("videos with storage data")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -515,7 +515,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? "Exclude" : "Include") + " videos without storage data"
+                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("videos without storage data")
                         ToolTip.delay: 300
                     }
                 } // RowLayout
