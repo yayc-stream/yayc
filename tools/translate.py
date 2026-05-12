@@ -40,7 +40,7 @@ def truncate(text: str, max_len: int = 80) -> str:
 def get_default_model(client: OpenAI) -> str:
     return client.models.list().data[0].id
 
-def translate_batch(client: OpenAI, model: str, strings: list[str], lang: str, display_name: str, timeout: int = 600) -> tuple[dict, object]:
+def translate_batch(client: OpenAI, model: str, strings: list[str], lang: str, display_name: str, timeout: int = 600, think_budget: int = None) -> tuple[dict, object]:
     messages = [
         {
             "role": "system",
@@ -58,12 +58,16 @@ def translate_batch(client: OpenAI, model: str, strings: list[str], lang: str, d
             "content": json.dumps({s: "" for s in strings}, ensure_ascii=False)
         }
     ]
+    extra = {}
+    if think_budget is not None and think_budget >= 0:
+        extra["extra_body"] = {"budget_tokens": think_budget}
     response = client.chat.completions.create(
         model=model,
         messages=messages,
         temperature=0.2,
         response_format={"type": "json_object"},
-        timeout=timeout
+        timeout=timeout,
+        **extra
     )
     raw = response.choices[0].message.content.strip()
     return json.loads(raw), response.usage
@@ -86,8 +90,9 @@ def main():
     parser.add_argument("--api-key",    "-k", default="none",            help="API key")
     parser.add_argument("--model",      "-m", default=None,              help="Model name (auto-detected if omitted)")
     parser.add_argument("--batch-size", "-b", default=40, type=int,      help="Strings per API call (default: 40)")
-    parser.add_argument("--timeout",    "-t", default=600, type=int,     help="Request timeout in seconds (default: 600)")
-    parser.add_argument("--ralph",      action="store_true",             help="Retry until no errors")
+    parser.add_argument("--timeout",      "-t", default=600, type=int,   help="Request timeout in seconds (default: 600)")
+    parser.add_argument("--think-budget", default=500, type=int,         help="Cap thinking tokens (llama.cpp budget_tokens, 0 = disable, default: 500)")
+    parser.add_argument("--ralph",        action="store_true",           help="Retry until no errors")
     parser.add_argument("--dry-run",    action="store_true",             help="Print curl commands instead of calling API")
     args = parser.parse_args()
 
@@ -147,6 +152,7 @@ def main():
                     "model": model,
                     "temperature": 0.2,
                     "response_format": {"type": "json_object"},
+                    **({"budget_tokens": args.think_budget} if args.think_budget is not None else {}),
                     "messages": [
                         {"role": "system", "content": (
                             f"You are a translator. Translate each English UI string into {display_name} ({lang}). "
@@ -167,7 +173,7 @@ def main():
                 continue
             t0 = time.time()
             try:
-                result, usage = translate_batch(client, model, batch, lang, display_name, args.timeout)
+                result, usage = translate_batch(client, model, batch, lang, display_name, args.timeout, args.think_budget)
                 elapsed = time.time() - t0
                 if usage:
                     total_tokens        += usage.total_tokens

@@ -38,5 +38,5 @@ for file in "$I18N_DIR"/*.json; do
         continue
     fi
     echo "=== Translating: $file ==="
-    "$PYTHON" "$SCRIPT_DIR/translate.py" "$file" "$@"
+    "$PYTHON" "$SCRIPT_DIR/translate.py" "$file" --think-budget 0 "$@"
 done
