@@ -40,7 +40,7 @@ def truncate(text: str, max_len: int = 80) -> str:
 def get_default_model(client: OpenAI) -> str:
     return client.models.list().data[0].id
 
-def translate_batch(client: OpenAI, model: str, strings: list[str], lang: str, display_name: str) -> tuple[dict, object]:
+def translate_batch(client: OpenAI, model: str, strings: list[str], lang: str, display_name: str, timeout: int = 600) -> tuple[dict, object]:
     messages = [
         {
             "role": "system",
@@ -62,7 +62,8 @@ def translate_batch(client: OpenAI, model: str, strings: list[str], lang: str, d
         model=model,
         messages=messages,
         temperature=0.2,
-        response_format={"type": "json_object"}
+        response_format={"type": "json_object"},
+        timeout=timeout
     )
     raw = response.choices[0].message.content.strip()
     return json.loads(raw), response.usage
@@ -85,7 +86,9 @@ def main():
     parser.add_argument("--api-key",    "-k", default="none",            help="API key")
     parser.add_argument("--model",      "-m", default=None,              help="Model name (auto-detected if omitted)")
     parser.add_argument("--batch-size", "-b", default=40, type=int,      help="Strings per API call (default: 40)")
+    parser.add_argument("--timeout",    "-t", default=600, type=int,     help="Request timeout in seconds (default: 600)")
     parser.add_argument("--ralph",      action="store_true",             help="Retry until no errors")
+    parser.add_argument("--dry-run",    action="store_true",             help="Print curl commands instead of calling API")
     args = parser.parse_args()
 
     lang_file = Path(args.file)
@@ -139,9 +142,32 @@ def main():
 
         for idx, batch in enumerate(batches, 1):
             log("info", f"Batch [{idx}/{len(batches)}] — {len(batch)} strings")
+            if args.dry_run:
+                payload = {
+                    "model": model,
+                    "temperature": 0.2,
+                    "response_format": {"type": "json_object"},
+                    "messages": [
+                        {"role": "system", "content": (
+                            f"You are a translator. Translate each English UI string into {display_name} ({lang}). "
+                            "Preserve formatting, placeholders (like %1, %2), newlines (\\n), and HTML tags. "
+                            "Keep very short strings (single words, symbols like '/') natural in context. "
+                            "Respond ONLY with a valid JSON object mapping each English string to its translation, "
+                            "with no explanation:\n"
+                            '{ "<english string>": "<translation>", ... }'
+                        )},
+                        {"role": "user", "content": json.dumps({s: "" for s in batch}, ensure_ascii=False)}
+                    ]
+                }
+                payload_json = json.dumps(payload, ensure_ascii=False, indent=2)
+                print(f"\ncurl {args.endpoint}/chat/completions \\")
+                print(f"  -H 'Content-Type: application/json' \\")
+                print(f"  -H 'Authorization: Bearer {args.api_key}' \\")
+                print(f"  -d '{payload_json}'\n")
+                continue
             t0 = time.time()
             try:
-                result, usage = translate_batch(client, model, batch, lang, display_name)
+                result, usage = translate_batch(client, model, batch, lang, display_name, args.timeout)
                 elapsed = time.time() - t0
                 if usage:
                     total_tokens        += usage.total_tokens
