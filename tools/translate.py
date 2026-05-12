@@ -60,7 +60,7 @@ def translate_batch(client: OpenAI, model: str, strings: list[str], lang: str, d
     ]
     extra = {}
     if think_budget is not None and think_budget >= 0:
-        extra["extra_body"] = {"budget_tokens": think_budget}
+        extra["extra_body"] = {"thinking_budget_tokens": think_budget}
     response = client.chat.completions.create(
         model=model,
         messages=messages,
@@ -91,7 +91,7 @@ def main():
     parser.add_argument("--model",      "-m", default=None,              help="Model name (auto-detected if omitted)")
     parser.add_argument("--batch-size", "-b", default=40, type=int,      help="Strings per API call (default: 40)")
     parser.add_argument("--timeout",      "-t", default=600, type=int,   help="Request timeout in seconds (default: 600)")
-    parser.add_argument("--think-budget", default=500, type=int,         help="Cap thinking tokens (llama.cpp budget_tokens, 0 = disable, default: 500)")
+    parser.add_argument("--think-budget", default=500, type=int,         help="Cap thinking tokens (llama.cpp thinking_budget_tokens, 0 = disable, default: 500)")
     parser.add_argument("--ralph",        action="store_true",           help="Retry until no errors")
     parser.add_argument("--dry-run",    action="store_true",             help="Print curl commands instead of calling API")
     args = parser.parse_args()
@@ -152,7 +152,7 @@ def main():
                     "model": model,
                     "temperature": 0.2,
                     "response_format": {"type": "json_object"},
-                    **({"budget_tokens": args.think_budget} if args.think_budget is not None else {}),
+                    **({"thinking_budget_tokens": args.think_budget} if args.think_budget is not None else {}),
                     "messages": [
                         {"role": "system", "content": (
                             f"You are a translator. Translate each English UI string into {display_name} ({lang}). "
