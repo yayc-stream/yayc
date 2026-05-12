@@ -97,7 +97,7 @@
   "Show advanced settings and developer options": "Prikaži napredne postavke i razvojničke opcije",
   "Star": "Zvijezda",
   "Star current video": "Označi trenutni video zvjezdicom",
-  "The Settings panel lets you select directories for where to store bookmarks,\\nthe viewing history, and the Google profile data, to automatically log you\\nin at every access. If the bookmarks directory isn't specified, bookmarks won't be\\nstored. If the history directory isn't specified, history won't be saved.\\nIf the Google profile directory isn't specified, YAYC will work in Inkognito mode.": "",
+  "The Settings panel lets you select directories for where to store bookmarks,\\nthe viewing history, and the Google profile data, to automatically log you\\nin at every access. If the bookmarks directory isn't specified, bookmarks won't be\\nstored. If the history directory isn't specified, history won't be saved.\\nIf the Google profile directory isn't specified, YAYC will work in Inkognito mode.": "Panel postavki omogućuje vam odabir direktorija u kojima želite pohraniti oznake,\\npovijest pregledavanja i podatke Google profila kako bi vas automatski prijavili\\npri svakom pristupu. Ako nije naveden direktorij za oznake, oznake se neće\\npohranjivati. Ako nije naveden direktorij za povijest, povijest se neće spremati.\\nAko nije naveden direktorij Google profila, YAYC će raditi u Inkognito načinu.",
   "Toggle Guide panel": "Prekidač panela vodiča",
   "Toggle Star": "Prekidač zvjezdice",
   "Toggle Viewed": "Prekidač pregledano",
