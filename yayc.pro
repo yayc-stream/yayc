@@ -31,7 +31,7 @@ SOURCES += \
         src/RequestInterceptor.cpp \
         src/YaycUtilities.cpp \
         src/qqmlsettings.cpp \
-        src/Localization.cpp
+        src/YaycContext.cpp
 
 HEADERS += \
         src/Platform.h \
@@ -46,7 +46,7 @@ HEADERS += \
         src/YaycUtilities.h \
         src/KeyInterceptor.h \
         src/qqmlsettings.h \
-        src/Localization.h
+        src/YaycContext.h
 
 qml.files = $$files($$PWD/src/qml/*.qml)
 qml.base = $$PWD/src/qml

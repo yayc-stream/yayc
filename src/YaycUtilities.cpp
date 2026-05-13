@@ -23,6 +23,8 @@ In addition to the above,
 #include <QFile>
 #include <QDir>
 #include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QSettings>
 #include <QTimer>
 #include <QCoreApplication>
@@ -473,4 +475,37 @@ void YaycUtilities::onDonateReplyFinished()
             emit donateUrl(QString(reply->readAll()).trimmed());
         }
     }
+}
+
+QString YaycUtilities::currentLanguage() const
+{
+    return m_currentLanguage;
+}
+
+void YaycUtilities::setLanguage(const QString &lang)
+{
+    if (m_currentLanguage == lang)
+        return;
+    m_currentLanguage = lang;
+    emit languageChanged(lang);
+}
+
+QStringList YaycUtilities::availableLanguages() const
+{
+    if (m_availableLanguages.isEmpty()) {
+        QDir dir(":/assets/i18n/");
+        for (const QString &f : dir.entryList({"*.json"}, QDir::Files))
+            m_availableLanguages << f.left(f.length() - 5);
+        m_availableLanguages.sort();
+    }
+    return m_availableLanguages;
+}
+
+QString YaycUtilities::languageDisplayName(const QString &lang) const
+{
+    QFile file(":/assets/i18n/" + lang + ".json");
+    if (!file.open(QIODevice::ReadOnly))
+        return lang;
+    const QJsonObject obj = QJsonDocument::fromJson(file.readAll()).object();
+    return obj.value("lang.display_name").toString(lang);
 }

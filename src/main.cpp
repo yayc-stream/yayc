@@ -27,7 +27,7 @@ In addition to the above,
 #include "YaycUtilities.h"
 #include "KeyInterceptor.h"
 #include "qqmlsettings.h"
-#include "Localization.h"
+#include "YaycContext.h"
 
 #include <QGuiApplication>
 #include <QApplication>
@@ -198,8 +198,6 @@ int main(int argc, char *argv[])
         qmlRegisterSingletonType(QUrl("qrc:/WebEngineInternals.qml"), "yayc", 1, 0, "WebEngineInternals");
         qmlRegisterSingletonType(QUrl("qrc:/YaycProperties.qml"), "yayc", 1, 0, "YaycProperties");
         qmlRegisterType<QQmlSettings>("yayc", 1, 0, "YaycSettings");
-        qmlRegisterSingletonType<Localization>("yayc", 1, 0, "Localization", Localization::create);
-
 
         QQmlApplicationEngine engine;
         ThumbnailImageProvider *imageProvider = new ThumbnailImageProvider();
@@ -223,6 +221,11 @@ int main(int argc, char *argv[])
         YaycUtilities *utilities = new YaycUtilities(&engine);
         KeyInterceptor *keyInterceptor = new KeyInterceptor(&engine);
         app.installEventFilter(keyInterceptor);
+
+        YaycContext *yaycContext = new YaycContext(engine, &engine);
+        engine.rootContext()->setContextObject(yaycContext);
+        QObject::connect(utilities, &YaycUtilities::languageChanged,
+                         yaycContext, &YaycContext::retranslate);
 
         engine.rootContext()->setContextProperty("utilities", utilities);
         engine.rootContext()->setContextProperty("keyInterceptor", keyInterceptor);

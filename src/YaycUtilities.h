@@ -21,6 +21,7 @@ In addition to the above,
 #include <QObject>
 #include <QUrl>
 #include <QString>
+#include <QStringList>
 #include <QTcpSocket>
 #include <QNetworkAccessManager>
 #include <QDateTime>
@@ -29,6 +30,10 @@ class QQuickItem;
 
 class YaycUtilities : public QObject {
     Q_OBJECT
+
+    Q_PROPERTY(QString currentLanguage READ currentLanguage WRITE setLanguage NOTIFY languageChanged)
+    Q_PROPERTY(QStringList availableLanguages READ availableLanguages CONSTANT)
+
 public:
     // Exit codes
     static constexpr int EXIT_CODE_REBOOT = -123456789;
@@ -84,10 +89,16 @@ public:
     Q_INVOKABLE static void setColorScheme(bool darkMode);
     Q_INVOKABLE void simulateClick(QQuickItem *item, double x, double y);
 
+    Q_INVOKABLE QString languageDisplayName(const QString &lang) const;
+    QString currentLanguage() const;
+    QStringList availableLanguages() const;
+    void setLanguage(const QString &lang);
+
     static bool isShortVideo(const QString &fkey);
     static void openInBrowser(const QString &key, const QString &extWorkingDirRoot);
 
 signals:
+    void languageChanged(const QString &lang);
     void youtubeUrlRequested(const QUrl &url);
     void networkFound();
     void latestVersion(const QString &);
@@ -106,6 +117,10 @@ public slots:
 protected:
     QTcpSocket *tcpSocket;
     QNetworkAccessManager m_nam;
+
+private:
+    QString m_currentLanguage{"en"};
+    mutable QStringList m_availableLanguages;
 };
 
 #endif // YAYCUTILITIES_H
