@@ -63,7 +63,6 @@ declare -A LANGS=(
     [no]="Norsk"
     [da]="Dansk"
     [is]="Íslenska"
-    [se]="Sámegiella"
     [mn]="Монгол"
 )
 
