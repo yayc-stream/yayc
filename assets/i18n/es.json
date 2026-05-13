@@ -126,5 +126,16 @@
   "unstarred": "sin marcar",
   "unwatched": "no visto",
   "videos with storage data": "videos con datos de almacenamiento",
-  "videos without storage data": "videos sin datos de almacenamiento"
+  "videos without storage data": "videos sin datos de almacenamiento",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

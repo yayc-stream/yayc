@@ -126,5 +126,16 @@
   "unstarred": "óstjörnuð",
   "unwatched": "óhorin",
   "videos with storage data": "myndbönd með geymslugögnum",
-  "videos without storage data": "myndbönd án geymsludáta"
+  "videos without storage data": "myndbönd án geymsludáta",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

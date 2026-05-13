@@ -126,5 +126,16 @@
   "unstarred": "স্টারবিহীন",
   "unwatched": "অদেখা",
   "videos with storage data": "স্টোরেজ ডেটা সহ ভিডিও",
-  "videos without storage data": "স্টোরেজ ডেটা ছাড়া ভিডিও"
+  "videos without storage data": "স্টোরেজ ডেটা ছাড়া ভিডিও",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

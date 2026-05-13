@@ -126,5 +126,16 @@
   "unstarred": "tädamata",
   "unwatched": "vaatamata",
   "videos with storage data": "videod koos salvestusandmetega",
-  "videos without storage data": "videod ilma salvestusandmeteta"
+  "videos without storage data": "videod ilma salvestusandmeteta",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

@@ -484,6 +484,7 @@ QString YaycUtilities::currentLanguage() const
 
 void YaycUtilities::setLanguage(const QString &lang)
 {
+    qDebug() << "[i18n] setLanguage:" << lang << "(current:" << m_currentLanguage << ")";
     if (m_currentLanguage == lang)
         return;
     m_currentLanguage = lang;

@@ -63,12 +63,12 @@ ApplicationWindow {
 
     Dialog {
         id: quitConfirmDialog
-        title: Localization.tr("Quit YAYC")
+        title: uiTr("Quit YAYC")
         modal: true
         anchors.centerIn: parent
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         Label {
-            text: Localization.tr("Are you sure you want to quit?")
+            text: uiTr("Are you sure you want to quit?")
         }
         footer: RowLayout {
             Layout.margins: 16
@@ -77,7 +77,7 @@ ApplicationWindow {
                 Layout.bottomMargin: 8
                 flat: true
                 Material.foreground: Material.accent
-                text: Localization.tr("Hide")
+                text: uiTr("Hide")
                 onClicked: {
                     quitConfirmDialog.close()
                     win.minimizeToTray()
@@ -89,7 +89,7 @@ ApplicationWindow {
                 Layout.bottomMargin: 8
                 flat: true
                 Material.foreground: Material.accent
-                text: Localization.tr("Quit")
+                text: uiTr("Quit")
                 onClicked: quitConfirmDialog.accepted()
             }
         }

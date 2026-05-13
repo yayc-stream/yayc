@@ -126,5 +126,16 @@
   "unstarred": "スターなし",
   "unwatched": "未視聴",
   "videos with storage data": "ストレージデータがある動画",
-  "videos without storage data": "ストレージデータがない動画"
+  "videos without storage data": "ストレージデータがない動画",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

@@ -126,5 +126,16 @@
   "unstarred": "நட்சத்திரமிடப்படாதது",
   "unwatched": "பார்க்கப்படாதது",
   "videos with storage data": "சேமிப்புத் தரவு உள்ள வீடியோக்கள்",
-  "videos without storage data": "சேமிப்புத் தரவு இல்லாத வீடியோக்கள்"
+  "videos without storage data": "சேமிப்புத் தரவு இல்லாத வீடியோக்கள்",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

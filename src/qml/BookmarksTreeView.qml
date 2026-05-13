@@ -225,7 +225,7 @@ Rectangle {
 
                     hoverEnabled: true
                     ToolTip.visible: hovered
-                    ToolTip.text: Localization.tr("Clear search term")
+                    ToolTip.text: uiTr("Clear search term")
                     ToolTip.delay: 300
                 }
 
@@ -252,7 +252,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: Localization.tr("Search")
+                        ToolTip.text: uiTr("Search")
                         ToolTip.delay: 300
                     }
                     Row {
@@ -278,7 +278,7 @@ Rectangle {
                                 onExited: hovered = false
                                 hoverEnabled: true
                                 ToolTip.visible: hovered
-                                ToolTip.text: Localization.tr("Click to") + " " + ((viewContainer.searchInTitles) ? Localization.tr("disable") : Localization.tr("enable")) + " " + Localization.tr("search in video titles")
+                                ToolTip.text: uiTr("Click to") + " " + ((viewContainer.searchInTitles) ? uiTr("disable") : uiTr("enable")) + " " + uiTr("search in video titles")
                                 ToolTip.delay: 300
                             }
                         }
@@ -304,7 +304,7 @@ Rectangle {
                                 onExited: hovered = false
                                 hoverEnabled: true
                                 ToolTip.visible: hovered
-                                ToolTip.text: Localization.tr("Click to") + " " + ((viewContainer.searchInChannelNames) ? Localization.tr("disable") : Localization.tr("enable")) + " " + Localization.tr("search in channel names")
+                                ToolTip.text: uiTr("Click to") + " " + ((viewContainer.searchInChannelNames) ? uiTr("disable") : uiTr("enable")) + " " + uiTr("search in channel names")
                                 ToolTip.delay: 300
                             }
                         }
@@ -347,7 +347,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("unstarred")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("unstarred")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -367,7 +367,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("starred")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("starred")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -387,7 +387,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("unopened")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("unopened")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -407,7 +407,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("opened")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("opened")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -427,7 +427,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("unwatched")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("unwatched")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -447,7 +447,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("Watched")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("Watched")
                         ToolTip.delay: 300
 
                         Image {
@@ -475,7 +475,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("Shorts")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("Shorts")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -495,7 +495,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("videos with storage data")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("videos with storage data")
                         ToolTip.delay: 300
                     }
                     ToolButton {
@@ -515,7 +515,7 @@ Rectangle {
 
                         hoverEnabled: true
                         ToolTip.visible: hovered
-                        ToolTip.text: ((checked) ? Localization.tr("Exclude") : Localization.tr("Include")) + " " + Localization.tr("videos without storage data")
+                        ToolTip.text: ((checked) ? uiTr("Exclude") : uiTr("Include")) + " " + uiTr("videos without storage data")
                         ToolTip.delay: 300
                     }
                 } // RowLayout

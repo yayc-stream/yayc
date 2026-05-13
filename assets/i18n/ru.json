@@ -126,5 +126,16 @@
   "unstarred": "без звёздочки",
   "unwatched": "непросмотренные",
   "videos with storage data": "видео с данными о хранилище",
-  "videos without storage data": "видео без данных о хранилище"
+  "videos without storage data": "видео без данных о хранилище",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

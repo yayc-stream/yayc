@@ -126,5 +126,16 @@
   "unstarred": "未收藏",
   "unwatched": "未观看",
   "videos with storage data": "带有存储数据的视频",
-  "videos without storage data": "无存储数据的视频"
+  "videos without storage data": "无存储数据的视频",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

@@ -512,7 +512,7 @@ Item {
             property bool linkIsVideo: requestedKey !== ""
 
             MenuItem {
-                text: Localization.tr("Added") + " (" + fileSystemModel.categoryName(webEngineView._ctxMenuAdded.requestedKey) + ")"
+                text: uiTr("Added") + " (" + fileSystemModel.categoryName(webEngineView._ctxMenuAdded.requestedKey) + ")"
                 icon.source: "/icons/add.svg"
                 enabled: false
             }
@@ -531,7 +531,7 @@ Item {
             property bool linkIsVideo: requestedKey !== ""
 
             Menu {
-                title: Localization.tr("Add to...")
+                title: uiTr("Add to...")
                 icon.source: "/icons/add.svg"
                 visible: webEngineView._ctxMenuNotAdded.linkIsVideo
                 height: visible ? implicitHeight : 0
@@ -684,7 +684,7 @@ Item {
         }
         ToolButton {
             id: buttonAddVideo
-            text: Localization.tr("Add")
+            text: uiTr("Add")
             enabled: false
             visible: true
             onClicked: {
@@ -767,8 +767,8 @@ Item {
             hoverEnabled: true
             ToolTip.visible: hovered
             ToolTip.text: (currentVideoAdded)
-                          ? Localization.tr("Bookmarked in") + ": " + fileSystemModel.categoryName(webEngineView.key)
-                          : Localization.tr("Add Video to Bookmarks")
+                          ? uiTr("Bookmarked in") + ": " + fileSystemModel.categoryName(webEngineView.key)
+                          : uiTr("Add Video to Bookmarks")
             ToolTip.delay: 300
 
             Menu {
@@ -789,7 +789,7 @@ Item {
         }
         ToolButton {
             id: buttonStarVideo
-            text: Localization.tr("Star")
+            text: uiTr("Star")
             enabled: buttonAddVideo.currentVideoAdded
             visible: true
             onClicked: {
@@ -815,13 +815,13 @@ Item {
             hoverEnabled: true
             ToolTip.visible: hovered
             ToolTip.text: (starred)
-                          ? Localization.tr("Unstar current video")
-                          : Localization.tr("Star current video")
+                          ? uiTr("Unstar current video")
+                          : uiTr("Star current video")
             ToolTip.delay: 300
         }
         ToolButton {
             id: buttonCopyLink
-            text: Localization.tr("Copy")
+            text: uiTr("Copy")
             enabled: true
             visible: true
             TextEdit{
@@ -839,12 +839,12 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Copy URL to Clipboard")
+            ToolTip.text: uiTr("Copy URL to Clipboard")
             ToolTip.delay: 300
         }
         ToolButton {
             id: buttonToggleGuide
-            text: Localization.tr("Toggle Guide panel") // left panel on the youtube home
+            text: uiTr("Toggle Guide panel") // left panel on the youtube home
             enabled: webEngineView.isYoutubeHome
             visible: true
             checkable: true
@@ -859,7 +859,7 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Toggle Guide panel")
+            ToolTip.text: uiTr("Toggle Guide panel")
             ToolTip.delay: 300
         }
         ToolButton {
@@ -874,7 +874,7 @@ Item {
             display: AbstractButton.IconOnly
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Toggle YouTube category bar")
+            ToolTip.text: uiTr("Toggle YouTube category bar")
             ToolTip.delay: 300
         }
         ToolButton {
@@ -900,7 +900,7 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Set home page grid columns")
+            ToolTip.text: uiTr("Set home page grid columns")
             ToolTip.delay: 300
         }
         ToolButton {
@@ -927,7 +927,7 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Picture-in-Picture")
+            ToolTip.text: uiTr("Picture-in-Picture")
             ToolTip.delay: 300
         }
         ToolButton {
@@ -955,7 +955,7 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Set playback rate")
+            ToolTip.text: uiTr("Set playback rate")
             ToolTip.delay: 300
         }
         ToolButton {
@@ -981,7 +981,7 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Set video quality")
+            ToolTip.text: uiTr("Set video quality")
             ToolTip.delay: 300
         }
         ToolButton {
@@ -1000,7 +1000,7 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: Localization.tr("Auto skip ads")
+            ToolTip.text: uiTr("Auto skip ads")
             ToolTip.delay: 300
         }
         ToolButton {
@@ -1032,8 +1032,8 @@ Item {
             hoverEnabled: true
             ToolTip.visible: hovered
             ToolTip.text: (root.timePuller.playerState === 1)
-                            ? Localization.tr("Pause video")
-                            : Localization.tr("Play video")
+                            ? uiTr("Pause video")
+                            : uiTr("Play video")
             ToolTip.delay: 300
         }
 
@@ -1154,7 +1154,7 @@ Item {
 
                     hoverEnabled: true
                     ToolTip.visible: hovered
-                    ToolTip.text: Localization.tr("Set playback rate to") + " " + text
+                    ToolTip.text: uiTr("Set playback rate to") + " " + text
                     ToolTip.delay: 300
                 }
             }
@@ -1229,7 +1229,7 @@ Item {
 
                 hoverEnabled: true
                 ToolTip.visible: hovered
-                ToolTip.text: Localization.tr("Let YouTube choose the best quality based on connection speed")
+                ToolTip.text: uiTr("Let YouTube choose the best quality based on connection speed")
                 ToolTip.delay: 300
             }
         }

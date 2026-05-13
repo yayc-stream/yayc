@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Extract all Localization.tr() strings from QML files and generate a translation template.
+Extract all uiTr() strings from QML files and generate a translation template.
 If the output file already exists, keeps existing translations and adds only new strings.
 Usage: ./extract-translations.py --lang <code> [--display-name <name>]
 Example: ./extract-translations.py --lang it --display-name "Italiano"
@@ -13,18 +13,17 @@ import argparse
 from pathlib import Path
 
 def extract_strings(qml_dir):
-    """Extract all Localization.tr() strings from QML files."""
+    """Extract all uiTr() strings from QML files."""
     strings = set()
 
     for qml_file in sorted(qml_dir.glob("*.qml")):
         with open(qml_file, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        # Find all Localization.tr( and extract the full string content
+        # Find all uiTr( and extract the full string content
         i = 0
         while True:
-            # Find next Localization.tr(
-            match = re.search(r'Localization\.tr\(\s*"', content[i:])
+            match = re.search(r'uiTr\(\s*"', content[i:])
             if not match:
                 break
 
@@ -76,7 +75,7 @@ def generate_json(strings, lang_code, display_name):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Extract Localization.tr() strings and generate translation template.")
+        description="Extract uiTr() strings and generate translation template.")
     parser.add_argument("--lang", required=True, metavar="CODE",
                         help="Language code (e.g. it, de, fr)")
     parser.add_argument("--display-name", metavar="NAME",

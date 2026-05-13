@@ -126,5 +126,16 @@
   "unstarred": "ไม่ได้ติดดาว",
   "unwatched": "ยังไม่ได้ดู",
   "videos with storage data": "วิดีโอที่มีข้อมูลพื้นที่จัดเก็บ",
-  "videos without storage data": "วิดีโอที่ไม่มีข้อมูลพื้นที่จัดเก็บ"
+  "videos without storage data": "วิดีโอที่ไม่มีข้อมูลพื้นที่จัดเก็บ",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

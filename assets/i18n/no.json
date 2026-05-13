@@ -126,5 +126,16 @@
   "unstarred": "ustjernet",
   "unwatched": "usett",
   "videos with storage data": "videoer med lagringsdata",
-  "videos without storage data": "videoer uten lagringsdata"
+  "videos without storage data": "videoer uten lagringsdata",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

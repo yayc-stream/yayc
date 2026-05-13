@@ -126,5 +126,16 @@
   "unstarred": "nieoznaczone gwiazdką",
   "unwatched": "nieobejrzane",
   "videos with storage data": "filmy z danymi o pamięci",
-  "videos without storage data": "filmy bez danych o pamięci"
+  "videos without storage data": "filmy bez danych o pamięci",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

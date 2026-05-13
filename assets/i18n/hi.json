@@ -126,5 +126,16 @@
   "unstarred": "बिना स्टार वाला",
   "unwatched": "बिना देखा गया",
   "videos with storage data": "स्टोरेज डेटा वाले वीडियो",
-  "videos without storage data": "बिना स्टोरेज डेटा वाले वीडियो"
+  "videos without storage data": "बिना स्टोरेज डेटा वाले वीडियो",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

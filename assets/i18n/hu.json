@@ -126,5 +126,16 @@
   "unstarred": "csillagozatlan",
   "unwatched": "nézetlen",
   "videos with storage data": "tárolóadatokat tartalmazó videók",
-  "videos without storage data": "videók tárolási adatok nélkül"
+  "videos without storage data": "videók tárolási adatok nélkül",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

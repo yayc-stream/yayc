@@ -126,5 +126,16 @@
   "unstarred": "yıldızlanmamış",
   "unwatched": "izlenmemiş",
   "videos with storage data": "depolama verisi olan videolar",
-  "videos without storage data": "depolama verisi olmayan videolar"
+  "videos without storage data": "depolama verisi olmayan videolar",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

@@ -223,7 +223,6 @@ int main(int argc, char *argv[])
         app.installEventFilter(keyInterceptor);
 
         YaycContext *yaycContext = new YaycContext(engine, &engine);
-        engine.rootContext()->setContextObject(yaycContext);
         QObject::connect(utilities, &YaycUtilities::languageChanged,
                          yaycContext, &YaycContext::retranslate);
 

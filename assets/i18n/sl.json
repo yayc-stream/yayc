@@ -126,5 +126,16 @@
   "unstarred": "brez zvezdice",
   "unwatched": "neoglejeno",
   "videos with storage data": "videoposnetki s podatki o shranovanju",
-  "videos without storage data": "videoposnetki brez podatkov o shranovanju"
+  "videos without storage data": "videoposnetki brez podatkov o shranovanju",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }

@@ -126,5 +126,16 @@
   "unstarred": "одон тэмдэглээгүй",
   "unwatched": "үзээгүй",
   "videos with storage data": "өгөгдлийн сантай видеонууд",
-  "videos without storage data": "Хадгалах өгөгдөлгүй видеонууд"
+  "videos without storage data": "Хадгалах өгөгдөлгүй видеонууд",
+  "Accept": "",
+  "Advanced": "",
+  "Blank when invisible": "",
+  "Cancel": "",
+  "Close": "",
+  "Dark mode": "",
+  "Delete storage": "",
+  "I Understand and Agree": "",
+  "Minimize to Tray": "",
+  "Set": "",
+  "Show": ""
 }
