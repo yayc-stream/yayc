@@ -259,8 +259,6 @@ Item {
         property string language: "en"
         onLanguageChanged: {
             utilities.currentLanguage = language
-            const idx = languageComboBox.model.indexOf(language)
-            languageComboBox.currentIndex = idx >= 0 ? idx : 0
         }
 
         onLoadedChanged: {
@@ -1643,6 +1641,7 @@ Item {
                         ComboBox {
                             id: languageComboBox
                             model: utilities.availableLanguages
+                            currentIndex: { var idx = model.indexOf(settings.language); return idx >= 0 ? idx : 0 }
                             displayText: utilities.languageDisplayName(currentText)
                             onActivated: settings.language = currentText
                             delegate: ItemDelegate {
