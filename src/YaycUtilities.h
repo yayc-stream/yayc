@@ -80,6 +80,7 @@ public:
     Q_INVOKABLE void clearSettings(const QString &settingsUrl);
 
     Q_INVOKABLE bool executableExists(const QString &exe) const;
+    Q_INVOKABLE static bool directoryExists(const QString &path);
     Q_INVOKABLE void fetchMissingThumbnails();
 
     Q_INVOKABLE int compareSemver(const QString &version1, const QString &version2);

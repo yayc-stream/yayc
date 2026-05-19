@@ -351,6 +351,13 @@ bool YaycUtilities::executableExists(const QString &exe) const
     return isExec(exe);
 }
 
+bool YaycUtilities::directoryExists(const QString &path)
+{
+    const QUrl url(path);
+    const QString localPath = url.isLocalFile() ? url.toLocalFile() : path;
+    return QFileInfo(localPath).isDir();
+}
+
 void YaycUtilities::fetchMissingThumbnails()
 {
     ThumbnailFetcher::fetchMissing();
