@@ -1171,32 +1171,32 @@ Item {
         id: aboutContainer
         x: (parent.width - width) * 0.5
         y: (parent.height - height) * 0.5
-        width: 800
+        width: 960
+        height: Math.min(parent.height * 0.9, 640)
         visible: false
         modal: true
+        padding: 20
+        bottomPadding: 0
+
         header: Item {
             width: aboutContainer.width
-            height: YaycProperties.fsH3 * 1.5
+            height: YaycProperties.fsH2 * 2
             Row {
                 anchors.centerIn: parent
-                topPadding: 8
-                Item {
-                    width: children[0].width * 1.05
-                    height: children[0].height * 1.05
-                    Image {
-                        source: "/images/yayc-inlined.png"
-                        anchors.centerIn: parent
-                        fillMode: Image.PreserveAspectFit
-                        height: YaycProperties.fsH2
-                        mipmap: true
-                        smooth: true
-                        layer.enabled: true
-                        layer.effect: ColorOverlay { color: YaycProperties.iconColor }
-                    }
+                spacing: 10
+                Image {
+                    source: "/images/yayc-inlined.png"
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                    height: YaycProperties.fsH2
+                    mipmap: true
+                    smooth: true
+                    layer.enabled: true
+                    layer.effect: ColorOverlay { color: YaycProperties.iconColor }
                 }
-
                 Label {
                     id: aboutTitleVersion
+                    anchors.verticalCenter: parent.verticalCenter
                     text: "v" + appVersion
                     font.pixelSize: YaycProperties.fsH2
                     font.bold: true
@@ -1207,187 +1207,153 @@ Item {
         footer: DialogButtonBox {
             standardButtons: DialogButtonBox.Close
         }
-        ColumnLayout {
-            width: parent.width
-            RowLayout {
-                Layout.fillWidth: true
-                ColumnLayout {
-                    Layout.alignment: Qt.AlignTop
-                    Layout.leftMargin: 8
-                    Rectangle {
-                        width: 224
-                        height: 224
-                        color: "transparent"
 
-                        Image {
-                            anchors {
-                                top: parent.top
-                                bottom: parent.bottom
-                                left: parent.left
-                                right: parent.right
-                                topMargin: 16
-                                bottomMargin: 16
-                                leftMargin: 16
-                                rightMargin: 16
-                            }
-                            source: "/images/yayc-square.png"
-                            sourceSize: Qt.size(parent.width - 32, parent.height - 32)
-                            smooth: true
-                            layer.enabled: true
-                            layer.effect: ColorOverlay { color: YaycProperties.iconColor }
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: (mouse) => {
-                                    Qt.openUrlExternally(repositoryURL)
-                                }
-                            }
-                        }
-                    }
-                    Item {
-                        width: 10
-                        height: 10
-                    }
-                    Row {
-                        Layout.alignment: Qt.AlignCenter
-                        Label {
-                            text: uiTr("Licensed under")
-                            font.pixelSize: YaycProperties.fsP2 * 1.05
-                        }
+        RowLayout {
+            anchors.fill: parent
+            spacing: 24
 
-                        Image {
-                            height: YaycProperties.fsP2
-                            fillMode: Image.PreserveAspectFit
-                            source: "/images/by-nc-sa_15.svg"
-                            smooth: true
-                            anchors.bottom: parent.bottom
-                            anchors.bottomMargin: 1
+            ColumnLayout {
+                Layout.alignment: Qt.AlignTop
+                Layout.preferredWidth: 224
+                spacing: 16
 
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: (mouse) => {
-                                    Qt.openUrlExternally(repositoryURL + '/blob/master/LICENSE')
-                                }
-                            }
+                Item {
+                    Layout.preferredWidth: 224
+                    Layout.preferredHeight: 224
+                    Image {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        source: "/images/yayc-square.png"
+                        sourceSize: Qt.size(208, 208)
+                        smooth: true
+                        mipmap: true
+                        fillMode: Image.PreserveAspectFit
+                        layer.enabled: true
+                        layer.effect: ColorOverlay { color: YaycProperties.iconColor }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Qt.openUrlExternally(repositoryURL)
                         }
                     }
                 }
-                Column { // ColumnLayout is screwing the width inside a RowLayout
+
+                Row {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 6
+                    Label {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: uiTr("Licensed under")
+                        font.pixelSize: YaycProperties.fsP2 * 1.05
+                    }
+                    Image {
+                        anchors.verticalCenter: parent.verticalCenter
+                        height: YaycProperties.fsP1
+                        fillMode: Image.PreserveAspectFit
+                        source: "/images/by-nc-sa_15.svg"
+                        smooth: true
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Qt.openUrlExternally(repositoryURL + '/blob/master/LICENSE')
+                        }
+                    }
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 14
+
+                Label {
                     Layout.fillWidth: true
+                    font.pixelSize: YaycProperties.fsP1
+                    wrapMode: Text.WordWrap
+                    text: uiTr("YAYC is your modern YouTube client, to help with the organization of scheduled and viewed content, progress tracking, and more!")
+                }
 
-                    Rectangle {
-                        color: "transparent"
-                        height: 50
-                        width: parent.width
+                Label {
+                    text: uiTr("Changelog")
+                    font.bold: true
+                    font.pixelSize: YaycProperties.fsH4
+                }
 
-                        Label {
-                            anchors {
-                                left: parent.left
-                                right: parent.right
-                            }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 160
+                    color: YaycProperties.paneColor
+                    radius: 6
+                    border.color: YaycProperties.tooltipBorderColor
+                    border.width: 1
 
+                    ScrollView {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        clip: true
+
+                        TextArea {
                             font.pixelSize: YaycProperties.fsP1
                             wrapMode: Text.WordWrap
-                            text:
-    uiTr("YAYC is your modern YouTube client, to help with the organization of scheduled and viewed content, progress tracking, and more!")
-
+                            textFormat: Text.MarkdownText
+                            readOnly: true
+                            background: null
+                            text: utilities.getChangelog()
                         }
                     }
+                }
 
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
                     Label {
-                        text: uiTr("Changelog")
-                        font {
-                            bold: true
-                            pixelSize: YaycProperties.fsH4
-                        }
+                        text: uiTr("Want to help?")
+                        font.bold: true
+                        font.pixelSize: YaycProperties.fsH4
                     }
-                    Rectangle {
-                        color: "transparent"
-                        height: 200
-                        width: parent.width
-
-                        ScrollView {
+                    Label {
+                        id: labelIssues
+                        text: '<a href="' + repositoryURL + '/issues">' + uiTr("Get involved") + '</a>'
+                        font.bold: true
+                        font.pixelSize: YaycProperties.fsH4
+                        linkColor: YaycProperties.selectionColor
+                        MouseArea {
                             anchors.fill: parent
-
-                            TextArea {
-                                font.pixelSize: YaycProperties.fsP1
-                                wrapMode: Text.WordWrap
-                                textFormat: Text.MarkdownText
-                                readOnly: true
-                                background: null // Material style bug
-                                text: utilities.getChangelog()
-                            }
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Qt.openUrlExternally(
+                                labelIssues.linkAt(labelIssues.width * 0.5,
+                                                   labelIssues.height * 0.5))
                         }
                     }
-
-                    Rectangle {
-                        color: "transparent"
-                        width: parent.width
-                        height: children[0].height
-                        RowLayout {
-                            Label {
-                                text: uiTr("Want to help?") + " "
-                                font {
-                                    bold: true
-                                    pixelSize: YaycProperties.fsH4
-                                }
-                            }
-                            Label {
-                                id: labelIssues
-                                text: '<a href="' + repositoryURL + '/issues">' + uiTr("Get involved") + '</a>'
-                                font {
-                                    bold: true
-                                    pixelSize: YaycProperties.fsH4
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: (mouse) => {
-                                        Qt.openUrlExternally(
-                                        labelIssues.linkAt(labelIssues.width * 0.5,
-                                                           labelIssues.height * 0.5))
-                                    }
-                                }
-                            }
-                            Label {
-                                text: ' ' + uiTr("or") + ' '
-                                font {
-                                    bold: true
-                                    pixelSize: YaycProperties.fsH4
-                                }
-                                enabled: root.donateUrl !== ""
-                                visible: enabled
-                            }
-                            Label {
-                                id: labelDonation
-                                enabled: root.donateUrl !== ""
-                                visible: enabled
-                                text: '<a href="'+root.donateUrl+'">' + uiTr("make a donation") + '</a>!'
-                                font {
-                                    bold: true
-                                    pixelSize: YaycProperties.fsH4
-                                }
-                                onLinkActivated: Qt.openUrlExternally(link)
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: (mouse) => {
-                                        Qt.openUrlExternally(
-                                        labelDonation.linkAt(labelDonation.width * 0.5,
-                                                             labelDonation.height * 0.5))
-                                    }
-                                }
-                            }
-                        } // RowLayout
-                    } // Rectangle
-                } // Column
-            } // RowLayout
-            Item {
-                height: 16
-                Layout.fillWidth: true
+                    Label {
+                        text: uiTr("or")
+                        font.bold: true
+                        font.pixelSize: YaycProperties.fsH4
+                        enabled: root.donateUrl !== ""
+                        visible: enabled
+                    }
+                    Label {
+                        id: labelDonation
+                        enabled: root.donateUrl !== ""
+                        visible: enabled
+                        text: '<a href="'+root.donateUrl+'">' + uiTr("make a donation") + '</a>!'
+                        font.bold: true
+                        font.pixelSize: YaycProperties.fsH4
+                        linkColor: YaycProperties.selectionColor
+                        onLinkActivated: Qt.openUrlExternally(link)
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Qt.openUrlExternally(
+                                labelDonation.linkAt(labelDonation.width * 0.5,
+                                                     labelDonation.height * 0.5))
+                        }
+                    }
+                    Item { Layout.fillWidth: true }
+                }
             }
-        } // ColumnLayout
+        }
     } // aboutContainer
 
     Dialog {
