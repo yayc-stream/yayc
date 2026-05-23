@@ -81,6 +81,14 @@ Popup {
             font.pixelSize: YaycProperties.fsP1
         }
 
+        MouseArea {
+            id: ma
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: rowRoot.activated()
+        }
+
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 12
@@ -132,14 +140,6 @@ Popup {
                 font.pixelSize: YaycProperties.fsH4
                 visible: rowRoot.chevron
             }
-        }
-
-        MouseArea {
-            id: ma
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: rowRoot.activated()
         }
     }
 
