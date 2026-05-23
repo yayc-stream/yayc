@@ -612,6 +612,7 @@ Item {
         visible: opacity > 0
 
         property real lastZoom: 1.0
+        property bool lastIsVideo: webEngineView.isYoutubeVideo
         property bool initialized: false
 
         Label {
@@ -645,6 +646,10 @@ Item {
                 zoomOverlay.lastZoom = newZoom
                 if (!zoomOverlay.initialized) {
                     zoomOverlay.initialized = true
+                    return
+                }
+                if (webEngineView.isYoutubeVideo !== zoomOverlay.lastIsVideo) {
+                    zoomOverlay.lastIsVideo = webEngineView.isYoutubeVideo
                     return
                 }
                 zoomFadeOut.stop()
