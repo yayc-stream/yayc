@@ -42,16 +42,7 @@ In addition to the above,
 #include <QNetworkProxy>
 #include <QStyleHints>
 #include <QGuiApplication>
-#include <QQuickItem>
-#include <QQuickWindow>
-#include <QMouseEvent>
 #include <QtWebEngineQuick/qquickwebengineprofile.h>
-
-#if defined(Q_OS_WIN)
-#  include <windows.h>
-#elif defined(Q_OS_MACOS)
-#  include <ApplicationServices/ApplicationServices.h>
-#endif
 
 // Static member definitions
 bool YaycUtilities::isPlasma = false;
@@ -428,61 +419,6 @@ void YaycUtilities::openInBrowser(const QString &key, const QString &extWorkingD
             QDesktopServices::openUrl(QUrl::fromLocalFile(d.filePath(key)));
         }
     }
-}
-
-void YaycUtilities::simulateClick(QQuickItem *item, double x, double y)
-{
-    if (!item || !item->window())
-        return;
-    QPointF localPos(x, y);
-    QPointF scenePos = item->mapToScene(localPos);
-    QPoint globalPos = item->window()->mapToGlobal(scenePos.toPoint());
-
-#if defined(Q_OS_WIN)
-    // On Windows, Chromium renders in a native HWND child — QMouseEvent to the
-    // QQuickWindow doesn't reach it. Use SendInput for OS-level injection.
-    // Qt gives logical pixels; SendInput absolute coords are physical pixels
-    // normalized across the entire virtual desktop (covers multi-monitor).
-    const qreal dpr = item->window()->devicePixelRatio();
-    const int physX = qRound(globalPos.x() * dpr);
-    const int physY = qRound(globalPos.y() * dpr);
-    const int vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    const int vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    const int vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    const int vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-    if (vw <= 1 || vh <= 1)
-        return;
-    const DWORD ax = MulDiv(physX - vx, 65535, vw - 1);
-    const DWORD ay = MulDiv(physY - vy, 65535, vh - 1);
-    INPUT inputs[2] = {};
-    inputs[0].type = INPUT_MOUSE;
-    inputs[0].mi.dx = ax;
-    inputs[0].mi.dy = ay;
-    inputs[0].mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK
-                         | MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN;
-    inputs[1].type = INPUT_MOUSE;
-    inputs[1].mi.dx = ax;
-    inputs[1].mi.dy = ay;
-    inputs[1].mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK
-                         | MOUSEEVENTF_LEFTUP;
-    SendInput(2, inputs, sizeof(INPUT));
-#elif defined(Q_OS_MACOS)
-    // Same issue on macOS: Chromium uses a native NSView child.
-    CGPoint pt = CGPointMake(globalPos.x(), globalPos.y());
-    CGEventRef down = CGEventCreateMouseEvent(nullptr, kCGEventLeftMouseDown, pt, kCGMouseButtonLeft);
-    CGEventRef up   = CGEventCreateMouseEvent(nullptr, kCGEventLeftMouseUp,   pt, kCGMouseButtonLeft);
-    CGEventPost(kCGHIDEventTap, down);
-    CGEventPost(kCGHIDEventTap, up);
-    CFRelease(down);
-    CFRelease(up);
-#else
-    QCoreApplication::postEvent(item->window(),
-        new QMouseEvent(QEvent::MouseButtonPress, scenePos, globalPos,
-                        Qt::LeftButton, Qt::LeftButton, Qt::NoModifier));
-    QCoreApplication::postEvent(item->window(),
-        new QMouseEvent(QEvent::MouseButtonRelease, scenePos, globalPos,
-                        Qt::LeftButton, Qt::NoButton, Qt::NoModifier));
-#endif
 }
 
 void YaycUtilities::onSocketConnected()

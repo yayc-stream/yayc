@@ -143,7 +143,8 @@ Item {
             if (x > 0 && y > 0
                     && x < webEngineView.width && y < webEngineView.height) {
                 console.log('[yayc-adskip] simulating click at', x, y)
-                utilities.simulateClick(webEngineView, x, y)
+                webEngineView.sendTrustedMousePress(Qt.point(x, y))
+                webEngineView.sendTrustedMouseRelease(Qt.point(x, y))
                 adSkipResumeTimer.restart()
             }
         }

@@ -9,7 +9,6 @@ CONFIG += qtquickcompiler
 macos {
     CONFIG += universal
     QMAKE_APPLE_DEVICE_ARCHS = arm64 x86_64
-    LIBS += -framework ApplicationServices
 }
 #unix:!android: CONFIG += use_lld_linker # fix for QTBUG-80964
 
