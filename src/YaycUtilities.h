@@ -33,6 +33,8 @@ class YaycUtilities : public QObject {
 
     Q_PROPERTY(QString currentLanguage READ currentLanguage WRITE setLanguage NOTIFY languageChanged)
     Q_PROPERTY(QStringList availableLanguages READ availableLanguages CONSTANT)
+    Q_PROPERTY(bool keepForegroundIllusion READ keepForegroundIllusion
+               WRITE setKeepForegroundIllusion NOTIFY keepForegroundIllusionChanged)
 
 public:
     // Exit codes
@@ -46,6 +48,18 @@ public:
 
     explicit YaycUtilities(QObject *parent = nullptr);
     ~YaycUtilities() override;
+
+    // When true, swallows QEvent::HoverLeave events destined for QtWebEngine's
+    // internal render-widget item whenever the real cursor is still physically
+    // over it. Works around window managers/compositors that deliver a
+    // QEvent::Leave to the window on focus loss or virtual-desktop switch
+    // (independent of the cursor moving) - Qt Quick turns that into a
+    // HoverLeave for the hovered item, which QtWebEngine forwards into
+    // Chromium as a real DOM mouseleave, pausing hover-preview media even
+    // though the pointer never moved.
+    bool keepForegroundIllusion() const;
+    void setKeepForegroundIllusion(bool enabled);
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
     Q_INVOKABLE QUrl urlWithPosition(const QString &url, const int position) const;
     Q_INVOKABLE void yDebug(const QString &s);
@@ -112,6 +126,7 @@ signals:
     void donateETag(const QString &);
     void donateUrl(const QString &);
     void videoUrlResolved(const QString &normalizedUrl);
+    void keepForegroundIllusionChanged(bool enabled);
 
 public slots:
     void onSocketConnected();
@@ -128,6 +143,7 @@ protected:
 private:
     QString m_currentLanguage{"en"};
     mutable QStringList m_availableLanguages;
+    bool m_keepForegroundIllusion{false};
 };
 
 #endif // YAYCUTILITIES_H

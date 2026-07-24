@@ -456,6 +456,17 @@ Popup {
                     }
                     onActivated: if (smenu.host) smenu.host.blankWhenHidden = !smenu.host.blankWhenHidden
                 }
+                MenuRow {
+                    label: uiTr("Keep hover preview playing")
+                    iconSource: "/icons/sliders.svg"
+                    rowTooltip: uiTr("Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop")
+                    rightItem: Switch {
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: smenu.host ? smenu.host.keepForegroundIllusion : false
+                        onToggled: if (smenu.host) smenu.host.keepForegroundIllusion = checked
+                    }
+                    onActivated: if (smenu.host) smenu.host.keepForegroundIllusion = !smenu.host.keepForegroundIllusion
+                }
                 MenuDivider {}
                 MenuRow {
                     label: uiTr("Custom script")

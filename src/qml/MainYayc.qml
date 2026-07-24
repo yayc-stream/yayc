@@ -165,6 +165,7 @@ Item {
     property bool removeStorageOnDelete: false
     property bool blankWhenHidden: false
     property bool autoSkipAd: false
+    property bool keepForegroundIllusion: false
     property bool showCategoryBar: true
     property int homeGridColumns: 4
     property int maxRecentDestinations: 5
@@ -199,6 +200,7 @@ Item {
 
     Binding { target: YaycProperties; property: "isDarkMode"; value: root.darkMode }
     Binding { target: fileSystemModel; property: "maxRecentDestinations"; value: root.maxRecentDestinations }
+    Binding { target: utilities; property: "keepForegroundIllusion"; value: root.keepForegroundIllusion }
     onDarkModeChanged: {
         utilities.setColorScheme(root.darkMode)
         if (root.settingsLoaded && webEngineView)
@@ -246,6 +248,7 @@ Item {
         property alias removeStorageOnDelete: root.removeStorageOnDelete
         property alias blankWhenHidden: root.blankWhenHidden
         property alias autoSkipAd: root.autoSkipAd
+        property alias keepForegroundIllusion: root.keepForegroundIllusion
         property alias showCategoryBar: root.showCategoryBar
         property alias homeGridColumns: root.homeGridColumns
         property alias maxRecentDestinations: root.maxRecentDestinations

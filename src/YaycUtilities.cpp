@@ -45,6 +45,8 @@ In addition to the above,
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QMouseEvent>
+#include <QHoverEvent>
+#include <QCursor>
 #include <QtWebEngineQuick/qquickwebengineprofile.h>
 
 // Static member definitions
@@ -448,6 +450,37 @@ void YaycUtilities::simulateClick(QQuickItem *item, double x, double y)
     // renderer lives in a native child window/view on Windows/macOS that a
     // QMouseEvent posted to the QQuickWindow never reaches.
 #endif
+}
+
+bool YaycUtilities::keepForegroundIllusion() const
+{
+    return m_keepForegroundIllusion;
+}
+
+void YaycUtilities::setKeepForegroundIllusion(bool enabled)
+{
+    if (m_keepForegroundIllusion == enabled)
+        return;
+    m_keepForegroundIllusion = enabled;
+    emit keepForegroundIllusionChanged(enabled);
+}
+
+bool YaycUtilities::eventFilter(QObject *watched, QEvent *event)
+{
+    if (m_keepForegroundIllusion && event->type() == QEvent::HoverLeave) {
+        if (auto *item = qobject_cast<QQuickItem *>(watched)) {
+            // QtWebEngine's internal render-widget item is a private/internal
+            // class (QtWebEngineCore::RenderWidgetHostViewQtDelegateItem), not
+            // linkable from here - match by class name instead.
+            if (QLatin1String(item->metaObject()->className())
+                    .contains(QLatin1String("RenderWidgetHostViewQtDelegateItem"))) {
+                const QPointF localPos = item->mapFromGlobal(QCursor::pos());
+                if (item->contains(localPos))
+                    return true; // spurious leave (e.g. alt-tab, virtual desktop switch): swallow it
+            }
+        }
+    }
+    return QObject::eventFilter(watched, event);
 }
 
 void YaycUtilities::onSocketConnected()
