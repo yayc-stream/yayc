@@ -173,6 +173,7 @@ Item {
     property real wevZoomFactorVideo
     property real volume: 0
     property real userSpecifiedVolume: -1
+    property real playbackRate: 1.0
     property bool muted: false
     property bool guideToggled: false
 
@@ -254,6 +255,7 @@ Item {
         property alias maxRecentDestinations: root.maxRecentDestinations
         property alias volume: root.volume
         property alias userSpecifiedVolume: root.userSpecifiedVolume
+        property alias playbackRate: root.playbackRate
         property alias guidePaneToggled: root.guideToggled
         property alias proxyType: proxyMenu.proxyType
         property alias proxyPort: proxyMenu.proxyPort
@@ -622,6 +624,7 @@ Item {
                         removeStorageOnDelete: root.removeStorageOnDelete
                         extCommandEnabled: root.extCommandEnabled
                         autoSkipAd: root.autoSkipAd
+                        playbackRate: root.playbackRate
                     }
 
                     // Keep videoPlaying in sync for Loader active condition
@@ -669,6 +672,10 @@ Item {
                 onUserSpecifiedVolumeChanged: if (webEngineView && webEngineView.userSpecifiedVolume !== userSpecifiedVolume)
                                                   webEngineView.userSpecifiedVolume = userSpecifiedVolume
 
+                property alias playbackRate: root.playbackRate
+                onPlaybackRateChanged: if (webEngineView && webEngineView.playbackRate !== playbackRate)
+                                           webEngineView.playbackRate = playbackRate
+
                 // Pull (child -> parent)
                 property Connections connections : Connections {
                     target: webEngineView
@@ -699,6 +706,10 @@ Item {
                     function onAutoSkipAdChanged() {
                         if (root.autoSkipAd !== webEngineView.autoSkipAd)
                             root.autoSkipAd = webEngineView.autoSkipAd
+                    }
+                    function onPlaybackRateChanged() {
+                        if (root.playbackRate !== webEngineView.playbackRate)
+                            root.playbackRate = webEngineView.playbackRate
                     }
                     function onZoomFactorChanged() {
                         syncZoomFactor()

@@ -39,6 +39,10 @@ Item {
     required property real wevZoomFactorVideo
     property int homeGridColumns: 4
     property bool autoSkipAd: false
+    // Global playback rate, applied to every player kind (watch/Shorts/preview).
+    // Pushed down from MainYayc, pulled back up when changed YouTube-side.
+    property real playbackRate: 1.0
+    onPlaybackRateChanged: applyPlayerSettings()
     property bool showCategoryBar: true
     required property string customScript
     required property string profilePath // if empty, the webengineview profile will turn itself "off the record"
@@ -181,7 +185,7 @@ Item {
             clickGuideButton();
         }
 
-        onVolumeChanged: root.volume = volume
+        onVolumeChanged: if (root.volume !== volume) root.volume = volume
         onMutedChanged: root.muted = muted
 
         function getCurrentVideoURLWithPosition() {
@@ -213,7 +217,13 @@ Item {
             update()
         }
 
-        onPlaybackRateChanged: root.applyPreviewPlayerSettings()
+        // Pull: the player reported its rate (e.g. changed via YouTube's own UI).
+        // The !== guard keeps this from ping-ponging with the push in
+        // root.onPlaybackRateChanged.
+        onPlaybackRateChanged: {
+            if (playbackRate > 0 && root.playbackRate !== playbackRate)
+                root.playbackRate = playbackRate
+        }
 
         function update() {
             var k = utilities.getVideoID(videoID, vendor, shorts)
@@ -312,6 +322,18 @@ Item {
                 setTimeout(apply, 2500);
             })();
         `)
+    }
+
+    // Pushes the global rate/volume into the page, where script_applyPlayerSettings
+    // spreads them across whichever players currently exist. Safe to call with no
+    // player (or no page) loaded: the values are stored and picked up on the next
+    // player that appears.
+    function applyPlayerSettings() {
+        let r = (root.playbackRate > 0) ? root.playbackRate : 1
+        let v = (sliderVolume.userValue >= 0) ? sliderVolume.userValue : sliderVolume.value
+        runScript("window.__yayc_playerRate = " + r + ";"
+                  + " window.__yayc_playerVolume = " + v + ";"
+                  + " if (window.__yayc_applyPlayerSettings) window.__yayc_applyPlayerSettings();")
     }
 
     function applyHomeGridColumns() {
@@ -433,6 +455,7 @@ Item {
                 root.applyHomeGridColumns()
                 if (root.autoSkipAd)
                     runScript("window.__yayc_autoSkipAdEnabled = true")
+                root.applyPlayerSettings()
             }
         }
 
@@ -949,7 +972,6 @@ Item {
         }
         ToolButton {
             id: buttonSpeed
-            enabled: webEngineView.isYoutubeVideo
             visible: true
             checkable: true
 
@@ -967,7 +989,7 @@ Item {
             display: (text !== "1.00")
                      ? AbstractButton.TextUnderIcon
                      : AbstractButton.IconOnly
-            text: (root.timePuller.playbackRate) ? root.timePuller.playbackRate.toFixed(2) : "1.00"
+            text: (root.playbackRate > 0) ? root.playbackRate.toFixed(2) : "1.00"
             spacing: -6
 
             hoverEnabled: true
@@ -1063,7 +1085,6 @@ Item {
             onExited: hovered = false
             Slider {
                 id: sliderVolume
-                enabled: webEngineView.isYoutubeVideo
                 implicitWidth: 130
                 anchors.centerIn: parent
 
@@ -1075,11 +1096,8 @@ Item {
                 property real userValue: -1
 
                 function setVolume() {
-                    var newVolume = (userValue >= 0) ? userValue : value
-
-                    var scriptToRun = WebEngineInternals.getVolumeSetterScript(newVolume,
-                                                                      utilities.isYoutubeShortsUrl(root.url))
-                    root.runScript(scriptToRun)
+                    // Applies to every player kind, not just the watch player.
+                    root.applyPlayerSettings()
                 }
 
                 onUserValueChanged: {
@@ -1152,7 +1170,7 @@ Item {
                     width: height
                     enabled: true
                     checkable: false
-                    checked: root.timePuller.playbackRate.toFixed(2) === text
+                    checked: root.playbackRate.toFixed(2) === text
 
                     z: playbackRateMenu.z + 5
 
@@ -1162,11 +1180,9 @@ Item {
 
                     onClicked: {
                         buttonSpeed.checked = false
-                        var scriptToRun = WebEngineInternals.getPlaybackRateSetterScript(
-                                    text, utilities.isYoutubeShortsUrl(root.url)
-                                 )
-    //                    console.log(scriptToRun)
-                        root.runScript(scriptToRun)
+                        // Sets the global; the change handler pushes it to every
+                        // player kind (watch/Shorts/preview).
+                        root.playbackRate = parseFloat(text)
                     }
 
                     hoverEnabled: true

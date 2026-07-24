@@ -95,37 +95,64 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
         })();
     "
 
-    // Applies rate/volume to YouTube's inline hover-preview players, which have
-    // no UI of their own and don't inherit the watch player's settings. Values
-    // are pushed in from WebView.qml as window globals; previews are created and
-    // destroyed as the user hovers around, so they're reasserted on mutation, on
-    // 'loadeddata', and on a slow interval as a backstop.
-    property string script_previewPlayerControl: "
+    // Brings every player on the page in line with YAYC's global rate/volume:
+    // the watch player, the active Shorts player, and the inline hover-preview
+    // players (which have no UI of their own and inherit nothing). Values are
+    // pushed in from WebView.qml as window globals, in the YouTube player API's
+    // own scales (rate as a multiplier, volume 0-100).
+    //
+    // Reasserted on mutation, on 'loadeddata', and on a slow interval, because
+    // preview players are created and destroyed as the cursor moves and YouTube
+    // initialises each one with its own defaults. window.__yayc_applyPlayerSettings
+    // is exposed so a push can take effect immediately instead of waiting a tick.
+    property string script_applyPlayerSettings: "
         (function() {
-            if (window.__yayc_previewctl) return;
-            window.__yayc_previewctl = true;
-            function apply(v) {
+            if (window.__yayc_playerctl) return;
+            window.__yayc_playerctl = true;
+
+            function collect() {
+                return [].concat(
+                    [].slice.call(document.querySelectorAll('ytd-watch-flexy ytd-player')),
+                    [].slice.call(document.querySelectorAll('ytd-reel-video-renderer ytd-player')),
+                    [].slice.call(document.querySelectorAll('ytd-video-preview ytd-player')));
+            }
+
+            function applyTo(host) {
+                var r = window.__yayc_playerRate;
+                var vol = window.__yayc_playerVolume;
+                var yt = null;
+                try { yt = host.getPlayer ? host.getPlayer() : null; } catch (e) { yt = null; }
+                if (yt && yt.setPlaybackRate) {
+                    // Player API is preferred: YouTube re-asserts its own values
+                    // onto the underlying element, but respects the API.
+                    try {
+                        if (r > 0 && Math.abs(yt.getPlaybackRate() - r) > 0.001)
+                            yt.setPlaybackRate(r);
+                        // Never unmutes: unmuting without user activation makes
+                        // Chromium pause the preview instead of playing it.
+                        if (vol >= 0 && !yt.isMuted() && Math.abs(yt.getVolume() - vol) > 0.5)
+                            yt.setVolume(vol);
+                    } catch (e) {}
+                    return;
+                }
+                var v = host.querySelector ? host.querySelector('video') : null;
                 if (!v) return;
-                var r = window.__yayc_previewRate;
-                var vol = window.__yayc_previewVolume;
                 if (r > 0 && v.playbackRate !== r)
                     v.playbackRate = r;
-                // Deliberately never touches v.muted: unmuting without user
-                // activation makes Chromium pause the preview instead.
-                if (vol >= 0 && !v.muted && Math.abs(v.volume - vol) > 0.001)
-                    v.volume = vol;
+                if (vol >= 0 && !v.muted && Math.abs(v.volume - vol / 100) > 0.001)
+                    v.volume = vol / 100;
             }
+
             function applyAll() {
-                var l = document.querySelectorAll('ytd-video-preview video');
+                var l = collect();
                 for (var i = 0; i < l.length; ++i)
-                    apply(l[i]);
+                    applyTo(l[i]);
             }
+            window.__yayc_applyPlayerSettings = applyAll;
+
             var obs = new MutationObserver(applyAll);
             obs.observe(document.body, { childList: true, subtree: true });
-            document.addEventListener('loadeddata', function(e) {
-                if (e.target && e.target.tagName === 'VIDEO')
-                    apply(e.target);
-            }, true);
+            document.addEventListener('loadeddata', applyAll, true);
             setInterval(applyAll, 1000);
         })();
     "
@@ -211,25 +238,9 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
         }
     "
 
-    function getPlaybackRateSetterScript(rate, isShorts) {
-        var res = "
-        setTimeout(function() {
-" + getPlayer(isShorts) +
-"                 ytplayer.setPlaybackRate(" + rate + ");
-    }, 100);
-"
-        return res;
-    }
-
-    function getVolumeSetterScript(volume, isShorts) {
-        var res = "
-        setTimeout(function() {
-" + getPlayer(isShorts) +
-"                 ytplayer.setVolume(" + volume + ");
-    }, 100);
-"
-        return res;
-    }
+    // Rate/volume setters used to live here, one player at a time. They were
+    // replaced by script_applyPlayerSettings, which addresses every player kind
+    // (watch/Shorts/preview) from YAYC's global values.
 
     function getMutedSetterScript(muted, isShorts) {
         var res = "
