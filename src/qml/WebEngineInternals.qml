@@ -95,6 +95,41 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
         })();
     "
 
+    // Applies rate/volume to YouTube's inline hover-preview players, which have
+    // no UI of their own and don't inherit the watch player's settings. Values
+    // are pushed in from WebView.qml as window globals; previews are created and
+    // destroyed as the user hovers around, so they're reasserted on mutation, on
+    // 'loadeddata', and on a slow interval as a backstop.
+    property string script_previewPlayerControl: "
+        (function() {
+            if (window.__yayc_previewctl) return;
+            window.__yayc_previewctl = true;
+            function apply(v) {
+                if (!v) return;
+                var r = window.__yayc_previewRate;
+                var vol = window.__yayc_previewVolume;
+                if (r > 0 && v.playbackRate !== r)
+                    v.playbackRate = r;
+                // Deliberately never touches v.muted: unmuting without user
+                // activation makes Chromium pause the preview instead.
+                if (vol >= 0 && !v.muted && Math.abs(v.volume - vol) > 0.001)
+                    v.volume = vol;
+            }
+            function applyAll() {
+                var l = document.querySelectorAll('ytd-video-preview video');
+                for (var i = 0; i < l.length; ++i)
+                    apply(l[i]);
+            }
+            var obs = new MutationObserver(applyAll);
+            obs.observe(document.body, { childList: true, subtree: true });
+            document.addEventListener('loadeddata', function(e) {
+                if (e.target && e.target.tagName === 'VIDEO')
+                    apply(e.target);
+            }, true);
+            setInterval(applyAll, 1000);
+        })();
+    "
+
     property string script_homePageStatusFetcher: "
         var backend;
         new QWebChannel(qt.webChannelTransport, function (channel) {

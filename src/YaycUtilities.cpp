@@ -474,9 +474,17 @@ bool YaycUtilities::eventFilter(QObject *watched, QEvent *event)
             // linkable from here - match by class name instead.
             if (QLatin1String(item->metaObject()->className())
                     .contains(QLatin1String("RenderWidgetHostViewQtDelegateItem"))) {
-                const QPointF localPos = item->mapFromGlobal(QCursor::pos());
-                if (item->contains(localPos))
-                    return true; // spurious leave (e.g. alt-tab, virtual desktop switch): swallow it
+                // Not our window's turn: the user is interacting with something
+                // else entirely (another app, the taskbar, a panel), so any leave
+                // now is a side effect of that - not of them moving off the
+                // thumbnail. Swallow it wherever the cursor happens to be.
+                const QWindow *win = item->window();
+                if (win && !win->isActive())
+                    return true;
+                // Window is active but Qt still reported a leave while the cursor
+                // is physically over us (compositor/WM quirk on focus changes).
+                if (item->contains(item->mapFromGlobal(QCursor::pos())))
+                    return true;
             }
         }
     }

@@ -213,9 +213,7 @@ Item {
             update()
         }
 
-        onPlaybackRateChanged: {
-
-        }
+        onPlaybackRateChanged: root.applyPreviewPlayerSettings()
 
         function update() {
             var k = utilities.getVideoID(videoID, vendor, shorts)

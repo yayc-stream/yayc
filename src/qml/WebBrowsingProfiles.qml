@@ -43,7 +43,13 @@ QtObject {
         adSkipScript.worldId = WebEngineScript.MainWorld
         adSkipScript.sourceCode = WebEngineInternals.script_autoSkipAd
 
-        return [ webChannelScript, userScript, cssScript, adSkipScript ]
+        let previewCtlScript = WebEngine.script()
+        previewCtlScript.name = "PreviewPlayerControl"
+        previewCtlScript.injectionPoint = WebEngineScript.Deferred
+        previewCtlScript.worldId = WebEngineScript.MainWorld
+        previewCtlScript.sourceCode = WebEngineInternals.script_previewPlayerControl
+
+        return [ webChannelScript, userScript, cssScript, adSkipScript, previewCtlScript ]
     }
 
     function recreateProfiles() {
