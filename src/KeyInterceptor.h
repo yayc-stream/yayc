@@ -38,7 +38,7 @@ public:
         }
     }
 
-    bool eventFilter(QObject *obj, QEvent *event) override {
+    bool eventFilter(QObject */*obj*/, QEvent *event) override {
         if (event->type() != QEvent::KeyPress || !m_playerActive)
             return false;
 

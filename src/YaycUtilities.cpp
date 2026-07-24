@@ -42,6 +42,9 @@ In addition to the above,
 #include <QNetworkProxy>
 #include <QStyleHints>
 #include <QGuiApplication>
+#include <QQuickItem>
+#include <QQuickWindow>
+#include <QMouseEvent>
 #include <QtWebEngineQuick/qquickwebengineprofile.h>
 
 // Static member definitions
@@ -419,6 +422,32 @@ void YaycUtilities::openInBrowser(const QString &key, const QString &extWorkingD
             QDesktopServices::openUrl(QUrl::fromLocalFile(d.filePath(key)));
         }
     }
+}
+
+void YaycUtilities::simulateClick(QQuickItem *item, double x, double y)
+{
+#if defined(Q_OS_LINUX)
+    if (!item || !item->window())
+        return;
+    QPointF localPos(x, y);
+    QPointF scenePos = item->mapToScene(localPos);
+    QPointF globalPos = item->window()->mapToGlobal(scenePos.toPoint());
+
+    QCoreApplication::postEvent(item->window(),
+        new QMouseEvent(QEvent::MouseButtonPress, scenePos, globalPos,
+                        Qt::LeftButton, Qt::LeftButton, Qt::NoModifier));
+    QCoreApplication::postEvent(item->window(),
+        new QMouseEvent(QEvent::MouseButtonRelease, scenePos, globalPos,
+                        Qt::LeftButton, Qt::NoButton, Qt::NoModifier));
+#else
+    Q_UNUSED(item);
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    // No reliable OS-level input injection without the trusted-mouse-injection
+    // QtWebEngine patch (see WebView.qml's hasTrustedMouseInjection). Chromium's
+    // renderer lives in a native child window/view on Windows/macOS that a
+    // QMouseEvent posted to the QQuickWindow never reaches.
+#endif
 }
 
 void YaycUtilities::onSocketConnected()

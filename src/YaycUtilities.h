@@ -26,6 +26,8 @@ In addition to the above,
 #include <QNetworkAccessManager>
 #include <QDateTime>
 
+class QQuickItem;
+
 class YaycUtilities : public QObject {
     Q_OBJECT
 
@@ -86,6 +88,13 @@ public:
                                             const QString &proxyHost,
                                             int proxyPort);
     Q_INVOKABLE static void setColorScheme(bool darkMode);
+
+    // Fallback for QtWebEngine builds without the trusted-mouse-injection
+    // patch (see WebView.qml's hasTrustedMouseInjection). Only works on
+    // Linux: Chromium's renderer lives in a native child window/view on
+    // Windows and macOS that a QMouseEvent posted to the QQuickWindow never
+    // reaches. No-op on other platforms.
+    Q_INVOKABLE void simulateClick(QQuickItem *item, double x, double y);
 
     Q_INVOKABLE QString languageDisplayName(const QString &lang) const;
     QString currentLanguage() const;

@@ -137,14 +137,27 @@ Item {
         property real skipAdY: -1
         property int skipAdSeq: 0
 
+        // True only if the loaded QtWebEngine was patched to expose
+        // QQuickWebEngineView::sendTrustedMouse{Press,Release,Move}() (see
+        // patches/qtwebengine/0001-trusted-mouse-event-injection-qml-api.patch).
+        // Resolved dynamically against whatever WebEngineQuick plugin is
+        // actually loaded at runtime, so this works unmodified whether YAYC
+        // is run against a stock or patched QtWebEngine.
+        readonly property bool hasTrustedMouseInjection:
+            typeof webEngineView.sendTrustedMousePress === "function"
+
         onSkipAdSeqChanged: {
             var x = skipAdX * webEngineView.zoomFactor
             var y = skipAdY * webEngineView.zoomFactor
             if (x > 0 && y > 0
                     && x < webEngineView.width && y < webEngineView.height) {
                 console.log('[yayc-adskip] simulating click at', x, y)
-                webEngineView.sendTrustedMousePress(Qt.point(x, y))
-                webEngineView.sendTrustedMouseRelease(Qt.point(x, y))
+                if (hasTrustedMouseInjection) {
+                    webEngineView.sendTrustedMousePress(Qt.point(x, y))
+                    webEngineView.sendTrustedMouseRelease(Qt.point(x, y))
+                } else {
+                    utilities.simulateClick(webEngineView, x, y)
+                }
                 adSkipResumeTimer.restart()
             }
         }
