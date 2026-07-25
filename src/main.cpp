@@ -95,10 +95,22 @@ int main(int argc, char *argv[])
     qputenv("QTWEBENGINE_ENABLE_LINUX_ACCESSIBILITY", "0");
     // qunsetenv("AT_SPI_BUS_ADDRESS");  // Disable AT-SPI D-Bus connection
     // qputenv("NO_AT_BRIDGE", "1");     // Another way to disable AT-SPI
+    // --disable-renderer-backgrounding / --disable-backgrounding-occluded-windows:
+    // without these, Chromium stops compositing frames for a renderer it considers
+    // backgrounded while audio keeps flowing - so switching away from YAYC leaves a
+    // frozen picture with continuing sound, and a hover preview has to be unpinned and
+    // re-hovered to come back. Costs some idle CPU/battery while YAYC sits in the
+    // background, which is the intended trade for a client whose whole point is that
+    // playback keeps going.
+    static const char *kBackgroundingFlags =
+            " --disable-renderer-backgrounding"
+            " --disable-backgrounding-occluded-windows";
 #ifdef QT_NO_DEBUG_OUTPUT
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-accessibility --log-level=3");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+            QByteArray("--disable-accessibility --log-level=3") + kBackgroundingFlags);
 #else
-    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-accessibility --log-level=0");
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS",
+            QByteArray("--disable-accessibility --log-level=0") + kBackgroundingFlags);
 #endif
 
 
