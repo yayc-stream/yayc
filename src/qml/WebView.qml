@@ -783,6 +783,27 @@ Item {
         }
     } // WebEngineView
 
+    // While a preview is pinned, Chromium stops receiving mouse movement, so YouTube's
+    // player auto-hide (ytp-autohide, cursor: none) fires and never gets cancelled -
+    // Chromium then pushes that blank cursor onto the render item and the pointer
+    // disappears over the whole view. This overlay sits above the web view purely to
+    // supply a cursor that Qt resolves in preference to the item's own.
+    //
+    // acceptedButtons: NoButton so clicks fall through untouched (the C++ filter still
+    // sees the press and unpins), and no wheel handling, so scrolling keeps working.
+    // Right-click also reaches the page, which the pin-swap flow depends on.
+    MouseArea {
+        anchors.fill: webEngineView
+        // Only while actually pinned - not for the brief ctxMenuOpen freeze, where
+        // the cursor is over the menu anyway and an overlay could only interfere.
+        visible: root.previewPinned
+        enabled: visible
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        cursorShape: Qt.ArrowCursor
+        z: webEngineView.z + 1
+    }
+
     Rectangle {
         id: zoomOverlay
         anchors.centerIn: parent
