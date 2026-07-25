@@ -55,6 +55,101 @@ Item {
     property string lastHoveredLink
     property string lastHoveredTooltip
 
+    // --- Hover-preview pinning ---------------------------------------------
+    // While pinned, the page's pointer position is frozen (see
+    // YaycUtilities::freezeWebViewHover) so the preview keeps playing while the
+    // cursor moves to the toolbar or another window. ctxMenuOpen freezes too, and
+    // that is load-bearing: moving the cursor off the thumbnail into the context
+    // menu is itself a leave, which would kill the preview before the user could
+    // ever click "Pin".
+    property bool previewPinned: false
+    property bool ctxMenuOpen: false
+    readonly property bool freezeHover: previewPinned || ctxMenuOpen
+    property url pinnedLink: ""
+    // Where the last context menu was requested, in view coordinates. Used to
+    // nudge hover when swapping pins (see pinPreview).
+    property point lastCtxPos: Qt.point(-1, -1)
+    // Set while waiting for a swapped-in preview to start playing.
+    property url pendingPinLink: ""
+
+    onPreviewPinnedChanged: {
+        runScript("window.__yayc_pinned = " + previewPinned)
+        if (previewPinned) {
+            // Pinning implies "I want to watch this one", so give it sound. Safe to
+            // unmute here specifically: the pin followed a right-click, satisfying
+            // Chromium's user-activation requirement for audible playback.
+            runScript("if (window.__yayc_unmutePreviews) window.__yayc_unmutePreviews();")
+        }
+    }
+
+    // YouTube needs a moment of hover before it starts a preview; this is how
+    // long we wait after releasing the freeze before pinning the new one.
+    Timer {
+        id: repinTimer
+        interval: 1200
+        onTriggered: {
+            if (root.pendingPinLink == "")
+                return
+            root.pinnedLink = root.pendingPinLink
+            root.pendingPinLink = ""
+            root.previewPinned = true
+        }
+    }
+
+    // Chromium's hover state is stale after a freeze, so the cursor sitting on the
+    // new thumbnail isn't enough to start its preview. A synthetic move at the same
+    // position restarts YouTube's hover timer. Needs the trusted-injection patch;
+    // without it the user's next physical mouse movement does the same job.
+    function nudgeHover() {
+        if (!timePuller.hasTrustedMouseInjection)
+            return
+        if (root.lastCtxPos.x < 0)
+            return
+        webEngineView.sendTrustedMouseMove(root.lastCtxPos)
+    }
+
+    function pinPreview(link) {
+        if (root.previewPinned) {
+            // Swapping pins. The new preview cannot be playing yet - hover was
+            // frozen - so release the freeze, nudge hover so YouTube starts it,
+            // and pin once it has had time to come up.
+            root.previewPinned = false
+            root.pinnedLink = ""
+            root.pendingPinLink = link
+            nudgeHover()
+            repinTimer.restart()
+            return
+        }
+        root.pinnedLink = link
+        root.previewPinned = true
+    }
+
+    function unpinPreview() {
+        repinTimer.stop()
+        root.pendingPinLink = ""
+        if (!root.previewPinned)
+            return
+        root.previewPinned = false
+        root.pinnedLink = ""
+    }
+
+    Binding {
+        target: utilities
+        property: "freezeWebViewHover"
+        value: root.freezeHover
+    }
+
+    Shortcut {
+        sequence: "Esc"
+        enabled: root.previewPinned
+        onActivated: root.unpinPreview()
+    }
+
+    Connections {
+        target: utilities
+        function onWebViewPressedWhileFrozen() { root.unpinPreview() }
+    }
+
     // for ctx menu
     required property string extWorkingDirPath
     required property string easyListPath
@@ -137,6 +232,9 @@ Item {
         property bool guideButtonChecked
         property string videoQuality: ""
         property var availableQualityLevels: []
+        property int previewPinLost: 0
+        onPreviewPinLostChanged: root.unpinPreview()
+
         property real skipAdX: -1
         property real skipAdY: -1
         property int skipAdSeq: 0
@@ -455,6 +553,7 @@ Item {
                 root.applyHomeGridColumns()
                 if (root.autoSkipAd)
                     runScript("window.__yayc_autoSkipAdEnabled = true")
+                root.unpinPreview()
                 root.applyPlayerSettings()
             }
         }
@@ -546,6 +645,28 @@ Item {
             property string requestedKey: utilities.getVideoID(requestedLink)
             property bool linkIsVideo: requestedKey !== ""
 
+            // Unconditional: when a pin was taken, previewPinned keeps freezeHover
+            // true on its own. Gating this on previewPinned would latch
+            // ctxMenuOpen forever and hover would never thaw after unpinning.
+            onClosed: root.ctxMenuOpen = false
+
+            MenuItem {
+                // Right-clicking the already-pinned video offers Unpin; any other
+                // video offers Pin, which swaps the pin over to it.
+                readonly property bool ctxIsPinned: root.previewPinned
+                        && root.pinnedLink == webEngineView._ctxMenuAdded.requestedLink
+                readonly property bool ctxCanPin: webEngineView._ctxMenuAdded.linkIsVideo && !ctxIsPinned
+                text: ctxCanPin ? uiTr("Pin preview") : uiTr("Unpin preview")
+                icon.source: "/icons/picture_in_picture.svg"
+                visible: ctxCanPin || root.previewPinned
+                height: visible ? implicitHeight : 0
+                onTriggered: {
+                    if (ctxCanPin)
+                        root.pinPreview(webEngineView._ctxMenuAdded.requestedLink)
+                    else
+                        root.unpinPreview()
+                }
+            }
             MenuItem {
                 text: uiTr("Added") + " (" + fileSystemModel.categoryName(webEngineView._ctxMenuAdded.requestedKey) + ")"
                 icon.source: "/icons/add.svg"
@@ -565,6 +686,28 @@ Item {
             property string requestedKey: utilities.getVideoID(requestedLink)
             property bool linkIsVideo: requestedKey !== ""
 
+            // Unconditional: when a pin was taken, previewPinned keeps freezeHover
+            // true on its own. Gating this on previewPinned would latch
+            // ctxMenuOpen forever and hover would never thaw after unpinning.
+            onClosed: root.ctxMenuOpen = false
+
+            MenuItem {
+                // Right-clicking the already-pinned video offers Unpin; any other
+                // video offers Pin, which swaps the pin over to it.
+                readonly property bool ctxIsPinned: root.previewPinned
+                        && root.pinnedLink == webEngineView._ctxMenuNotAdded.requestedLink
+                readonly property bool ctxCanPin: webEngineView._ctxMenuNotAdded.linkIsVideo && !ctxIsPinned
+                text: ctxCanPin ? uiTr("Pin preview") : uiTr("Unpin preview")
+                icon.source: "/icons/picture_in_picture.svg"
+                visible: ctxCanPin || root.previewPinned
+                height: visible ? implicitHeight : 0
+                onTriggered: {
+                    if (ctxCanPin)
+                        root.pinPreview(webEngineView._ctxMenuNotAdded.requestedLink)
+                    else
+                        root.unpinPreview()
+                }
+            }
             Menu {
                 title: uiTr("Add to...")
                 icon.source: "/icons/add.svg"
@@ -619,6 +762,10 @@ Item {
             menu.requestedLink = link
             menu.requestedLinkText = linkText
             request.accepted = true
+            // Freeze before the menu appears, so crossing into it doesn't end the
+            // preview. Released in the menus' onClosed unless a pin was taken.
+            root.ctxMenuOpen = true
+            root.lastCtxPos = request.position
             menu.popup()
         }
 
@@ -995,6 +1142,21 @@ Item {
             hoverEnabled: true
             ToolTip.visible: hovered
             ToolTip.text: uiTr("Set playback rate")
+            ToolTip.delay: 300
+        }
+        ToolButton {
+            id: buttonUnpinPreview
+            // Only exists while something is pinned: it is the escape hatch when
+            // the pinned thumbnail has scrolled away or is otherwise unreachable.
+            visible: root.previewPinned
+            icon.source: "/icons/picture_in_picture.svg"
+            display: AbstractButton.IconOnly
+
+            onClicked: root.unpinPreview()
+
+            hoverEnabled: true
+            ToolTip.visible: hovered
+            ToolTip.text: uiTr("Unpin preview")
             ToolTip.delay: 300
         }
         ToolButton {

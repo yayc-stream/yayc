@@ -49,7 +49,14 @@ QtObject {
         playerCtlScript.worldId = WebEngineScript.MainWorld
         playerCtlScript.sourceCode = WebEngineInternals.script_applyPlayerSettings
 
-        return [ webChannelScript, userScript, cssScript, adSkipScript, playerCtlScript ]
+        let previewPinScript = WebEngine.script()
+        previewPinScript.name = "PreviewPin"
+        previewPinScript.injectionPoint = WebEngineScript.Deferred
+        previewPinScript.worldId = WebEngineScript.MainWorld
+        previewPinScript.sourceCode = WebEngineInternals.script_previewPin
+
+        return [ webChannelScript, userScript, cssScript, adSkipScript,
+                 playerCtlScript, previewPinScript ]
     }
 
     function recreateProfiles() {

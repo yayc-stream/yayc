@@ -35,6 +35,8 @@ class YaycUtilities : public QObject {
     Q_PROPERTY(QStringList availableLanguages READ availableLanguages CONSTANT)
     Q_PROPERTY(bool keepForegroundIllusion READ keepForegroundIllusion
                WRITE setKeepForegroundIllusion NOTIFY keepForegroundIllusionChanged)
+    Q_PROPERTY(bool freezeWebViewHover READ freezeWebViewHover
+               WRITE setFreezeWebViewHover NOTIFY freezeWebViewHoverChanged)
 
 public:
     // Exit codes
@@ -59,6 +61,15 @@ public:
     // though the pointer never moved.
     bool keepForegroundIllusion() const;
     void setKeepForegroundIllusion(bool enabled);
+
+    // Freezes the web view's notion of where the pointer is, by swallowing all
+    // hover traffic aimed at it: Chromium never learns the cursor moved, so DOM
+    // hover state stays where it was. Used to "pin" a YouTube hover preview so
+    // it keeps playing while the cursor goes to the toolbar or another window.
+    // Independent of keepForegroundIllusion - pinning works either way.
+    bool freezeWebViewHover() const;
+    void setFreezeWebViewHover(bool enabled);
+
     bool eventFilter(QObject *watched, QEvent *event) override;
 
     Q_INVOKABLE QUrl urlWithPosition(const QString &url, const int position) const;
@@ -127,6 +138,12 @@ signals:
     void donateUrl(const QString &);
     void videoUrlResolved(const QString &normalizedUrl);
     void keepForegroundIllusionChanged(bool enabled);
+    void freezeWebViewHoverChanged(bool enabled);
+    // Emitted when the user clicks inside the web view while hover is frozen.
+    // The click itself is delivered normally (a press carries its own
+    // coordinates, so it lands where the user aimed); QML uses this to drop the
+    // pin, since clicking through to the page implies they're done with it.
+    void webViewPressedWhileFrozen();
 
 public slots:
     void onSocketConnected();
@@ -144,6 +161,7 @@ private:
     QString m_currentLanguage{"en"};
     mutable QStringList m_availableLanguages;
     bool m_keepForegroundIllusion{false};
+    bool m_freezeWebViewHover{false};
 };
 
 #endif // YAYCUTILITIES_H

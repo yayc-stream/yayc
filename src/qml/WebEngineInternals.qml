@@ -95,6 +95,92 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
         })();
     "
 
+    // Keeps a "pinned" hover preview alive. The Qt-side event filter already stops
+    // hover traffic from reaching Chromium (so no new hover is computed), but that
+    // can't cover events Chromium generates internally from geometry - notably on
+    // scroll. So while pinned we also blanket-block the leave family in the capture
+    // phase, plus resume playback if something pauses the preview anyway.
+    //
+    // The block is deliberately NOT scoped to the ytd-video-preview subtree: the
+    // DevTools trace showed YouTube's dismiss handlers sit on ancestor containers
+    // (ytd-rich-item-renderer, yt-lockup-view-model) *outside* the preview element,
+    // so a scoped filter would miss them. Collateral effect is that other page
+    // hover states can stick while pinned, which is cosmetic and transient.
+    property string script_previewPin: "
+        (function() {
+            if (window.__yayc_pinctl) return;
+            window.__yayc_pinctl = true;
+            var backend = null;
+            new QWebChannel(qt.webChannelTransport, function(channel) {
+                backend = channel.objects.backend;
+            });
+
+            function block(e) {
+                if (window.__yayc_pinned)
+                    e.stopImmediatePropagation();
+            }
+            // Both directions have to go, not just the leave family. On scroll
+            // Chromium dispatches a synthetic mousemove to re-resolve what sits under
+            // the last known pointer position, then fires over/enter at whatever
+            // element just arrived there - which made YouTube start *that* thumbnail's
+            // preview as soon as one scrolled under the frozen point. These are
+            // generated inside Chromium, so the Qt-side filter cannot see them; only a
+            // DOM-level block reaches them.
+            var types = ['mouseleave', 'mouseout', 'pointerleave', 'pointerout',
+                         'mouseover', 'mouseenter', 'pointerover', 'pointerenter',
+                         'mousemove', 'pointermove'];
+            for (var i = 0; i < types.length; ++i)
+                document.addEventListener(types[i], block, true);
+
+            // Backstop: whatever route YouTube took to pause it, resume.
+            document.addEventListener('pause', function(e) {
+                if (!window.__yayc_pinned) return;
+                var v = e.target;
+                if (!v || v.tagName !== 'VIDEO') return;
+                if (!v.closest || !v.closest('ytd-video-preview')) return;
+                try { v.play(); } catch (err) {}
+            }, true);
+
+            // Unmuting is safe here, unlike in the general applier: a pin always
+            // follows a right-click, so Chromium's user-activation requirement for
+            // audible playback is satisfied and it won't pause us instead.
+            //
+            // Note this can only help if the preview actually carries audio. Some
+            // previews (music videos especially) appear to be served without an
+            // audio stream - that is why YouTube shows no unmute affordance on them -
+            // and for those there is nothing to unmute.
+            window.__yayc_unmutePreviews = function() {
+                var hosts = document.querySelectorAll('ytd-video-preview ytd-player');
+                for (var i = 0; i < hosts.length; ++i) {
+                    var yt = null;
+                    try { yt = hosts[i].getPlayer ? hosts[i].getPlayer() : null; } catch (e) {}
+                    if (yt && yt.unMute) {
+                        try {
+                            yt.unMute();
+                            if (window.__yayc_playerVolume >= 0)
+                                yt.setVolume(window.__yayc_playerVolume);
+                        } catch (e) {}
+                        continue;
+                    }
+                    var v = hosts[i].querySelector('video');
+                    if (v) {
+                        v.muted = false;
+                        if (window.__yayc_playerVolume >= 0)
+                            v.volume = window.__yayc_playerVolume / 100;
+                    }
+                }
+            };
+
+            // If the preview is torn down regardless, tell QML so it can drop the
+            // pin instead of leaving hover frozen with nothing playing.
+            setInterval(function() {
+                if (!window.__yayc_pinned || !backend) return;
+                if (!document.querySelector('ytd-video-preview video'))
+                    backend.previewPinLost = (backend.previewPinLost || 0) + 1;
+            }, 1000);
+        })();
+    "
+
     // Brings every player on the page in line with YAYC's global rate/volume:
     // the watch player, the active Shorts player, and the inline hover-preview
     // players (which have no UI of their own and inherit nothing). Values are

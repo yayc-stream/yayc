@@ -465,28 +465,68 @@ void YaycUtilities::setKeepForegroundIllusion(bool enabled)
     emit keepForegroundIllusionChanged(enabled);
 }
 
+bool YaycUtilities::freezeWebViewHover() const
+{
+    return m_freezeWebViewHover;
+}
+
+void YaycUtilities::setFreezeWebViewHover(bool enabled)
+{
+    if (m_freezeWebViewHover == enabled)
+        return;
+    m_freezeWebViewHover = enabled;
+    emit freezeWebViewHoverChanged(enabled);
+}
+
+namespace {
+// QtWebEngine's internal render-widget item is a private/internal class
+// (QtWebEngineCore::RenderWidgetHostViewQtDelegateItem) we can't link against,
+// so identify it by class name.
+bool isWebEngineRenderItem(const QQuickItem *item)
+{
+    return QLatin1String(item->metaObject()->className())
+            .contains(QLatin1String("RenderWidgetHostViewQtDelegateItem"));
+}
+} // namespace
+
 bool YaycUtilities::eventFilter(QObject *watched, QEvent *event)
 {
-    if (m_keepForegroundIllusion && event->type() == QEvent::HoverLeave) {
-        if (auto *item = qobject_cast<QQuickItem *>(watched)) {
-            // QtWebEngine's internal render-widget item is a private/internal
-            // class (QtWebEngineCore::RenderWidgetHostViewQtDelegateItem), not
-            // linkable from here - match by class name instead.
-            if (QLatin1String(item->metaObject()->className())
-                    .contains(QLatin1String("RenderWidgetHostViewQtDelegateItem"))) {
-                // Not our window's turn: the user is interacting with something
-                // else entirely (another app, the taskbar, a panel), so any leave
-                // now is a side effect of that - not of them moving off the
-                // thumbnail. Swallow it wherever the cursor happens to be.
-                const QWindow *win = item->window();
-                if (win && !win->isActive())
-                    return true;
-                // Window is active but Qt still reported a leave while the cursor
-                // is physically over us (compositor/WM quirk on focus changes).
-                if (item->contains(item->mapFromGlobal(QCursor::pos())))
-                    return true;
-            }
-        }
+    if (!m_keepForegroundIllusion && !m_freezeWebViewHover)
+        return QObject::eventFilter(watched, event);
+
+    const QEvent::Type type = event->type();
+    const bool isHover = (type == QEvent::HoverLeave || type == QEvent::HoverMove
+                          || type == QEvent::HoverEnter);
+    if (!isHover && type != QEvent::MouseButtonPress)
+        return QObject::eventFilter(watched, event);
+
+    auto *item = qobject_cast<QQuickItem *>(watched);
+    if (!item || !isWebEngineRenderItem(item))
+        return QObject::eventFilter(watched, event);
+
+    if (type == QEvent::MouseButtonPress) {
+        if (m_freezeWebViewHover)
+            emit webViewPressedWhileFrozen();
+        return QObject::eventFilter(watched, event); // never swallow the click
+    }
+
+    // Pinned: swallow every kind of hover traffic, so the page's hover state
+    // stays frozen wherever it was when the pin engaged.
+    if (m_freezeWebViewHover)
+        return true;
+
+    if (m_keepForegroundIllusion && type == QEvent::HoverLeave) {
+        // Not our window's turn: the user is interacting with something else
+        // entirely (another app, the taskbar, a panel), so any leave now is a
+        // side effect of that - not of them moving off the thumbnail. Swallow it
+        // wherever the cursor happens to be.
+        const QWindow *win = item->window();
+        if (win && !win->isActive())
+            return true;
+        // Window is active but Qt still reported a leave while the cursor is
+        // physically over us (compositor/WM quirk on focus changes).
+        if (item->contains(item->mapFromGlobal(QCursor::pos())))
+            return true;
     }
     return QObject::eventFilter(watched, event);
 }
