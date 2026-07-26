@@ -87,6 +87,9 @@ class FileSystemModel : public QFileSystemModel {
     Q_PROPERTY(QVariant nullIndex MEMBER m_nullIndex CONSTANT)
     Q_PROPERTY(QString bookmarksRootPath READ rootPath NOTIFY rootPathIndexChanged)
     Q_PROPERTY(QVariantList recentDestinations READ recentDestinations NOTIFY recentDestinationsChanged)
+    // Plain path list, for persistence in the settings file
+    Q_PROPERTY(QStringList recentDestinationPaths READ recentDestinationPaths
+               WRITE setRecentDestinationPaths NOTIFY recentDestinationsChanged)
     Q_PROPERTY(int maxRecentDestinations READ maxRecentDestinations WRITE setMaxRecentDestinations NOTIFY maxRecentDestinationsChanged)
     Q_PROPERTY(int extAppQueueTotal READ extAppQueueTotal NOTIFY extAppProgressChanged)
     Q_PROPERTY(int extAppQueueCompleted READ extAppQueueCompleted NOTIFY extAppProgressChanged)
@@ -96,6 +99,8 @@ public:
     QVariant rootPathIndex() const;
     QVariant sortFilterProxyModel() const;
     QVariantList recentDestinations() const;
+    QStringList recentDestinationPaths() const;
+    void setRecentDestinationPaths(const QStringList &paths);
     int maxRecentDestinations() const;
     void setMaxRecentDestinations(int max);
 
@@ -192,6 +197,8 @@ public slots:
     void setLastDestinationCategory(QModelIndex categoryIndex);
     Q_INVOKABLE QString categoryPath(QModelIndex proxyIndex) const;
     Q_INVOKABLE void reloadCategory(QModelIndex proxyIndex);
+    Q_INVOKABLE QVariantList subFolders(const QString &path) const;
+    Q_INVOKABLE void pushDestination(const QString &path);
 
 signals:
     void filesAdded(const QVariantList &addedPaths);

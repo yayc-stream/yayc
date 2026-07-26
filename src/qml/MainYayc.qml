@@ -169,6 +169,7 @@ Item {
     property bool showCategoryBar: true
     property int homeGridColumns: 4
     property int maxRecentDestinations: 5
+    property var recentDestinationPaths: []
     property real wevZoomFactor
     property real wevZoomFactorVideo
     property real volume: 0
@@ -201,6 +202,16 @@ Item {
 
     Binding { target: YaycProperties; property: "isDarkMode"; value: root.darkMode }
     Binding { target: fileSystemModel; property: "maxRecentDestinations"; value: root.maxRecentDestinations }
+    // Recent destinations live in the model, which is recreated on every setRoot(): the binding
+    // pushes the persisted list into whichever model is current, the Connections below stores
+    // back what the model adds.
+    Binding { target: fileSystemModel; property: "recentDestinationPaths"; value: root.recentDestinationPaths }
+    Connections {
+        target: fileSystemModel
+        function onRecentDestinationsChanged() {
+            root.recentDestinationPaths = fileSystemModel.recentDestinationPaths
+        }
+    }
     Binding { target: utilities; property: "keepForegroundIllusion"; value: root.keepForegroundIllusion }
     onDarkModeChanged: {
         utilities.setColorScheme(root.darkMode)
@@ -253,6 +264,7 @@ Item {
         property alias showCategoryBar: root.showCategoryBar
         property alias homeGridColumns: root.homeGridColumns
         property alias maxRecentDestinations: root.maxRecentDestinations
+        property alias recentDestinationPaths: root.recentDestinationPaths
         property alias volume: root.volume
         property alias userSpecifiedVolume: root.userSpecifiedVolume
         property alias playbackRate: root.playbackRate

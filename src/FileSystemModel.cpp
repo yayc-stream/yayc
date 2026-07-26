@@ -1101,6 +1101,34 @@ void FileSystemModel::setLastDestinationCategory(QModelIndex categoryIndex) {
     pushRecentDestination(d.path(), d.dirName());
 }
 
+// Category subdirectories of path, sorted by name. Read straight off the disk instead of
+// through QFileSystemModel: no lazy population / fetchMore, and the menu that consumes this
+// rebuilds the level on every open anyway.
+QVariantList FileSystemModel::subFolders(const QString &path) const {
+    QVariantList result;
+    if (!hasValidRoot())
+        return result;
+    const QString root = m_root.absolutePath();
+    QDir d(path.isEmpty() ? root : path);
+    if (!d.exists())
+        return result;
+    const QString abs = d.absolutePath();
+    if (abs != root && !abs.startsWith(root + QLatin1Char('/'))) // never escape the bookmarks root
+        return result;
+    const auto entries = d.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks,
+                                         QDir::Name | QDir::IgnoreCase);
+    for (const auto &fi : entries)
+        result.append(QVariantMap{{"path", fi.absoluteFilePath()}, {"name", fi.fileName()}});
+    return result;
+}
+
+void FileSystemModel::pushDestination(const QString &path) {
+    QDir d(path);
+    if (!d.exists())
+        return;
+    pushRecentDestination(d.path(), d.dirName());
+}
+
 void FileSystemModel::pushRecentDestination(const QString &path, const QString &name) {
     DestinationCategory dc{path, name};
     if (!m_recentDestinations.isEmpty() && m_recentDestinations.first() == dc)
@@ -1119,6 +1147,32 @@ QVariantList FileSystemModel::recentDestinations() const {
             result.append(QVariantMap{{"path", dc.path}, {"name", dc.name}});
     }
     return result;
+}
+
+// Raw paths, unfiltered: a destination on a currently missing/unmounted path is kept in the
+// settings and comes back on its own, since recentDestinations() filters at read time.
+QStringList FileSystemModel::recentDestinationPaths() const {
+    QStringList result;
+    for (const auto &dc : m_recentDestinations)
+        result.append(dc.path);
+    return result;
+}
+
+void FileSystemModel::setRecentDestinationPaths(const QStringList &paths) {
+    QList<DestinationCategory> restored;
+    for (const auto &p : paths) {
+        if (p.isEmpty() || restored.size() >= m_maxRecentDestinations)
+            continue;
+        const QDir d(p);
+        const DestinationCategory dc{d.path(), d.dirName()};
+        if (restored.contains(dc))
+            continue;
+        restored.append(dc);
+    }
+    if (restored == m_recentDestinations)
+        return;
+    m_recentDestinations = restored;
+    emit recentDestinationsChanged();
 }
 
 int FileSystemModel::maxRecentDestinations() const {

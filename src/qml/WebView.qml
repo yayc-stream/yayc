@@ -688,7 +688,7 @@ Item {
                 readonly property bool ctxCanPin: webEngineView._ctxMenuAdded.linkIsVideo
                         && root.pinnedLink != webEngineView._ctxMenuAdded.requestedLink
                 text: uiTr("Pin preview")
-                icon.source: "/icons/picture_in_picture.svg"
+                icon.source: "/icons/pin.svg"
                 visible: root.keepForegroundIllusion && ctxCanPin
                 height: visible ? implicitHeight : 0
                 onTriggered: root.pinPreview(webEngineView._ctxMenuAdded.requestedLink)
@@ -697,7 +697,7 @@ Item {
             // thumbnail can be scrolled away or far from the cursor.
             MenuItem {
                 text: uiTr("Unpin current")
-                icon.source: "/icons/picture_in_picture.svg"
+                icon.source: "/icons/unpin.svg"
                 visible: root.keepForegroundIllusion && root.previewPinned
                 height: visible ? implicitHeight : 0
                 onTriggered: root.unpinPreview()
@@ -730,7 +730,7 @@ Item {
                 readonly property bool ctxCanPin: webEngineView._ctxMenuNotAdded.linkIsVideo
                         && root.pinnedLink != webEngineView._ctxMenuNotAdded.requestedLink
                 text: uiTr("Pin preview")
-                icon.source: "/icons/picture_in_picture.svg"
+                icon.source: "/icons/pin.svg"
                 visible: root.keepForegroundIllusion && ctxCanPin
                 height: visible ? implicitHeight : 0
                 onTriggered: root.pinPreview(webEngineView._ctxMenuNotAdded.requestedLink)
@@ -739,12 +739,13 @@ Item {
             // thumbnail can be scrolled away or far from the cursor.
             MenuItem {
                 text: uiTr("Unpin current")
-                icon.source: "/icons/picture_in_picture.svg"
+                icon.source: "/icons/unpin.svg"
                 visible: root.keepForegroundIllusion && root.previewPinned
                 height: visible ? implicitHeight : 0
                 onTriggered: root.unpinPreview()
             }
             Menu {
+                id: ctxAddToMenu
                 title: uiTr("Add to...")
                 icon.source: "/icons/add.svg"
                 visible: webEngineView._ctxMenuNotAdded.linkIsVideo
@@ -761,9 +762,13 @@ Item {
                         }
                     }
                 }
-                Repeater {
+                // Instantiator, not Repeater: Repeater appends to contentModel as items are
+                // created, so destinations added at runtime would land after the separator.
+                Instantiator {
                     model: fileSystemModel.recentDestinations
-                    MenuItem {
+                    onObjectAdded: (index, object) => ctxAddToMenu.insertItem(1 + index, object)
+                    onObjectRemoved: (index, object) => ctxAddToMenu.removeItem(object)
+                    delegate: MenuItem {
                         required property var modelData
                         text: modelData.name
                         onClicked: {
@@ -774,6 +779,22 @@ Item {
                                 root.triggerVideoAdded()
                             }
                         }
+                    }
+                }
+                MenuSeparator {}
+                DestinationFolderMenu {
+                    title: uiTr("Browse...")
+                    icon.source: "/icons/folder_open.svg"
+                    selfSelectable: false
+                    folderPath: fileSystemModel.bookmarksRootPath
+                    pick: function(path) {
+                        var key = webEngineView._ctxMenuNotAdded.requestedKey
+                        if (key === "")
+                            return
+                        fileSystemModel.addEntry(key, webEngineView._ctxMenuNotAdded.requestedLinkText,
+                                                 "", "", "", 0, 0, path)
+                        fileSystemModel.pushDestination(path)
+                        root.triggerVideoAdded()
                     }
                 }
             }
@@ -1018,12 +1039,27 @@ Item {
                     text: "/"
                     onClicked: root.timePuller.addCurrentVideo()
                 }
-                Repeater {
+                // See ctxAddToMenu: Instantiator keeps runtime-added destinations above the
+                // separator.
+                Instantiator {
                     model: fileSystemModel.recentDestinations
-                    MenuItem {
+                    onObjectAdded: (index, object) => addToToolbarMenu.insertItem(1 + index, object)
+                    onObjectRemoved: (index, object) => addToToolbarMenu.removeItem(object)
+                    delegate: MenuItem {
                         required property var modelData
                         text: modelData.name
                         onClicked: buttonAddVideo.addToDestination(modelData.path)
+                    }
+                }
+                MenuSeparator {}
+                DestinationFolderMenu {
+                    title: uiTr("Browse...")
+                    icon.source: "/icons/folder_open.svg"
+                    selfSelectable: false
+                    folderPath: fileSystemModel.bookmarksRootPath
+                    pick: function(path) {
+                        buttonAddVideo.addToDestination(path)
+                        fileSystemModel.pushDestination(path)
                     }
                 }
             }
@@ -1203,7 +1239,7 @@ Item {
             // Only exists while something is pinned: it is the escape hatch when
             // the pinned thumbnail has scrolled away or is otherwise unreachable.
             visible: root.previewPinned
-            icon.source: "/icons/picture_in_picture.svg"
+            icon.source: "/icons/unpin.svg"
             display: AbstractButton.IconOnly
 
             onClicked: root.unpinPreview()
