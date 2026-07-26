@@ -95,112 +95,163 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
         })();
     "
 
-    // Keeps a "pinned" hover preview alive. The Qt-side event filter already stops
-    // hover traffic from reaching Chromium (so no new hover is computed), but that
-    // can't cover events Chromium generates internally from geometry - notably on
-    // scroll. So while pinned we also blanket-block the leave family in the capture
-    // phase, plus resume playback if something pauses the preview anyway.
-    //
-    // The block is deliberately NOT scoped to the ytd-video-preview subtree: the
-    // DevTools trace showed YouTube's dismiss handlers sit on ancestor containers
-    // (ytd-rich-item-renderer, yt-lockup-view-model) *outside* the preview element,
-    // so a scoped filter would miss them. Collateral effect is that other page
-    // hover states can stick while pinned, which is cosmetic and transient.
+    // Keeps a pinned preview alive. The Qt filter stops hover events before Chromium,
+    // but Chromium also makes its own hover events from geometry (example: on scroll).
+    // So block them inside the page too.
+    //  - block is wide, not only inside ytd-video-preview: YouTube handlers sit on
+    //    parent elements outside it, so a narrow block would miss them
+    //  - cost: some page hover states stay stuck while pinned (only visual, temporary)
     property string script_previewPin: "
         (function() {
             if (window.__yayc_pinctl) return;
             window.__yayc_pinctl = true;
-            var backend = null;
-            new QWebChannel(qt.webChannelTransport, function(channel) {
-                backend = channel.objects.backend;
-            });
+
+            // Preview players found by structure: any ytd-player that is not the watch
+            // player and not a Short. Matching by tag ('ytd-video-preview ytd-player')
+            // missed music video markup. That broke unmute and made the watchdog unpin
+            // at once.
+            window.__yayc_previewPlayers = function() {
+                var all = document.querySelectorAll('ytd-player');
+                var out = [];
+                for (var i = 0; i < all.length; ++i) {
+                    var p = all[i];
+                    if (p.closest && (p.closest('ytd-watch-flexy')
+                                      || p.closest('ytd-reel-video-renderer')))
+                        continue;
+                    out.push(p);
+                }
+                return out;
+            };
+            // No QWebChannel here on purpose. More channels on one transport fight over
+            // message callbacks ('channel.execCallbacks[message.id] is not a function')
+            // and can break other backend writes, like ad-skip. QML polls this counter.
+            window.__yayc_pinLostSeq = 0;
 
             function block(e) {
                 if (window.__yayc_pinned)
                     e.stopImmediatePropagation();
             }
-            // Both directions have to go, not just the leave family. On scroll
-            // Chromium dispatches a synthetic mousemove to re-resolve what sits under
-            // the last known pointer position, then fires over/enter at whatever
-            // element just arrived there - which made YouTube start *that* thumbnail's
-            // preview as soon as one scrolled under the frozen point. These are
-            // generated inside Chromium, so the Qt-side filter cannot see them; only a
-            // DOM-level block reaches them.
+            // Block enter too, not only leave. On scroll Chromium checks what is under
+            // the frozen pointer and sends over/enter there, which started the preview of
+            // that thumbnail. Chromium makes these events, so only a page block stops them.
             var types = ['mouseleave', 'mouseout', 'pointerleave', 'pointerout',
                          'mouseover', 'mouseenter', 'pointerover', 'pointerenter',
                          'mousemove', 'pointermove'];
             for (var i = 0; i < types.length; ++i)
                 document.addEventListener(types[i], block, true);
 
+            // Right click elsewhere made YouTube close the preview (it reads
+            // contextmenu/mousedown as 'user does something else'). Hide it from the page,
+            // but do NOT preventDefault: Chromium must still send contextMenuRequested, so
+            // our menu opens. Left button stays: it should unpin and navigate.
+            function blockRightButton(e) {
+                if (!window.__yayc_pinned)
+                    return;
+                if (e.type === 'contextmenu' || e.button === 2)
+                    e.stopImmediatePropagation();
+            }
+            var rtypes = ['contextmenu', 'mousedown', 'mouseup', 'auxclick',
+                          'pointerdown', 'pointerup'];
+            for (var j = 0; j < rtypes.length; ++j)
+                document.addEventListener(rtypes[j], blockRightButton, true);
+
             // Backstop: whatever route YouTube took to pause it, resume.
             document.addEventListener('pause', function(e) {
                 if (!window.__yayc_pinned) return;
                 var v = e.target;
-                if (!v || v.tagName !== 'VIDEO') return;
-                if (!v.closest || !v.closest('ytd-video-preview')) return;
+                if (!v || v.tagName !== 'VIDEO' || !v.closest) return;
+                // Same structure test as __yayc_previewPlayers.
+                if (v.closest('ytd-watch-flexy') || v.closest('ytd-reel-video-renderer'))
+                    return;
                 try { v.play(); } catch (err) {}
             }, true);
 
-            // Unmuting is safe here, unlike in the general applier: a pin always
-            // follows a right-click, so Chromium's user-activation requirement for
-            // audible playback is satisfied and it won't pause us instead.
-            //
-            // Note this can only help if the preview actually carries audio. Some
-            // previews (music videos especially) appear to be served without an
-            // audio stream - that is why YouTube shows no unmute affordance on them -
-            // and for those there is nothing to unmute.
-            window.__yayc_unmutePreviews = function() {
-                var hosts = document.querySelectorAll('ytd-video-preview ytd-player');
+            // Preview audio: unmute once with the real prototype setter, then shadow
+            // 'muted' on the element. YouTube writes then hit an empty setter, so the
+            // native audio state never changes again.
+            //  - no fight: unmute on a timer or on 'volumechange' fought YouTube re-mute,
+            //    the player went to buffering, then playback died
+            //  - uses the DOM API, not YouTube short names, so base.js rebuilds cannot
+            //    break it. Done once per element (__yayc_audioForced)
+            window.__yayc_forcePreviewAudio = function() {
+                var proto = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');
+                if (!proto || !proto.set) return;
+                var hosts = window.__yayc_previewPlayers();
                 for (var i = 0; i < hosts.length; ++i) {
-                    var yt = null;
-                    try { yt = hosts[i].getPlayer ? hosts[i].getPlayer() : null; } catch (e) {}
-                    if (yt && yt.unMute) {
-                        try {
-                            yt.unMute();
-                            if (window.__yayc_playerVolume >= 0)
-                                yt.setVolume(window.__yayc_playerVolume);
-                        } catch (e) {}
-                        continue;
-                    }
                     var v = hosts[i].querySelector('video');
-                    if (v) {
-                        v.muted = false;
+                    if (!v || v.__yayc_audioForced) continue;
+                    try {
+                        proto.set.call(v, false);
+                        Object.defineProperty(v, 'muted', {
+                            configurable: true,
+                            get: function() { return false; },
+                            set: function() {}
+                        });
                         if (window.__yayc_playerVolume >= 0)
                             v.volume = window.__yayc_playerVolume / 100;
-                    }
+                        v.__yayc_audioForced = true;
+                    } catch (e) {}
                 }
             };
 
-            // If the preview is torn down regardless, tell QML so it can drop the
-            // pin instead of leaving hover frozen with nothing playing.
+            // Undo on unpin, so audio belongs to the pin only. YouTube reuses its preview
+            // player, so keeping the shadow would make later hovers loud with no pin, and
+            // the YouTube mute button would look dead.
+            window.__yayc_releasePreviewAudio = function() {
+                var proto = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'muted');
+                var hosts = window.__yayc_previewPlayers();
+                for (var i = 0; i < hosts.length; ++i) {
+                    var v = hosts[i].querySelector('video');
+                    if (!v || !v.__yayc_audioForced) continue;
+                    try {
+                        delete v.muted;              // drop the own property, prototype accessor is live again
+                        if (proto && proto.set)
+                            proto.set.call(v, true); // back to muted, as previews normally are
+                        v.__yayc_audioForced = false;
+                    } catch (e) {}
+                }
+            };
+
+            // Preview gone anyway: tell QML to drop the pin, else hover stays frozen with
+            // nothing playing. Needs 3 misses in a row, because the player can be missing
+            // for a moment while YouTube rebuilds the DOM, and a wrong hit unpins silently.
+            var misses = 0;
             setInterval(function() {
-                if (!window.__yayc_pinned || !backend) return;
-                if (!document.querySelector('ytd-video-preview video'))
-                    backend.previewPinLost = (backend.previewPinLost || 0) + 1;
+                if (!window.__yayc_pinned) { misses = 0; return; }
+                var hosts = window.__yayc_previewPlayers();
+                var alive = false;
+                for (var i = 0; i < hosts.length && !alive; ++i)
+                    alive = !!hosts[i].querySelector('video');
+                if (alive) { misses = 0; return; }
+                if (++misses >= 3) {
+                    misses = 0;
+                    window.__yayc_pinLostSeq = (window.__yayc_pinLostSeq || 0) + 1;
+                }
             }, 1000);
         })();
     "
 
-    // Brings every player on the page in line with YAYC's global rate/volume:
-    // the watch player, the active Shorts player, and the inline hover-preview
-    // players (which have no UI of their own and inherit nothing). Values are
-    // pushed in from WebView.qml as window globals, in the YouTube player API's
-    // own scales (rate as a multiplier, volume 0-100).
-    //
-    // Reasserted on mutation, on 'loadeddata', and on a slow interval, because
-    // preview players are created and destroyed as the cursor moves and YouTube
-    // initialises each one with its own defaults. window.__yayc_applyPlayerSettings
-    // is exposed so a push can take effect immediately instead of waiting a tick.
+    // Applies YAYC global rate/volume to every player: watch, active Short, and hover
+    // previews (previews have no UI and inherit nothing). Values come from WebView.qml as
+    // window globals, in player API scales (rate multiplier, volume 0-100).
+    //  - applied again on mutation, on 'loadeddata' and on a slow interval: previews are
+    //    created and destroyed as the cursor moves, each one starts with YouTube defaults
+    //  - __yayc_applyPlayerSettings is exported, so a push applies at once
     property string script_applyPlayerSettings: "
         (function() {
             if (window.__yayc_playerctl) return;
             window.__yayc_playerctl = true;
 
             function collect() {
+                // Defined by script_previewPin, so both scripts agree what a preview is.
+                // Guard is only for injection order. No tag fallback: tag matching is what
+                // missed music video previews.
+                var previews = window.__yayc_previewPlayers
+                        ? window.__yayc_previewPlayers() : [];
                 return [].concat(
                     [].slice.call(document.querySelectorAll('ytd-watch-flexy ytd-player')),
                     [].slice.call(document.querySelectorAll('ytd-reel-video-renderer ytd-player')),
-                    [].slice.call(document.querySelectorAll('ytd-video-preview ytd-player')));
+                    previews);
             }
 
             function applyTo(host) {

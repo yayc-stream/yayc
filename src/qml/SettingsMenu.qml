@@ -459,7 +459,7 @@ Popup {
                 MenuRow {
                     label: uiTr("Keep hover preview playing")
                     iconSource: "/icons/sliders.svg"
-                    rowTooltip: uiTr("Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop")
+                    rowTooltip: uiTr("Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.")
                     rightItem: Switch {
                         anchors.verticalCenter: parent.verticalCenter
                         checked: smenu.host ? smenu.host.keepForegroundIllusion : false

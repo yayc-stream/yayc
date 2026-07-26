@@ -56,29 +56,38 @@ Item {
     property string lastHoveredTooltip
 
     // --- Hover-preview pinning ---------------------------------------------
-    // While pinned, the page's pointer position is frozen (see
-    // YaycUtilities::freezeWebViewHover) so the preview keeps playing while the
-    // cursor moves to the toolbar or another window. ctxMenuOpen freezes too, and
-    // that is load-bearing: moving the cursor off the thumbnail into the context
-    // menu is itself a leave, which would kill the preview before the user could
-    // ever click "Pin".
+    // While pinned, pointer and focus state are frozen (YaycUtilities::freezeWebViewHover),
+    // so the preview keeps playing when the cursor goes to the toolbar or another window.
+    // Uses the same setting as the hover-preview keep-alive: both mean "keep preview alive".
+    property bool keepForegroundIllusion: false
+    onKeepForegroundIllusionChanged: if (!keepForegroundIllusion) unpinPreview()
+
     property bool previewPinned: false
-    property bool ctxMenuOpen: false
-    readonly property bool freezeHover: previewPinned || ctxMenuOpen
     property url pinnedLink: ""
-    // Where the last context menu was requested, in view coordinates. Used to
-    // nudge hover when swapping pins (see pinPreview).
+    // Also freezes while the menu is open. This matters: moving onto the menu is itself
+    // a leave, and that would kill the preview before "Pin" can be clicked.
+    property bool ctxMenuOpen: false
+    // One gate for all freeze effects. previewPinned already needs the setting, but
+    // ctxMenuOpen is set on any right click, so it is checked here.
+    readonly property bool freezeHover: keepForegroundIllusion
+                                        && (previewPinned || ctxMenuOpen)
+    // Last context menu position, in view coordinates. Used to wake hover on pin swap.
     property point lastCtxPos: Qt.point(-1, -1)
     // Set while waiting for a swapped-in preview to start playing.
     property url pendingPinLink: ""
+    // -1 = not read yet, so an old counter from a past pin cannot unpin this one.
+    property int pinLostSeqSeen: -1
 
     onPreviewPinnedChanged: {
         runScript("window.__yayc_pinned = " + previewPinned)
         if (previewPinned) {
-            // Pinning implies "I want to watch this one", so give it sound. Safe to
-            // unmute here specifically: the pin followed a right-click, satisfying
-            // Chromium's user-activation requirement for audible playback.
-            runScript("if (window.__yayc_unmutePreviews) window.__yayc_unmutePreviews();")
+            // Once, at pin time. Deliberately not on a timer: see script_previewPin for
+            // why re-asserting is what broke playback last time.
+            runScript("if (window.__yayc_forcePreviewAudio) window.__yayc_forcePreviewAudio();")
+        } else {
+            // Hand mute back to YouTube, so audio is tied to pinning and its own
+            // mute button works again.
+            runScript("if (window.__yayc_releasePreviewAudio) window.__yayc_releasePreviewAudio();")
         }
     }
 
@@ -96,19 +105,21 @@ Item {
         }
     }
 
-    // Chromium's hover state is stale after a freeze, so the cursor sitting on the
-    // new thumbnail isn't enough to start its preview. A synthetic move at the same
-    // position restarts YouTube's hover timer. Needs the trusted-injection patch;
-    // without it the user's next physical mouse movement does the same job.
-    function nudgeHover() {
+    // After a freeze Chromium hover state is old and nothing wakes it: no movement
+    // arrives, so YouTube also keeps the cursor hidden. A fake move fixes both. Needs the
+    // trusted-injection patch. Without it, the next real mouse move does the same.
+    function nudgeHoverAt(pos) {
         if (!timePuller.hasTrustedMouseInjection)
             return
-        if (root.lastCtxPos.x < 0)
+        if (!pos || pos.x < 0)
             return
-        webEngineView.sendTrustedMouseMove(root.lastCtxPos)
+        webEngineView.sendTrustedMouseMove(pos)
     }
 
     function pinPreview(link) {
+        if (!root.keepForegroundIllusion)
+            return
+        root.pinLostSeqSeen = -1
         if (root.previewPinned) {
             // Swapping pins. The new preview cannot be playing yet - hover was
             // frozen - so release the freeze, nudge hover so YouTube starts it,
@@ -116,7 +127,8 @@ Item {
             root.previewPinned = false
             root.pinnedLink = ""
             root.pendingPinLink = link
-            nudgeHover()
+            // Cursor is already on the new thumbnail.
+            nudgeHoverAt(root.lastCtxPos)
             repinTimer.restart()
             return
         }
@@ -131,6 +143,9 @@ Item {
             return
         root.previewPinned = false
         root.pinnedLink = ""
+        // Else the page stays half dead: Qt cleared its hover state before the leaves we
+        // dropped, and the cursor stays hidden. So wake hover where the pointer is.
+        nudgeHoverAt(utilities.cursorPosIn(webEngineView))
     }
 
     Binding {
@@ -150,6 +165,28 @@ Item {
         function onWebViewPressedWhileFrozen() { root.unpinPreview() }
     }
 
+    // Reads the pin-lost counter from script_previewPin. Polling, not push: more
+    // QWebChannel objects on one transport break other backend writes.
+    Timer {
+        id: pinLostPoll
+        interval: 2000
+        repeat: true
+        running: root.previewPinned
+        onTriggered: webEngineView.runJavaScript(
+                         "window.__yayc_pinLostSeq || 0",
+                         function(seq) {
+                             if (!root.previewPinned)
+                                 return
+                             if (root.pinLostSeqSeen < 0) {
+                                 root.pinLostSeqSeen = seq
+                                 return
+                             }
+                             if (seq > root.pinLostSeqSeen) {
+                                 root.pinLostSeqSeen = seq
+                                 root.unpinPreview()
+                             }
+                         })
+    }
     // for ctx menu
     required property string extWorkingDirPath
     required property string easyListPath
@@ -232,9 +269,6 @@ Item {
         property bool guideButtonChecked
         property string videoQuality: ""
         property var availableQualityLevels: []
-        property int previewPinLost: 0
-        onPreviewPinLostChanged: root.unpinPreview()
-
         property real skipAdX: -1
         property real skipAdY: -1
         property int skipAdSeq: 0
@@ -645,27 +679,28 @@ Item {
             property string requestedKey: utilities.getVideoID(requestedLink)
             property bool linkIsVideo: requestedKey !== ""
 
-            // Unconditional: when a pin was taken, previewPinned keeps freezeHover
-            // true on its own. Gating this on previewPinned would latch
-            // ctxMenuOpen forever and hover would never thaw after unpinning.
+            // Always clear it. previewPinned keeps freezeHover true by itself. Checking
+            // it here would leave ctxMenuOpen true forever, so hover would never wake.
             onClosed: root.ctxMenuOpen = false
 
+            // Pin: shown for any video that is not the pinned one, so it also swaps.
             MenuItem {
-                // Right-clicking the already-pinned video offers Unpin; any other
-                // video offers Pin, which swaps the pin over to it.
-                readonly property bool ctxIsPinned: root.previewPinned
-                        && root.pinnedLink == webEngineView._ctxMenuAdded.requestedLink
-                readonly property bool ctxCanPin: webEngineView._ctxMenuAdded.linkIsVideo && !ctxIsPinned
-                text: ctxCanPin ? uiTr("Pin preview") : uiTr("Unpin preview")
+                readonly property bool ctxCanPin: webEngineView._ctxMenuAdded.linkIsVideo
+                        && root.pinnedLink != webEngineView._ctxMenuAdded.requestedLink
+                text: uiTr("Pin preview")
                 icon.source: "/icons/picture_in_picture.svg"
-                visible: ctxCanPin || root.previewPinned
+                visible: root.keepForegroundIllusion && ctxCanPin
                 height: visible ? implicitHeight : 0
-                onTriggered: {
-                    if (ctxCanPin)
-                        root.pinPreview(webEngineView._ctxMenuAdded.requestedLink)
-                    else
-                        root.unpinPreview()
-                }
+                onTriggered: root.pinPreview(webEngineView._ctxMenuAdded.requestedLink)
+            }
+            // Unpin: always shown while a pin exists, whatever was clicked. The pinned
+            // thumbnail can be scrolled away or far from the cursor.
+            MenuItem {
+                text: uiTr("Unpin current")
+                icon.source: "/icons/picture_in_picture.svg"
+                visible: root.keepForegroundIllusion && root.previewPinned
+                height: visible ? implicitHeight : 0
+                onTriggered: root.unpinPreview()
             }
             MenuItem {
                 text: uiTr("Added") + " (" + fileSystemModel.categoryName(webEngineView._ctxMenuAdded.requestedKey) + ")"
@@ -686,27 +721,28 @@ Item {
             property string requestedKey: utilities.getVideoID(requestedLink)
             property bool linkIsVideo: requestedKey !== ""
 
-            // Unconditional: when a pin was taken, previewPinned keeps freezeHover
-            // true on its own. Gating this on previewPinned would latch
-            // ctxMenuOpen forever and hover would never thaw after unpinning.
+            // Always clear it. previewPinned keeps freezeHover true by itself. Checking
+            // it here would leave ctxMenuOpen true forever, so hover would never wake.
             onClosed: root.ctxMenuOpen = false
 
+            // Pin: shown for any video that is not the pinned one, so it also swaps.
             MenuItem {
-                // Right-clicking the already-pinned video offers Unpin; any other
-                // video offers Pin, which swaps the pin over to it.
-                readonly property bool ctxIsPinned: root.previewPinned
-                        && root.pinnedLink == webEngineView._ctxMenuNotAdded.requestedLink
-                readonly property bool ctxCanPin: webEngineView._ctxMenuNotAdded.linkIsVideo && !ctxIsPinned
-                text: ctxCanPin ? uiTr("Pin preview") : uiTr("Unpin preview")
+                readonly property bool ctxCanPin: webEngineView._ctxMenuNotAdded.linkIsVideo
+                        && root.pinnedLink != webEngineView._ctxMenuNotAdded.requestedLink
+                text: uiTr("Pin preview")
                 icon.source: "/icons/picture_in_picture.svg"
-                visible: ctxCanPin || root.previewPinned
+                visible: root.keepForegroundIllusion && ctxCanPin
                 height: visible ? implicitHeight : 0
-                onTriggered: {
-                    if (ctxCanPin)
-                        root.pinPreview(webEngineView._ctxMenuNotAdded.requestedLink)
-                    else
-                        root.unpinPreview()
-                }
+                onTriggered: root.pinPreview(webEngineView._ctxMenuNotAdded.requestedLink)
+            }
+            // Unpin: always shown while a pin exists, whatever was clicked. The pinned
+            // thumbnail can be scrolled away or far from the cursor.
+            MenuItem {
+                text: uiTr("Unpin current")
+                icon.source: "/icons/picture_in_picture.svg"
+                visible: root.keepForegroundIllusion && root.previewPinned
+                height: visible ? implicitHeight : 0
+                onTriggered: root.unpinPreview()
             }
             Menu {
                 title: uiTr("Add to...")
@@ -783,15 +819,12 @@ Item {
         }
     } // WebEngineView
 
-    // While a preview is pinned, Chromium stops receiving mouse movement, so YouTube's
-    // player auto-hide (ytp-autohide, cursor: none) fires and never gets cancelled -
-    // Chromium then pushes that blank cursor onto the render item and the pointer
-    // disappears over the whole view. This overlay sits above the web view purely to
-    // supply a cursor that Qt resolves in preference to the item's own.
-    //
-    // acceptedButtons: NoButton so clicks fall through untouched (the C++ filter still
-    // sees the press and unpins), and no wheel handling, so scrolling keeps working.
-    // Right-click also reaches the page, which the pin-swap flow depends on.
+    // While pinned Chromium sees no mouse movement, so YouTube auto-hide (ytp-autohide,
+    // cursor: none) starts and never stops, and Chromium sends that empty cursor to the
+    // render item. This overlay only gives Qt a cursor to use instead.
+    //  - acceptedButtons: NoButton, so clicks pass through (the filter still sees the
+    //    press and unpins), and right click still reaches the page for pin swap
+    //  - no wheel handling, so scrolling still works
     MouseArea {
         anchors.fill: webEngineView
         // Only while actually pinned - not for the brief ctxMenuOpen freeze, where

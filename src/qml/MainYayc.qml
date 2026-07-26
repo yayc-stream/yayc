@@ -625,6 +625,7 @@ Item {
                         extCommandEnabled: root.extCommandEnabled
                         autoSkipAd: root.autoSkipAd
                         playbackRate: root.playbackRate
+                        keepForegroundIllusion: root.keepForegroundIllusion
                     }
 
                     // Keep videoPlaying in sync for Loader active condition

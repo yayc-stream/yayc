@@ -25,6 +25,7 @@ In addition to the above,
 #include <QTcpSocket>
 #include <QNetworkAccessManager>
 #include <QDateTime>
+#include <QPointF>
 
 class QQuickItem;
 
@@ -51,22 +52,15 @@ public:
     explicit YaycUtilities(QObject *parent = nullptr);
     ~YaycUtilities() override;
 
-    // When true, swallows QEvent::HoverLeave events destined for QtWebEngine's
-    // internal render-widget item whenever the real cursor is still physically
-    // over it. Works around window managers/compositors that deliver a
-    // QEvent::Leave to the window on focus loss or virtual-desktop switch
-    // (independent of the cursor moving) - Qt Quick turns that into a
-    // HoverLeave for the hovered item, which QtWebEngine forwards into
-    // Chromium as a real DOM mouseleave, pausing hover-preview media even
-    // though the pointer never moved.
+    // Keeps hover previews playing when focus changes. Leave event is fake:
+    //  - WM sends QEvent::Leave on focus loss or desktop switch. Cursor did not move
+    //  - Qt Quick makes it a HoverLeave for the hovered item
+    //  - QtWebEngine gives it to page as DOM mouseleave, so YouTube stops preview
     bool keepForegroundIllusion() const;
     void setKeepForegroundIllusion(bool enabled);
 
-    // Freezes the web view's notion of where the pointer is, by swallowing all
-    // hover traffic aimed at it: Chromium never learns the cursor moved, so DOM
-    // hover state stays where it was. Used to "pin" a YouTube hover preview so
-    // it keeps playing while the cursor goes to the toolbar or another window.
-    // Independent of keepForegroundIllusion - pinning works either way.
+    // Freezes pointer and focus state of view: all hover events and FocusOut are
+    // dropped, so Chromium never learns they changed. Used by preview pinning.
     bool freezeWebViewHover() const;
     void setFreezeWebViewHover(bool enabled);
 
@@ -121,6 +115,10 @@ public:
     // reaches. No-op on other platforms.
     Q_INVOKABLE void simulateClick(QQuickItem *item, double x, double y);
 
+    // Cursor position in \a item coordinates, or (-1, -1) if cursor is outside.
+    // QML cannot use QCursor. Unpin needs this to wake hover again.
+    Q_INVOKABLE QPointF cursorPosIn(QQuickItem *item) const;
+
     Q_INVOKABLE QString languageDisplayName(const QString &lang) const;
     QString currentLanguage() const;
     QStringList availableLanguages() const;
@@ -139,10 +137,8 @@ signals:
     void videoUrlResolved(const QString &normalizedUrl);
     void keepForegroundIllusionChanged(bool enabled);
     void freezeWebViewHoverChanged(bool enabled);
-    // Emitted when the user clicks inside the web view while hover is frozen.
-    // The click itself is delivered normally (a press carries its own
-    // coordinates, so it lands where the user aimed); QML uses this to drop the
-    // pin, since clicking through to the page implies they're done with it.
+    // Left click inside frozen view: QML drops the pin. Click still reaches the page
+    // (a press carries its own coordinates, so it lands right).
     void webViewPressedWhileFrozen();
 
 public slots:

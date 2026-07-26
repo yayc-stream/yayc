@@ -465,6 +465,14 @@ void YaycUtilities::setKeepForegroundIllusion(bool enabled)
     emit keepForegroundIllusionChanged(enabled);
 }
 
+QPointF YaycUtilities::cursorPosIn(QQuickItem *item) const
+{
+    if (!item)
+        return QPointF(-1, -1);
+    const QPointF local = item->mapFromGlobal(QCursor::pos());
+    return item->contains(local) ? local : QPointF(-1, -1);
+}
+
 bool YaycUtilities::freezeWebViewHover() const
 {
     return m_freezeWebViewHover;
@@ -479,9 +487,8 @@ void YaycUtilities::setFreezeWebViewHover(bool enabled)
 }
 
 namespace {
-// QtWebEngine's internal render-widget item is a private/internal class
-// (QtWebEngineCore::RenderWidgetHostViewQtDelegateItem) we can't link against,
-// so identify it by class name.
+// Render item class is private (QtWebEngineCore::RenderWidgetHostViewQtDelegateItem),
+// so we cannot link it. Match by class name instead.
 bool isWebEngineRenderItem(const QQuickItem *item)
 {
     return QLatin1String(item->metaObject()->className())
@@ -497,7 +504,7 @@ bool YaycUtilities::eventFilter(QObject *watched, QEvent *event)
     const QEvent::Type type = event->type();
     const bool isHover = (type == QEvent::HoverLeave || type == QEvent::HoverMove
                           || type == QEvent::HoverEnter);
-    if (!isHover && type != QEvent::MouseButtonPress)
+    if (!isHover && type != QEvent::MouseButtonPress && type != QEvent::FocusOut)
         return QObject::eventFilter(watched, event);
 
     auto *item = qobject_cast<QQuickItem *>(watched);
@@ -505,26 +512,34 @@ bool YaycUtilities::eventFilter(QObject *watched, QEvent *event)
         return QObject::eventFilter(watched, event);
 
     if (type == QEvent::MouseButtonPress) {
-        if (m_freezeWebViewHover)
+        // Left button only. Right click opens the menu with Unpin/swap, so it must
+        // not unpin by itself.
+        auto *me = static_cast<QMouseEvent *>(event);
+        if (m_freezeWebViewHover && me->button() == Qt::LeftButton)
             emit webViewPressedWhileFrozen();
         return QObject::eventFilter(watched, event); // never swallow the click
     }
 
-    // Pinned: swallow every kind of hover traffic, so the page's hover state
-    // stays frozen wherever it was when the pin engaged.
+    // In Chromium FocusOut becomes SetActive(false) + LostFocus() (handleFocusEvent in
+    // render_widget_host_view_qt_delegate_client.cpp). Two bad results:
+    //  - frames stop reaching the screen (picture freezes, audio keeps playing)
+    //  - page gets 'blur', so YouTube closes the preview
+    // So drop every reason, popup focus too. Using only ActiveWindowFocusReason was
+    // tried: the blur came back. The context-menu stall (tasks/todo.md) is another bug.
+    if (type == QEvent::FocusOut)
+        return m_freezeWebViewHover;
+
+    // Pinned: drop all hover events. Hover stays where the pin started.
     if (m_freezeWebViewHover)
         return true;
 
     if (m_keepForegroundIllusion && type == QEvent::HoverLeave) {
-        // Not our window's turn: the user is interacting with something else
-        // entirely (another app, the taskbar, a panel), so any leave now is a
-        // side effect of that - not of them moving off the thumbnail. Swallow it
-        // wherever the cursor happens to be.
+        // Other window has focus. So this leave comes from that, not from the user
+        // moving off the thumbnail. Cursor position does not matter here.
         const QWindow *win = item->window();
         if (win && !win->isActive())
             return true;
-        // Window is active but Qt still reported a leave while the cursor is
-        // physically over us (compositor/WM quirk on focus changes).
+        // Window is active, but leave arrived while cursor is still inside: WM bug.
         if (item->contains(item->mapFromGlobal(QCursor::pos())))
             return true;
     }
