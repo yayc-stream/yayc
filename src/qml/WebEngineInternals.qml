@@ -234,13 +234,23 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
     // Applies YAYC global rate/volume to every player: watch, active Short, and hover
     // previews (previews have no UI and inherit nothing). Values come from WebView.qml as
     // window globals, in player API scales (rate multiplier, volume 0-100).
-    //  - applied again on mutation, on 'loadeddata' and on a slow interval: previews are
-    //    created and destroyed as the cursor moves, each one starts with YouTube defaults
-    //  - __yayc_applyPlayerSettings is exported, so a push applies at once
+    //  - reasserted on mutation, on 'loadeddata' and on a slow interval: preview players are
+    //    created and destroyed as the cursor moves and YouTube initialises each with its own
+    //    defaults
+    //  - __yayc_applyPlayerSettings is exported, so a push takes effect at once
+    //  - the other direction is a 'ratechange' listener: a rate set in YouTube's own UI
+    //    becomes the new target instead of being reasserted away, and reaches the controls
+    //    on the next timePuller pull
     property string script_applyPlayerSettings: "
         (function() {
             if (window.__yayc_playerctl) return;
             window.__yayc_playerctl = true;
+
+            function mains() {
+                return [].concat(
+                    [].slice.call(document.querySelectorAll('ytd-watch-flexy ytd-player')),
+                    [].slice.call(document.querySelectorAll('ytd-reel-video-renderer ytd-player')));
+            }
 
             function collect() {
                 // Defined by script_previewPin, so both scripts agree what a preview is.
@@ -248,10 +258,7 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
                 // missed music video previews.
                 var previews = window.__yayc_previewPlayers
                         ? window.__yayc_previewPlayers() : [];
-                return [].concat(
-                    [].slice.call(document.querySelectorAll('ytd-watch-flexy ytd-player')),
-                    [].slice.call(document.querySelectorAll('ytd-reel-video-renderer ytd-player')),
-                    previews);
+                return mains().concat(previews);
             }
 
             function applyTo(host) {
@@ -286,6 +293,34 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
                     applyTo(l[i]);
             }
             window.__yayc_applyPlayerSettings = applyAll;
+
+            // A source change resets the player to YouTube's own rate: next video, ad start,
+            // ad end. Those must be forced back, so ratechange is ignored around them.
+            var transitionUntil = 0;
+            function noteTransition() { transitionUntil = Date.now() + 2500; }
+            document.addEventListener('loadstart', noteTransition, true);
+            document.addEventListener('emptied', noteTransition, true);
+
+            // Rate changed on the watch/Shorts player by something other than applyTo():
+            // YouTube's speed menu or its < > shortcuts. Our own writes always land on the
+            // target, so a rate that ends up away from it can only be external - adopt it,
+            // and the QML side picks it up on its next pull.
+            document.addEventListener('ratechange', function(e) {
+                var v = e.target;
+                if (!v || !v.closest || !(v.playbackRate > 0))
+                    return;
+                if (Date.now() < transitionUntil)
+                    return;
+                var host = v.closest('ytd-player');
+                // Previews get no vote: each starts at YouTube defaults, which would drag the
+                // global rate back to 1 every time the cursor crosses a thumbnail.
+                if (!host || mains().indexOf(host) < 0)
+                    return;
+                if (host.querySelector('.ad-showing'))
+                    return;
+                if (Math.abs(v.playbackRate - window.__yayc_playerRate) > 0.001)
+                    window.__yayc_playerRate = v.playbackRate;
+            }, true);
 
             var obs = new MutationObserver(applyAll);
             obs.observe(document.body, { childList: true, subtree: true });
