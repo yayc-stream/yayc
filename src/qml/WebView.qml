@@ -673,6 +673,26 @@ Item {
             }
         }
 
+        // Right click that hit no video link: image, plain text, empty page area. Kept
+        // separate because a submenu row cannot be hidden - Menu.visible/height are the
+        // popup's own - so "Add to..." and "Launch in" would show up dead here.
+        property Menu _ctxMenuPlain: Menu {
+            property url requestedLink: ""
+            property string requestedLinkText: ""
+
+            onClosed: root.ctxMenuOpen = false
+
+            // Unpin only: nothing was right-clicked that could be pinned.
+            MenuItem {
+                text: uiTr("Unpin current")
+                icon.source: "/icons/unpin.svg"
+                visible: root.keepForegroundIllusion && root.previewPinned
+                height: visible ? implicitHeight : 0
+                onTriggered: root.unpinPreview()
+            }
+            CtxClipboardActions {}
+        }
+
         property Menu _ctxMenuAdded: Menu {
             property url requestedLink: ""
             property string requestedLinkText: ""
@@ -748,8 +768,6 @@ Item {
                 id: ctxAddToMenu
                 title: uiTr("Add to...")
                 icon.source: "/icons/add.svg"
-                visible: webEngineView._ctxMenuNotAdded.linkIsVideo
-                height: visible ? implicitHeight : 0
 
                 MenuItem {
                     text: "/"
@@ -815,7 +833,9 @@ Item {
             var linkText = request.linkText
             var key = utilities.getVideoID(link)
             var isAdded = key !== "" && fileSystemModel.isVideoBookmarked(key)
-            var menu = isAdded ? webEngineView._ctxMenuAdded : webEngineView._ctxMenuNotAdded
+            var menu = (key === "")
+                    ? webEngineView._ctxMenuPlain
+                    : (isAdded ? webEngineView._ctxMenuAdded : webEngineView._ctxMenuNotAdded)
             menu.requestedLink = link
             menu.requestedLinkText = linkText
             request.accepted = true
