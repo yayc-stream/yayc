@@ -176,12 +176,12 @@
   "Working dir": "Directorio de trabajo",
   "path": "ruta",
   "undefined — set from hamburger menu": "indefinido — establecer desde el menú de hamburguesa",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Añadir aquí",
+  "Browse...": "Explorar...",
+  "Go to URL": "Ir a la URL",
+  "Keep hover preview playing": "Mantener reproducción de vista previa",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Mantiene la reproducción de las vistas previas de las miniaturas cuando YAYC pierde el foco o cambias de escritorio virtual. También permite fijar una vista previa mediante el clic derecho.",
+  "Pin preview": "Fijar vista previa",
+  "Unpin current": "Desfijar actual",
+  "Unpin preview": "Desfijar vista previa"
 }

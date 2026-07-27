@@ -176,12 +176,12 @@
   "Working dir": "Dir. e punës",
   "path": "rruga",
   "undefined — set from hamburger menu": "e papërcaktuar — caktohet nga menuja hamburger",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Shto këtu",
+  "Browse...": "Shfillo...",
+  "Go to URL": "Shko te URL-ja",
+  "Keep hover preview playing": "Mbaj parashikimin në vazhdim",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Mbaj parashikimet e miniaturave në vazhdim kur YAYC humbet fokusin ose kur ndërroni desktopin virtual. Gjithashtu mundëson fikserimin e një parashikimi përmes klikimit të djathtë.",
+  "Pin preview": "Fikso parashikimin",
+  "Unpin current": "Hiq fikserimin e aktualit",
+  "Unpin preview": "Hiq fikserimin e parashikimit"
 }

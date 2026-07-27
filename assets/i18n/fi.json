@@ -176,12 +176,12 @@
   "Working dir": "Työhakemisto",
   "path": "polku",
   "undefined — set from hamburger menu": "määrittelemätön — asetetaan hampurilaisvalikosta",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Lisää tähän",
+  "Browse...": "Selaa...",
+  "Go to URL": "Siirry URL-osoitteeseen",
+  "Keep hover preview playing": "Pidä esikatselu toistossa hiiren päällä",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Pidä pikkukuvan esikatselut toistossa, vaikka YAYC menettää fokuksen tai vaihdat virtuaalipöytää. Mahdollistaa myös esikatselun kiinnittämisen hiiren oikealla painikkeella.",
+  "Pin preview": "Kiinnitä esikatselu",
+  "Unpin current": "Poista nykyinen kiinnitys",
+  "Unpin preview": "Poista esikatselun kiinnitys"
 }

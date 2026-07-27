@@ -176,12 +176,12 @@
   "Working dir": "مجلد العمل",
   "path": "المسار",
   "undefined — set from hamburger menu": "غير محدد — يتم ضبطه من قائمة الهامبرغر",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "أضف هنا",
+  "Browse...": "تصفح...",
+  "Go to URL": "الانتقال إلى الرابط",
+  "Keep hover preview playing": "إبقاء معاينة التحويم قيد التشغيل",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "إبقاء معاينات الصور المصغرة عند التحويم قيد التشغيل عندما يفقد YAYC التركيز أو عند تبديل سطح المكتب الافتراضي. يتيح ذلك أيضاً تثبيت المعاينة عبر النقر بزر الماوس الأيمن.",
+  "Pin preview": "تثبيت المعاينة",
+  "Unpin current": "إلغاء تثبيت الحالي",
+  "Unpin preview": "إلغاء تثبيت المعاينة"
 }

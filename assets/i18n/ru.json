@@ -176,12 +176,12 @@
   "Working dir": "Рабочая директория",
   "path": "путь",
   "undefined — set from hamburger menu": "не определено — установите из меню-гамбургера",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Добавить сюда",
+  "Browse...": "Обзор...",
+  "Go to URL": "Перейти по URL",
+  "Keep hover preview playing": "Не останавливать предпросмотр при наведении",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Продолжать воспроизведение предпросмотра миниатюр при потере фокуса YAYC или переключении виртуального рабочего стола. Также позволяет закреплять предпросмотр через правую кнопку мыши.",
+  "Pin preview": "Закрепить предпросмотр",
+  "Unpin current": "Открепить текущий",
+  "Unpin preview": "Открепить предпросмотр"
 }

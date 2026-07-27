@@ -176,12 +176,12 @@
   "Working dir": "Direktoriyo ng trabaho",
   "path": "landas",
   "undefined — set from hamburger menu": "hindi tinukoy — itakda mula sa hamburger menu",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Idagdag dito",
+  "Browse...": "Mag-browse...",
+  "Go to URL": "Pumunta sa URL",
+  "Keep hover preview playing": "Panatilihing naka-play ang hover preview",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Panatilihing naka-play ang mga thumbnail hover preview kapag nawalan ng focus ang YAYC o lumipat ka ng virtual desktop. Pinahihintulutan din nito ang pag-pin ng preview sa pamamagitan ng right-click.",
+  "Pin preview": "I-pin ang preview",
+  "Unpin current": "I-unpin ang kasalukuyan",
+  "Unpin preview": "I-unpin ang preview"
 }

@@ -176,12 +176,12 @@
   "Working dir": "Arbejdsmappe",
   "path": "sti",
   "undefined — set from hamburger menu": "ikke defineret — indstilles fra hamburgermenu",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Tilføj her",
+  "Browse...": "Gennemse...",
+  "Go to URL": "Gå til URL",
+  "Keep hover preview playing": "Hold hover-forhåndsvisning kørende",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Hold miniature-hover-forhåndsvisninger kørende, når YAYC mister fokus, eller når du skifter virtuelt skrivebord. Gør det også muligt at fastgøre en forhåndsvisning via højreklik.",
+  "Pin preview": "Fastgør forhåndsvisning",
+  "Unpin current": "Fjern fastgørelse af nuværende",
+  "Unpin preview": "Fjern fastgørelse af forhåndsvisning"
 }

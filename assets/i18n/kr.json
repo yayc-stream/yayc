@@ -176,12 +176,12 @@
   "Working dir": "작업 디렉터리",
   "path": "경로",
   "undefined — set from hamburger menu": "정의되지 않음 — 햄버거 메뉴에서 설정",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "여기에 추가",
+  "Browse...": "찾아보기...",
+  "Go to URL": "URL로 이동",
+  "Keep hover preview playing": "호버 미리보기 재생 유지",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "YAYC가 포커스를 잃거나 가상 데스크톱을 전환할 때도 썸네일 호버 미리보기가 계속 재생되도록 합니다. 또한 우클릭을 통해 미리보기를 고정할 수 있습니다.",
+  "Pin preview": "미리보기 고정",
+  "Unpin current": "현재 고정 해제",
+  "Unpin preview": "미리보기 고정 해제"
 }

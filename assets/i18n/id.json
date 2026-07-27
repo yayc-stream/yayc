@@ -176,12 +176,12 @@
   "Working dir": "Direktori kerja",
   "path": "jalur",
   "undefined — set from hamburger menu": "tidak ditentukan — atur dari menu hamburger",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Tambah di sini",
+  "Browse...": "Telusuri...",
+  "Go to URL": "Buka URL",
+  "Keep hover preview playing": "Tetap putar pratinjau hover",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Tetap putar pratinjau hover thumbnail saat YAYC kehilangan fokus atau saat Anda berpindah desktop virtual. Juga memungkinkan untuk menyematkan pratinjau melalui klik kanan.",
+  "Pin preview": "Sematkan pratinjau",
+  "Unpin current": "Lepas sematan saat ini",
+  "Unpin preview": "Lepas sematan pratinjau"
 }

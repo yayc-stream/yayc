@@ -176,12 +176,12 @@
   "Working dir": "Director de lucru",
   "path": "cale",
   "undefined — set from hamburger menu": "nedefinit — setat din meniul hamburger",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Adaugă aici",
+  "Browse...": "Caută...",
+  "Go to URL": "Accesează URL",
+  "Keep hover preview playing": "Menține previzualizarea la hover în desfășurare",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Menține previzualizările de tip thumbnail la hover în desfășurare când YAYC își pierde concentrarea sau când schimbi desktopul virtual. Permite, de asemenea, fixarea unei previzualizări prin clic dreapta.",
+  "Pin preview": "Fixează previzualizarea",
+  "Unpin current": "Dezfixează actualul",
+  "Unpin preview": "Dezfixează previzualizarea"
 }

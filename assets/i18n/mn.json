@@ -176,12 +176,12 @@
   "Working dir": "Ажлын хавтас",
   "path": "зам",
   "undefined — set from hamburger menu": "тодорхойгүй — hamburger цэснээс тохируулна",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Энд нэмэх",
+  "Browse...": "Шалгах...",
+  "Go to URL": "URL руу очих",
+  "Keep hover preview playing": "Хулгана аваасаар байхад үзүүлэн тоглуулах",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "YAYC фокус алдах эсвэл виртуал десктоп солих үед миниатюр үзүүлэн тоглуулах хэвээр байлгах. Мөн хулганы баруун товчлуураар үзүүлэн залгах боломжийг олгоно.",
+  "Pin preview": "Үзүүлэн залгах",
+  "Unpin current": "Одоогийнхыг салгах",
+  "Unpin preview": "Үзүүлэн салгах"
 }

@@ -176,12 +176,12 @@
   "Working dir": "ওয়ার্কিং ডিরেক্টরি",
   "path": "পাথ",
   "undefined — set from hamburger menu": "অনির্ধারিত — হ্যামবার্গার মেনু থেকে সেট করুন",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "এখানে যোগ করুন",
+  "Browse...": "ব্রাউজ করুন...",
+  "Go to URL": "URL-এ যান",
+  "Keep hover preview playing": "হোভার প্রিভিউ চালু রাখুন",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "YAYC ফোকাস হারালে বা আপনি ভার্চুয়াল ডেস্কটপ পরিবর্তন করলে থাম্বনেইল হোভার প্রিভিউ চালু রাখুন। এটি রাইট-ক্লিক করার মাধ্যমে প্রিভিউ পিন করার সুবিধাও প্রদান করে।",
+  "Pin preview": "প্রিভিউ পিন করুন",
+  "Unpin current": "বর্তমানটি আনপিন করুন",
+  "Unpin preview": "প্রিভিউ আনপিন করুন"
 }

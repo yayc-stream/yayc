@@ -176,12 +176,12 @@
   "Working dir": "ไดเรกทอรีทำงาน",
   "path": "เส้นทาง",
   "undefined — set from hamburger menu": "ไม่ระบุ — ตั้งค่าจากเมนูแฮมเบอร์เกอร์",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "เพิ่มที่นี่",
+  "Browse...": "เรียกดู...",
+  "Go to URL": "ไปที่ URL",
+  "Keep hover preview playing": "เล่นตัวอย่างขณะวางเมาส์ค้างไว้ต่อไป",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "เล่นตัวอย่างภาพขนาดย่อขณะวางเมาส์ค้างไว้ต่อไป แม้ว่า YAYC จะเสียโฟกัสหรือคุณสลับเดสก์ท็อปเสมือน นอกจากนี้ยังช่วยให้สามารถปักหมุดตัวอย่างได้ผ่านการคลิกขวา",
+  "Pin preview": "ปักหมุดตัวอย่าง",
+  "Unpin current": "ยกเลิกการปักหมุดปัจจุบัน",
+  "Unpin preview": "ยกเลิกการปักหมุดตัวอย่าง"
 }

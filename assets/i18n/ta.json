@@ -176,12 +176,12 @@
   "Working dir": "செயல்பாட்டு அடைவு",
   "path": "பாதை",
   "undefined — set from hamburger menu": "வரையறுக்கப்படவில்லை — ஹேம்பர்ger மெனுவிலிருந்து அமைக்கவும்",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "இங்கே சேர்க்கவும்",
+  "Browse...": "உலாดู...",
+  "Go to URL": "URL-க்குச் செல்லவும்",
+  "Keep hover preview playing": "Hover முன்னோட்டம் தொடர்ந்து இயங்க விடவும்",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "YAYC கவனத்தை இழக்கும்போதோ அல்லது நீங்கள் விர்ச்சுவல் டெஸ்க்டை மாற்றும்போதோ தம்ப்நெயில் hover முன்னோட்டங்களைத் தொடர்ந்து இயக்க இது உதவும். மேலும், வலது கிளிக் மூலம் முன்னோட்டத்தை பின் (pin) செய்யவும் இது அனுமதிக்கிறது.",
+  "Pin preview": "முன்னோட்டத்தைப் பின் செய்யவும்",
+  "Unpin current": "தற்போதையதை அன்பின் செய்யவும்",
+  "Unpin preview": "முன்னோட்டத்தை அன்பின் செய்யவும்"
 }

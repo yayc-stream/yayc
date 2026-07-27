@@ -176,12 +176,12 @@
   "Working dir": "Thư mục làm việc",
   "path": "đường dẫn",
   "undefined — set from hamburger menu": "chưa xác định — thiết lập từ menu hamburger",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Thêm vào đây",
+  "Browse...": "Duyệt...",
+  "Go to URL": "Đi tới URL",
+  "Keep hover preview playing": "Giữ xem trước đang phát khi di chuột",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Giữ các bản xem trước khi di chuột trên hình thu nhỏ đang phát ngay cả khi YAYC mất tiêu điểm hoặc khi bạn chuyển màn hình ảo. Cũng cho phép ghim bản xem trước thông qua chuột phải.",
+  "Pin preview": "Ghim bản xem trước",
+  "Unpin current": "Bỏ ghim hiện tại",
+  "Unpin preview": "Bỏ ghim bản xem trước"
 }

@@ -176,12 +176,12 @@
   "Working dir": "Munkaköri könyvtár",
   "path": "útvonal",
   "undefined — set from hamburger menu": "nem meghatározott — a hamburger menüből állítható be",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Hozzáadás ide",
+  "Browse...": "Böngészés...",
+  "Go to URL": "URL megnyitása",
+  "Keep hover preview playing": "Folyamatos előnézet az egymás fölé vivéskor",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "A kisbaborék-előnézeti képek folyamatos lejátszása, amikor a YAYC elveszíti a fókuszt, vagy amikor átváltasz a virtuális asztal között. Emellett lehetővé teszi az előnézet jobb klikk segítségével történő kitűzését is.",
+  "Pin preview": "Rögzített előnézet",
+  "Unpin current": "Rögzítés megszüntetése",
+  "Unpin preview": "Elvétel a rögzítésről"
 }

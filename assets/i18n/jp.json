@@ -176,12 +176,12 @@
   "Working dir": "作業ディレクトリ",
   "path": "パス",
   "undefined — set from hamburger menu": "未設定 — ハンバーガーメニューから設定",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "ここに追加",
+  "Browse...": "参照...",
+  "Go to URL": "URLへ移動",
+  "Keep hover preview playing": "ホバープレビューを再生し続ける",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "YAYCがフォーカスを失ったときや仮想デスクトップを切り替えたときでも、サムネイルのホバープレビューを再生し続けます。また、右クリックによるプレビューのピン留めも可能になります。",
+  "Pin preview": "プレビューをピン留め",
+  "Unpin current": "現在のピン留めを解除",
+  "Unpin preview": "プレビューのピン留めを解除"
 }

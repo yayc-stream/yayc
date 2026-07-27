@@ -176,12 +176,12 @@
   "Working dir": "Radni direktorijum",
   "path": "putanja",
   "undefined — set from hamburger menu": "nedefinisano — postavite iz hamburger menija",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "Dodaj ovde",
+  "Browse...": "Pretraži...",
+  "Go to URL": "Idi na URL",
+  "Keep hover preview playing": "Zadrži reprodukciju pregleda pri prelasku mišem",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "Zadrži reprodukciju pregleda sličica pri prelasku mišem kada YAYC izgubi fokus ili kada promenite virtuelnu radnu površinu. Takođe omogućava pripijanje pregleda desnim klikom.",
+  "Pin preview": "Zakači pregled",
+  "Unpin current": "Otkvačaj trenutni",
+  "Unpin preview": "Otkvačaj pregled"
 }

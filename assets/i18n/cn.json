@@ -176,12 +176,12 @@
   "Working dir": "工作目录",
   "path": "路径",
   "undefined — set from hamburger menu": "未定义 — 从汉堡菜单设置",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "在此添加",
+  "Browse...": "浏览...",
+  "Go to URL": "前往 URL",
+  "Keep hover preview playing": "保持悬停预览播放",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "当 YAYC 失去焦点或切换虚拟桌面时，保持缩略图悬停预览播放。同时允许通过右键点击固定预览。",
+  "Pin preview": "固定预览",
+  "Unpin current": "取消固定当前",
+  "Unpin preview": "取消固定预览"
 }

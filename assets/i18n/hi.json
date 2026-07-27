@@ -176,12 +176,12 @@
   "Working dir": "कार्यशील निर्देशिका",
   "path": "पथ",
   "undefined — set from hamburger menu": "अपरिभाषित — हैमबर्गर मेनू से सेट करें",
-  "Add here": "",
-  "Browse...": "",
-  "Go to URL": "",
-  "Keep hover preview playing": "",
-  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
-  "Pin preview": "",
-  "Unpin current": "",
-  "Unpin preview": ""
+  "Add here": "यहाँ जोड़ें",
+  "Browse...": "ब्राउज़ करें...",
+  "Go to URL": "URL पर जाएँ",
+  "Keep hover preview playing": "होवर प्रीव्यू चलते रहने दें",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "जब YAYC फोकस खो दे या आप वर्चुअल डेस्कटॉप बदलें, तब भी थंबनेल होवर प्रीव्यू चलते रहने दें। यह राइट-क्लिक के माध्यम से प्रीव्यू को पिन करने की सुविधा भी देता है।",
+  "Pin preview": "प्रीव्यू पिन करें",
+  "Unpin current": "वर्तमान अनपिन करें",
+  "Unpin preview": "प्रीव्यू अनपिन करें"
 }
