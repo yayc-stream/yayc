@@ -1,19 +1,20 @@
-## YAYC v1.8.0 (2026.04) -- Spookie
+## YAYC v1.9.0 (2026.07) -- Coalball
 
 ### ✨ New Features
 
-- Added support for adding youtu.be links (as opposed to only youtube.com)
-- Improvements to the Web View context menu
+- Added internationalization (UI translated in multiple languages)
+- Redesigned settings menu
+- Added ability to pin a playing miniature so that it will continue playing, also in background or minimized.
 
 ### 🐞 Bug fixes
 
+- Ad AutoSkip fixed on Windows and Mac (requires patched Qt, that is included in the releases)
 - Several stability improvements
-- Multiple fixes to the filesystem model, and the treeviews, which should now hopefully stop glitching
-  or do so much less.
+- Move to now works for categories as well
 
 ### ⚠️ Known Issues
 
-- Same as for v1.7( -> 1.4)
+- Same as for v1.7(-> 1.4)
 
 ## YAYC v1.8.0 (2026.04) -- Spookie
 
