@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "जब YAYC छिपा हो और कोई वीडियो नहीं चल रहा हो, तो वेब व्यू को अनलोड करें",
   "Working dir": "कार्यशील निर्देशिका",
   "path": "पथ",
-  "undefined — set from hamburger menu": "अपरिभाषित — हैमबर्गर मेनू से सेट करें"
+  "undefined — set from hamburger menu": "अपरिभाषित — हैमबर्गर मेनू से सेट करें",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

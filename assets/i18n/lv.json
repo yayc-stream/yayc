@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "Izlādēt tīmekļa skatiņu, ja YAYC ir paslēpts un neviena video netiek atskaņots",
   "Working dir": "Darba direktorijs",
   "path": "ceļš",
-  "undefined — set from hamburger menu": "nav definēts — iestatiet no hamburger menija"
+  "undefined — set from hamburger menu": "nav definēts — iestatiet no hamburger menija",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

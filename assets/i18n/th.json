@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "ยกเลิกการโหลดเว็บวิวเมื่อ YAYC ถูกซ่อนและไม่มีวิดีโอที่กำลังเล่นอยู่",
   "Working dir": "ไดเรกทอรีทำงาน",
   "path": "เส้นทาง",
-  "undefined — set from hamburger menu": "ไม่ระบุ — ตั้งค่าจากเมนูแฮมเบอร์เกอร์"
+  "undefined — set from hamburger menu": "ไม่ระบุ — ตั้งค่าจากเมนูแฮมเบอร์เกอร์",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

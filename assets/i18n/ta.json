@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "YAYC மறைக்கப்பட்டிருக்கும் போதும் வீடியோ எதுவும் ஓடாத போதும் வெப் வியூவை அன்லோட் செய்யவும்",
   "Working dir": "செயல்பாட்டு அடைவு",
   "path": "பாதை",
-  "undefined — set from hamburger menu": "வரையறுக்கப்படவில்லை — ஹேம்பர்ger மெனுவிலிருந்து அமைக்கவும்"
+  "undefined — set from hamburger menu": "வரையறுக்கப்படவில்லை — ஹேம்பர்ger மெனுவிலிருந்து அமைக்கவும்",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "Avlasta webbvisningen när YAYC är dold och ingen video spelas upp",
   "Working dir": "Arbetsdir",
   "path": "Sökväg",
-  "undefined — set from hamburger menu": "oidentifierad — ställs in från hamburgermenyn"
+  "undefined — set from hamburger menu": "oidentifierad — ställs in från hamburgermenyn",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

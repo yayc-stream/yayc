@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "Décharger la vue web lorsque YAYC est masqué et qu'aucune vidéo n'est en cours de lecture",
   "Working dir": "Répertoire de travail",
   "path": "chemin",
-  "undefined — set from hamburger menu": "indéfini — à définir depuis le menu hamburger"
+  "undefined — set from hamburger menu": "indéfini — à définir depuis le menu hamburger",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

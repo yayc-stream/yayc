@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "Выгружать веб-представление, когда YAYC скрыт и видео не воспроизводится",
   "Working dir": "Рабочая директория",
   "path": "путь",
-  "undefined — set from hamburger menu": "не определено — установите из меню-гамбургера"
+  "undefined — set from hamburger menu": "не определено — установите из меню-гамбургера",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

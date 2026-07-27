@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "YAYC লুকানো থাকলে এবং কোনো ভিডিও না চললে ওয়েব ভিউ আনলোড করুন",
   "Working dir": "ওয়ার্কিং ডিরেক্টরি",
   "path": "পাথ",
-  "undefined — set from hamburger menu": "অনির্ধারিত — হ্যামবার্গার মেনু থেকে সেট করুন"
+  "undefined — set from hamburger menu": "অনির্ধারিত — হ্যামবার্গার মেনু থেকে সেট করুন",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

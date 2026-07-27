@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "YAYC가 숨겨져 있고 비디오가 재생 중이지 않을 때 웹 뷰 언로드",
   "Working dir": "작업 디렉터리",
   "path": "경로",
-  "undefined — set from hamburger menu": "정의되지 않음 — 햄버거 메뉴에서 설정"
+  "undefined — set from hamburger menu": "정의되지 않음 — 햄버거 메뉴에서 설정",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "当 YAYC 被隐藏且没有视频播放时，卸载 Web 视图",
   "Working dir": "工作目录",
   "path": "路径",
-  "undefined — set from hamburger menu": "未定义 — 从汉堡菜单设置"
+  "undefined — set from hamburger menu": "未定义 — 从汉堡菜单设置",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

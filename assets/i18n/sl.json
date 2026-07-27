@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "Izpreni pogled spletnega preglednika, ko je YAYC skrit in se nobena video ne predvajata",
   "Working dir": "Delovni direktorij",
   "path": "pot",
-  "undefined — set from hamburger menu": "nedefinirano — nastavite iz hamburger menija"
+  "undefined — set from hamburger menu": "nedefinirano — nastavite iz hamburger menija",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

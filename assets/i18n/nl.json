@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "Laad de webview uit wanneer YAYC verborgen is en er geen video wordt afgespeeld",
   "Working dir": "Werkmap",
   "path": "pad",
-  "undefined — set from hamburger menu": "niet gedefinieerd — instellen via hamburgermenu"
+  "undefined — set from hamburger menu": "niet gedefinieerd — instellen via hamburgermenu",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }

@@ -175,5 +175,13 @@
   "Unload the web view when YAYC is hidden and no video is playing": "Изключване на уеб изгледа, когато YAYC е скрит и не се възпроизвежда видео",
   "Working dir": "Работна директория",
   "path": "път",
-  "undefined — set from hamburger menu": "не е дефинирано — задава се от менюто (хамбургер)"
+  "undefined — set from hamburger menu": "не е дефинирано — задава се от менюто (хамбургер)",
+  "Add here": "",
+  "Browse...": "",
+  "Go to URL": "",
+  "Keep hover preview playing": "",
+  "Keep thumbnail hover previews playing when YAYC loses focus or you switch virtual desktop. Also enables pinning a preview via right-click.": "",
+  "Pin preview": "",
+  "Unpin current": "",
+  "Unpin preview": ""
 }
