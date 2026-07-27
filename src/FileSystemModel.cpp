@@ -923,6 +923,45 @@ bool FileSystemModel::moveEntry(QModelIndex item, QModelIndex destinationDir) {
     }
 }
 
+// Same as moveEntry(QModelIndex, QModelIndex) but the destination is a plain
+// path (used by BookmarkContextMenu's "Move to..." — root path / recent
+// destinations are stored as strings, not model indices).
+bool FileSystemModel::moveEntry(QModelIndex item, const QString &destinationPath) {
+    if (!m_ready)
+        return false;
+    auto index = m_proxyModel->mapToSource(item);
+    if (!index.isValid() || !filePath(index).size()) {
+        qWarning() << "invalid input";
+        return false;
+    }
+
+    QDir d(destinationPath);
+    if (!d.exists()) {
+        qWarning() << "Destination directory doesn't exist";
+        return false;
+    }
+    pushRecentDestination(d.path(), d.dirName());
+
+    if (isDir(index)) {
+        QDir f(filePath(index));
+        if (!f.exists()) {
+            qWarning() << "directory to move doesn't exist";
+            return false;
+        }
+        QString newName = d.absoluteFilePath(fileName(index));
+        const bool res = f.rename(f.absoluteFilePath(""), newName);
+        if (res) {
+            m_cache = cacheRoot(rootDirectory());
+            emit structureChanged();
+        }
+        return res;
+    } else {
+        const QString &key = itemKey(index);
+        moveEntry(key, d);
+        return true;
+    }
+}
+
 // as of 2024.11.17 used only in BookmarkContextMenu.Move to (last dest)
 void FileSystemModel::moveEntry(const QString &key, const QString &ds) {
     if (!m_ready || !m_cache.contains(key))

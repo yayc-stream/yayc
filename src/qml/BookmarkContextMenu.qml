@@ -51,7 +51,6 @@ Menu {
         extAppMenu.close()
         moveToMenu.close()
     }
-
     property string categoryName: ""
 
     function setCategoryIndex(idx, name) {
@@ -86,35 +85,40 @@ Menu {
         id: moveToMenu
         title: uiTr("Move to...")
         icon.source: "/icons/move.svg"
-        enabled: rootItem.deleteVideoItem
-                 && rootItem.model
+        enabled: (rootItem.deleteVideoItem || rootItem.deleteCategoryItem) && rootItem.model
         visible: enabled
-        height: enabled ? implicitHeight : 0
+
+        function moveTo(destinationPath) {
+            if (rootItem.deleteCategoryItem)
+                rootItem.model.moveEntry(rootItem.categoryIndex, destinationPath)
+            else
+                rootItem.model.moveEntry(rootItem.key, destinationPath)
+        }
 
         MenuItem {
             text: "/"
-            onClicked: rootItem.model.moveEntry(rootItem.key, rootItem.model.bookmarksRootPath)
+            onClicked: moveToMenu.moveTo(rootItem.model.bookmarksRootPath)
         }
         Repeater {
             model: (moveToMenu.enabled) ? rootItem.model.recentDestinations : undefined
             MenuItem {
                 required property var modelData
                 text: modelData.name
-                onClicked: rootItem.model.moveEntry(rootItem.key, modelData.path)
+                onClicked: moveToMenu.moveTo(modelData.path)
             }
         }
     }
-    MenuItem {
-        text: uiTr("Set as destination")
-        enabled: !rootItem.isHistoryView && rootItem.parentView
-                 && rootItem.deleteCategoryItem
-        visible: enabled
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            rootItem.model.setLastDestinationCategory(rootItem.categoryIndex)
+    Repeater {
+        model: (!rootItem.isHistoryView && rootItem.parentView
+                && rootItem.deleteCategoryItem) ? 1 : 0
+        MenuItem {
+            text: uiTr("Set as destination")
+            onClicked: {
+                rootItem.model.setLastDestinationCategory(rootItem.categoryIndex)
+            }
+            icon.source: "/icons/move.svg"
+            display: MenuItem.TextBesideIcon
         }
-        icon.source: "/icons/move.svg"
-        display: MenuItem.TextBesideIcon
     }
     MenuItem {
         text: uiTr("Add category")
@@ -143,171 +147,163 @@ Menu {
         icon.source: "/icons/add.svg"
         display: MenuItem.TextBesideIcon
     }
-    MenuItem {
-        text: uiTr("Reload category")
-        enabled: !rootItem.isHistoryView && rootItem.parentView
-                 && rootItem.deleteCategoryItem
-        visible: enabled
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            rootItem.model.reloadCategory(rootItem.categoryIndex)
-        }
-        icon.source: "/icons/refresh.svg"
-        display: MenuItem.TextBesideIcon
-    }
-    MenuItem {
-        text: uiTr("Delete category")
-        enabled: !rootItem.isHistoryView && rootItem.parentView
-                 && rootItem.deleteCategoryItem
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            if (rootItem.isHistoryView)
-                return
-            rootItem.model.deleteEntry(rootItem.categoryIndex)
-            if (rootItem.parentContainer)
-                rootItem.parentContainer.refreshLayout()
-        }
-        icon.source: "/icons/folder_delete.svg"
-        display: MenuItem.TextBesideIcon
-    }
-    MenuItem {
-        text: uiTr("Delete video") + ((rootItem.isHistoryView) ? " " + uiTr("from History"): "")
-        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            rootItem.model.deleteEntry(rootItem.key,
-                                            (rootItem.removeStorageOnDelete)
-                                            ? rootItem.extWorkingDirPath
-                                            : "",
-                                            rootItem.removeStorageOnDelete)
-            // root.triggerVideoAdded() FIXME
-            if (rootItem.parentContainer)
-                rootItem.parentContainer.refreshLayout()
-        }
-        icon.source: "/icons/remove.svg"
-        display: MenuItem.TextBesideIcon
-    }
-    MenuItem {
-        TextEdit{
-            id: copyLinkClipboardProxy
-            visible: false
-        }
-        text: uiTr("Copy Link")
-        enabled: rootItem.parentView && rootItem.deleteVideoItem
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            copyLinkClipboardProxy.text = rootItem.model.videoUrl(rootItem.videoIndex)
-            copyLinkClipboardProxy.selectAll();
-            copyLinkClipboardProxy.copy()
-        }
-        icon.source: "/icons/content_copy.svg"
-        display: MenuItem.TextBesideIcon
-    }
-    MenuItem {
-        text: uiTr("Toggle Star")
-        enabled: !rootItem.isHistoryView
-                 && (rootItem.deleteVideoItem || !rootItem.parentView)
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            if (rootItem.isHistoryView)
-                return
-            var starred = rootItem.model.isStarred(rootItem.key)
-            rootItem.model.starEntry(rootItem.key, !starred)
-            rootItem.model.bumpVersion(rootItem.key)
-        }
-        icon.source: "/icons/"+(fileSystemModel.isStarred(rootItem.key)
-                                ? "star_fill.svg" : "star.svg")
-        display: MenuItem.TextBesideIcon
-    }
-    MenuItem {
-        text: uiTr("Toggle Viewed")
-        enabled: !rootItem.isHistoryView
-                 && (rootItem.deleteVideoItem || !rootItem.parentView)
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            if (rootItem.isHistoryView)
-                return
-            var viewed = rootItem.model.isViewed(rootItem.key)
-            rootItem.model.viewEntry(rootItem.key, !viewed)
-            rootItem.model.bumpVersion(rootItem.key)
-        }
-        icon.source: "/icons/"+(fileSystemModel.isViewed(rootItem.key)
-                                ? "check_circle_fill.svg" : "check_circle.svg")
-        display: MenuItem.TextBesideIcon
-    }
-    MenuItem {
-        text: (rootItem.parentView && rootItem.parentView.selectedKey !== rootItem.key)
-              ? uiTr("Cut")
-              : uiTr("Un-Cut")
-        enabled:  !rootItem.isHistoryView && rootItem.parentView
-                  && rootItem.deleteVideoItem
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            if (parentView.selectedKey !== rootItem.key) {
-                parentView.selectedKey = rootItem.key
-            } else {
-                parentView.selectedKey = ""
+    Repeater {
+        model: (!rootItem.isHistoryView && rootItem.parentView
+                && rootItem.deleteCategoryItem) ? 1 : 0
+        MenuItem {
+            text: uiTr("Reload category")
+            onClicked: {
+                rootItem.model.reloadCategory(rootItem.categoryIndex)
             }
+            icon.source: "/icons/refresh.svg"
+            display: MenuItem.TextBesideIcon
         }
-        icon.source: "/icons/content_cut.svg"
-        display: MenuItem.TextBesideIcon
     }
-    MenuItem {
-        text: uiTr("Paste")
-        enabled: (!rootItem.isHistoryView && rootItem.parentView)
-                 && rootItem.deleteCategoryItem
-                 && (parentView && parentView.selectedKey !== "")
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            if (rootItem.isHistoryView)
-                return
-            var key = parentView.selectedKey
-            parentView.selectedKey = ""
-            var res = rootItem.model.moveVideo(key, rootItem.categoryIndex)
+    Repeater {
+        model: (!rootItem.isHistoryView && rootItem.parentView
+                && rootItem.deleteCategoryItem) ? 1 : 0
+        MenuItem {
+            text: uiTr("Delete category")
+            onClicked: {
+                rootItem.model.deleteEntry(rootItem.categoryIndex)
+                if (rootItem.parentContainer)
+                    rootItem.parentContainer.refreshLayout()
+            }
+            icon.source: "/icons/folder_delete.svg"
+            display: MenuItem.TextBesideIcon
         }
-        icon.source: "/icons/content_paste.svg"
-        display: MenuItem.TextBesideIcon
     }
-    MenuItem {
-        text: uiTr("Open containing folder")
-        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
-                 && rootItem.extWorkingDirExists
-                 && rootItem.model.hasWorkingDir(
-                     rootItem.key,
-                     rootItem.extWorkingDirPath)
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            rootItem.model.openInBrowser(
-                        rootItem.key,
-                        rootItem.extWorkingDirPath)
+    Repeater {
+        model: (rootItem.deleteVideoItem || !rootItem.parentView) ? 1 : 0
+        MenuItem {
+            text: uiTr("Delete video") + ((rootItem.isHistoryView) ? " " + uiTr("from History"): "")
+            onClicked: {
+                rootItem.model.deleteEntry(rootItem.key,
+                                                (rootItem.removeStorageOnDelete)
+                                                ? rootItem.extWorkingDirPath
+                                                : "",
+                                                rootItem.removeStorageOnDelete)
+                // root.triggerVideoAdded() FIXME
+                if (rootItem.parentContainer)
+                    rootItem.parentContainer.refreshLayout()
+            }
+            icon.source: "/icons/remove.svg"
+            display: MenuItem.TextBesideIcon
         }
-        icon.source: "/icons/open_in_browser.svg"
-        display: MenuItem.TextBesideIcon
     }
-    MenuItem {
-        text: uiTr("Delete storage data")
-        enabled: (rootItem.deleteVideoItem || !rootItem.parentView)
-                 && rootItem.extWorkingDirExists
-                 && rootItem.model.hasWorkingDir(
-                     rootItem.key,
-                     rootItem.extWorkingDirPath)
-        visible: true
-        height: enabled ? implicitHeight : 0
-        onClicked: {
-            rootItem.model.deleteStorage(
-                        rootItem.key,
-                        rootItem.extWorkingDirPath)
+    Repeater {
+        model: (rootItem.parentView && rootItem.deleteVideoItem) ? 1 : 0
+        MenuItem {
+            TextEdit{
+                id: copyLinkClipboardProxy
+                visible: false
+            }
+            text: uiTr("Copy Link")
+            onClicked: {
+                copyLinkClipboardProxy.text = rootItem.model.videoUrl(rootItem.videoIndex)
+                copyLinkClipboardProxy.selectAll();
+                copyLinkClipboardProxy.copy()
+            }
+            icon.source: "/icons/content_copy.svg"
+            display: MenuItem.TextBesideIcon
         }
-        icon.source: "/icons/delete_forever.svg"
-        display: MenuItem.TextBesideIcon
+    }
+    Repeater {
+        model: (!rootItem.isHistoryView
+                && (rootItem.deleteVideoItem || !rootItem.parentView)) ? 1 : 0
+        MenuItem {
+            text: uiTr("Toggle Star")
+            onClicked: {
+                var starred = rootItem.model.isStarred(rootItem.key)
+                rootItem.model.starEntry(rootItem.key, !starred)
+                rootItem.model.bumpVersion(rootItem.key)
+            }
+            icon.source: "/icons/"+(fileSystemModel.isStarred(rootItem.key)
+                                    ? "star_fill.svg" : "star.svg")
+            display: MenuItem.TextBesideIcon
+        }
+    }
+    Repeater {
+        model: (!rootItem.isHistoryView
+                && (rootItem.deleteVideoItem || !rootItem.parentView)) ? 1 : 0
+        MenuItem {
+            text: uiTr("Toggle Viewed")
+            onClicked: {
+                var viewed = rootItem.model.isViewed(rootItem.key)
+                rootItem.model.viewEntry(rootItem.key, !viewed)
+                rootItem.model.bumpVersion(rootItem.key)
+            }
+            icon.source: "/icons/"+(fileSystemModel.isViewed(rootItem.key)
+                                    ? "check_circle_fill.svg" : "check_circle.svg")
+            display: MenuItem.TextBesideIcon
+        }
+    }
+    Repeater {
+        model: (!rootItem.isHistoryView && rootItem.parentView
+                && rootItem.deleteVideoItem) ? 1 : 0
+        MenuItem {
+            text: (rootItem.parentView && rootItem.parentView.selectedKey !== rootItem.key)
+                  ? uiTr("Cut")
+                  : uiTr("Un-Cut")
+            onClicked: {
+                if (parentView.selectedKey !== rootItem.key) {
+                    parentView.selectedKey = rootItem.key
+                } else {
+                    parentView.selectedKey = ""
+                }
+            }
+            icon.source: "/icons/content_cut.svg"
+            display: MenuItem.TextBesideIcon
+        }
+    }
+    Repeater {
+        model: (!rootItem.isHistoryView && rootItem.parentView
+                && rootItem.deleteCategoryItem) ? 1 : 0
+        MenuItem {
+            text: uiTr("Paste")
+            enabled: parentView && parentView.selectedKey !== ""
+            onClicked: {
+                var key = parentView.selectedKey
+                parentView.selectedKey = ""
+                var res = rootItem.model.moveVideo(key, rootItem.categoryIndex)
+            }
+            icon.source: "/icons/content_paste.svg"
+            display: MenuItem.TextBesideIcon
+        }
+    }
+    Repeater {
+        model: ((rootItem.deleteVideoItem || !rootItem.parentView)
+                && rootItem.extWorkingDirExists
+                && rootItem.model.hasWorkingDir(
+                    rootItem.key,
+                    rootItem.extWorkingDirPath)) ? 1 : 0
+        MenuItem {
+            text: uiTr("Open containing folder")
+            onClicked: {
+                rootItem.model.openInBrowser(
+                            rootItem.key,
+                            rootItem.extWorkingDirPath)
+            }
+            icon.source: "/icons/open_in_browser.svg"
+            display: MenuItem.TextBesideIcon
+        }
+    }
+    Repeater {
+        model: ((rootItem.deleteVideoItem || !rootItem.parentView)
+                && rootItem.extWorkingDirExists
+                && rootItem.model.hasWorkingDir(
+                    rootItem.key,
+                    rootItem.extWorkingDirPath)) ? 1 : 0
+        MenuItem {
+            text: uiTr("Delete storage data")
+            onClicked: {
+                rootItem.model.deleteStorage(
+                            rootItem.key,
+                            rootItem.extWorkingDirPath)
+            }
+            icon.source: "/icons/delete_forever.svg"
+            display: MenuItem.TextBesideIcon
+        }
     }
     // ToDo: add Menu for tagging
     Menu {
@@ -315,19 +311,13 @@ Menu {
         title: uiTr("Launch in")
         icon.source: "/icons/function.svg"
         enabled: rootItem.extCommandEnabled
-        height: enabled ? implicitHeight : 0
 
         Repeater {
-            model: (extAppMenu.enabled)
-                    ? rootItem.externalCommands
-                    : undefined
+            model: (extAppMenu.enabled) ? rootItem.externalCommands : undefined
             MenuItem {
                 text: (rootItem.externalCommands[index])
                         ? rootItem.externalCommands[index].name
                         : ""
-                enabled: true
-                visible: true
-                height: enabled ? implicitHeight : 0
                 onClicked: {
                     if (rootItem.categoryIndex !== undefined
                             && rootItem.categoryIndex !== null) {

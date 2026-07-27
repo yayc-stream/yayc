@@ -181,6 +181,7 @@ public slots:
     QString videoIconUrl(const QString &key) const;
     bool moveVideo(const QString &key, QModelIndex destinationDir);
     bool moveEntry(QModelIndex item, QModelIndex destinationDir);
+    bool moveEntry(QModelIndex item, const QString &destinationPath);
     void moveEntry(const QString &key, const QString &ds);
     void moveEntry(const QString &key, const QDir &d);
     bool addCategory(const QString &name, QModelIndex parentDir = QModelIndex());

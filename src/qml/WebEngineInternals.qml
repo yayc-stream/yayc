@@ -264,6 +264,20 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
             function applyTo(host) {
                 var r = window.__yayc_playerRate;
                 var vol = window.__yayc_playerVolume;
+                var v = host.querySelector ? host.querySelector('video') : null;
+
+                // Pinned preview with forced audio: set the element directly. The player
+                // API is useless here - we unmuted by shadowing 'muted' on the element, so
+                // the API still reports isMuted() == true and the mute guard below would
+                // skip every volume change (slider looked dead while pinned).
+                if (v && v.__yayc_audioForced) {
+                    if (r > 0 && v.playbackRate !== r)
+                        v.playbackRate = r;
+                    if (vol >= 0 && Math.abs(v.volume - vol / 100) > 0.001)
+                        v.volume = vol / 100;
+                    return;
+                }
+
                 var yt = null;
                 try { yt = host.getPlayer ? host.getPlayer() : null; } catch (e) { yt = null; }
                 if (yt && yt.setPlaybackRate) {
@@ -279,7 +293,6 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
                     } catch (e) {}
                     return;
                 }
-                var v = host.querySelector ? host.querySelector('video') : null;
                 if (!v) return;
                 if (r > 0 && v.playbackRate !== r)
                     v.playbackRate = r;
