@@ -576,9 +576,12 @@ Item {
                     anchors.fill: parent
                     asynchronous: true
 
-                    // Desired state: profile exists AND (window visible OR playing OR unload-on-hide disabled)
+                    // Desired state: profile exists AND (window visible OR playing OR
+                    // preview pinned OR unload-on-hide disabled)
                     property bool shouldBeActive: WebBrowsingProfiles.profile !== null
                                                    && (webViewWrapper.videoPlaying
+                                                       || (!!webEngineViewLoader.item
+                                                           && webEngineViewLoader.item.previewPinned)
                                                        || !root.windowHidden
                                                        || !root.blankWhenHidden)
                     onShouldBeActiveChanged: {

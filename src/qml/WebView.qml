@@ -953,15 +953,45 @@ Item {
             extCommandEnabled: root.extCommandEnabled
         }
         TextField {
+            id: urlTextField
             Layout.fillWidth: true
 
             text: root.url
             selectByMouse: true
+            rightPadding: urlGoButton.width + 4
             onEditingFinished: {}
             onAccepted: {
                 if (text == root.url)
                     return
                 root.url = text
+            }
+
+            ToolButton {
+                id: urlGoButton
+                anchors {
+                    right: parent.right
+                    rightMargin: 2
+                    verticalCenter: parent.verticalCenter
+                }
+                height: parent.height - 4
+                width: height
+
+                enabled: urlTextField.text != root.url
+
+                icon.source: "/icons/arrow_right.svg"
+                icon.color: enabled ? urlTextField.color
+                                    : YaycProperties.disabledTextColor
+                display: AbstractButton.IconOnly
+
+                onClicked: {
+                    urlTextField.forceActiveFocus()
+                    urlTextField.accepted()
+                }
+
+                hoverEnabled: true
+                ToolTip.visible: hovered && enabled
+                ToolTip.text: uiTr("Go to URL")
+                ToolTip.delay: 300
             }
         }
         ToolButton {
