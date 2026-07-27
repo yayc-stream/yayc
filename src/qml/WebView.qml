@@ -769,50 +769,42 @@ Item {
                 title: uiTr("Add to...")
                 icon.source: "/icons/add.svg"
 
+                onAboutToShow: ctxRecents.rebuild()
+
+                function addToDestination(path) {
+                    var key = webEngineView._ctxMenuNotAdded.requestedKey
+                    if (key === "")
+                        return
+                    fileSystemModel.addEntry(key, webEngineView._ctxMenuNotAdded.requestedLinkText,
+                                             "", "", "", 0, 0, path)
+                    root.triggerVideoAdded()
+                }
+
                 MenuItem {
                     text: "/"
-                    onClicked: {
-                        var key = webEngineView._ctxMenuNotAdded.requestedKey
-                        if (key !== "") {
-                            fileSystemModel.addEntry(key, webEngineView._ctxMenuNotAdded.requestedLinkText,
-                                                     "", "", "")
-                            root.triggerVideoAdded()
-                        }
-                    }
+                    onClicked: ctxAddToMenu.addToDestination("")
                 }
-                // Instantiator, not Repeater: Repeater appends to contentModel as items are
-                // created, so destinations added at runtime would land after the separator.
-                Instantiator {
-                    model: fileSystemModel.recentDestinations
-                    onObjectAdded: (index, object) => ctxAddToMenu.insertItem(1 + index, object)
-                    onObjectRemoved: (index, object) => ctxAddToMenu.removeItem(object)
-                    delegate: MenuItem {
-                        required property var modelData
-                        text: modelData.name
-                        onClicked: {
-                            var key = webEngineView._ctxMenuNotAdded.requestedKey
-                            if (key !== "") {
-                                fileSystemModel.addEntry(key, webEngineView._ctxMenuNotAdded.requestedLinkText,
-                                                         "", "", "", 0, 0, modelData.path)
-                                root.triggerVideoAdded()
-                            }
-                        }
-                    }
+                // Recents are built on show, in front of this separator - see
+                // RecentDestinationsSection.qml.
+                RecentDestinationsSection {
+                    id: ctxRecents
+                    menu: ctxAddToMenu
+                    before: ctxRecentsSeparator
+                    destinations: fileSystemModel.recentDestinations
+                    pick: function(path) { ctxAddToMenu.addToDestination(path) }
                 }
-                MenuSeparator {}
+                MenuSeparator { id: ctxRecentsSeparator }
                 DestinationFolderMenu {
                     title: uiTr("Browse...")
+                    // 48px-native svg; menu icons are 24
                     icon.source: "/icons/folder_open.svg"
+                    icon.width: 24
+                    icon.height: 24
                     selfSelectable: false
                     folderPath: fileSystemModel.bookmarksRootPath
                     pick: function(path) {
-                        var key = webEngineView._ctxMenuNotAdded.requestedKey
-                        if (key === "")
-                            return
-                        fileSystemModel.addEntry(key, webEngineView._ctxMenuNotAdded.requestedLinkText,
-                                                 "", "", "", 0, 0, path)
+                        ctxAddToMenu.addToDestination(path)
                         fileSystemModel.pushDestination(path)
-                        root.triggerVideoAdded()
                     }
                 }
             }
@@ -1085,26 +1077,27 @@ Item {
 
             Menu {
                 id: addToToolbarMenu
+                onAboutToShow: toolbarRecents.rebuild()
                 MenuItem {
                     text: "/"
                     onClicked: root.timePuller.addCurrentVideo()
                 }
-                // See ctxAddToMenu: Instantiator keeps runtime-added destinations above the
-                // separator.
-                Instantiator {
-                    model: fileSystemModel.recentDestinations
-                    onObjectAdded: (index, object) => addToToolbarMenu.insertItem(1 + index, object)
-                    onObjectRemoved: (index, object) => addToToolbarMenu.removeItem(object)
-                    delegate: MenuItem {
-                        required property var modelData
-                        text: modelData.name
-                        onClicked: buttonAddVideo.addToDestination(modelData.path)
-                    }
+                // Recents are built on show, in front of this separator - see
+                // RecentDestinationsSection.qml.
+                RecentDestinationsSection {
+                    id: toolbarRecents
+                    menu: addToToolbarMenu
+                    before: toolbarRecentsSeparator
+                    destinations: fileSystemModel.recentDestinations
+                    pick: function(path) { buttonAddVideo.addToDestination(path) }
                 }
-                MenuSeparator {}
+                MenuSeparator { id: toolbarRecentsSeparator }
                 DestinationFolderMenu {
                     title: uiTr("Browse...")
+                    // 48px-native svg; menu icons are 24
                     icon.source: "/icons/folder_open.svg"
+                    icon.width: 24
+                    icon.height: 24
                     selfSelectable: false
                     folderPath: fileSystemModel.bookmarksRootPath
                     pick: function(path) {
