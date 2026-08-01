@@ -127,6 +127,31 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
             // and can break other backend writes, like ad-skip. QML polls this counter.
             window.__yayc_pinLostSeq = 0;
 
+            // Play/pause for the pinned preview. The pause backstop below resumes
+            // anything YouTube pauses, so a wanted pause needs a flag it honours.
+            window.__yayc_pinPaused = false;
+            window.__yayc_setPreviewPaused = function(p) {
+                window.__yayc_pinPaused = !!p;
+                var hosts = window.__yayc_previewPlayers();
+                for (var i = 0; i < hosts.length; ++i) {
+                    var v = hosts[i].querySelector('video');
+                    if (!v) continue;
+                    try {
+                        if (p) v.pause(); else v.play();
+                    } catch (e) {}
+                }
+            };
+            // Real state for the QML poll, so a preview that pauses on its own (end of
+            // the clip) still shows the right icon.
+            window.__yayc_previewPaused = function() {
+                var hosts = window.__yayc_previewPlayers();
+                for (var i = 0; i < hosts.length; ++i) {
+                    var v = hosts[i].querySelector('video');
+                    if (v) return !!v.paused;
+                }
+                return false;
+            };
+
             function block(e) {
                 if (window.__yayc_pinned)
                     e.stopImmediatePropagation();
@@ -155,9 +180,10 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
             for (var j = 0; j < rtypes.length; ++j)
                 document.addEventListener(rtypes[j], blockRightButton, true);
 
-            // Backstop: whatever route YouTube took to pause it, resume.
+            // Backstop: whatever route YouTube took to pause it, resume - unless the
+            // pause was wanted (__yayc_pinPaused).
             document.addEventListener('pause', function(e) {
-                if (!window.__yayc_pinned) return;
+                if (!window.__yayc_pinned || window.__yayc_pinPaused) return;
                 var v = e.target;
                 if (!v || v.tagName !== 'VIDEO' || !v.closest) return;
                 // Same structure test as __yayc_previewPlayers.

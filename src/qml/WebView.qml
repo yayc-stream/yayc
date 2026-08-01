@@ -77,9 +77,16 @@ Item {
     property url pendingPinLink: ""
     // -1 = not read yet, so an old counter from a past pin cannot unpin this one.
     property int pinLostSeqSeen: -1
+    // Pinned preview paused by the toolbar, or by reaching its own end. Kept in sync
+    // with the page by pinLostPoll.
+    property bool pinPaused: false
 
     onPreviewPinnedChanged: {
         runScript("window.__yayc_pinned = " + previewPinned)
+        // Every pin starts playing, and a stale flag would gate the pause backstop of
+        // the next one. Not through setPreviewPaused(): no video should be touched here.
+        root.pinPaused = false
+        runScript("window.__yayc_pinPaused = false")
         if (previewPinned) {
             // Once, at pin time. Deliberately not on a timer: see script_previewPin for
             // why re-asserting is what broke playback last time.
@@ -136,6 +143,16 @@ Item {
         root.previewPinned = true
     }
 
+    // YouTube may drop the paused preview back to its thumbnail. The pin survives that:
+    // the element stays, so the watchdog does not fire, and resuming brings it back.
+    function setPreviewPaused(paused) {
+        if (!root.previewPinned)
+            return
+        root.pinPaused = paused
+        runScript("if (window.__yayc_setPreviewPaused) window.__yayc_setPreviewPaused("
+                  + paused + ");")
+    }
+
     function unpinPreview() {
         repinTimer.stop()
         root.pendingPinLink = ""
@@ -165,24 +182,28 @@ Item {
         function onWebViewPressedWhileFrozen() { root.unpinPreview() }
     }
 
-    // Reads the pin-lost counter from script_previewPin. Polling, not push: more
-    // QWebChannel objects on one transport break other backend writes.
+    // Reads the pin-lost counter and the preview play state from script_previewPin.
+    // Polling, not push: more QWebChannel objects on one transport break other backend
+    // writes.
     Timer {
         id: pinLostPoll
         interval: 2000
         repeat: true
         running: root.previewPinned
         onTriggered: webEngineView.runJavaScript(
-                         "window.__yayc_pinLostSeq || 0",
-                         function(seq) {
-                             if (!root.previewPinned)
+                         "({ seq: window.__yayc_pinLostSeq || 0,"
+                         + "   paused: window.__yayc_previewPaused"
+                         + "           ? window.__yayc_previewPaused() : false })",
+                         function(res) {
+                             if (!root.previewPinned || !res)
                                  return
+                             root.pinPaused = res.paused
                              if (root.pinLostSeqSeen < 0) {
-                                 root.pinLostSeqSeen = seq
+                                 root.pinLostSeqSeen = res.seq
                                  return
                              }
-                             if (seq > root.pinLostSeqSeen) {
-                                 root.pinLostSeqSeen = seq
+                             if (res.seq > root.pinLostSeqSeen) {
+                                 root.pinLostSeqSeen = res.seq
                                  root.unpinPreview()
                              }
                          })
@@ -1339,11 +1360,23 @@ Item {
         }
         ToolButton {
             id: buttonPlayPause
-            enabled: webEngineView.isYoutubeVideo && (root.timePuller.playerState !== -1)
+            // Off a watch page a pin is the only thing playing, so the button drives it.
+            // On a watch page the main player wins: the pin is then a side preview.
+            readonly property bool controlsPin: root.previewPinned
+                                                && !webEngineView.isYoutubeVideo
+            readonly property bool showsPause: controlsPin
+                                               ? !root.pinPaused
+                                               : (root.timePuller.playerState === 1)
+            enabled: controlsPin
+                     || (webEngineView.isYoutubeVideo && (root.timePuller.playerState !== -1))
             visible: true
             checkable: false
 
             onClicked: {
+                if (controlsPin) {
+                    root.setPreviewPaused(!root.pinPaused)
+                    return
+                }
                 var scriptToRun
                 if (root.timePuller.playerState === 1 && webEngineView.key !== "")
                     scriptToRun = WebEngineInternals.getPauseVideoScript(webEngineView.isShorts)
@@ -1357,7 +1390,7 @@ Item {
                 root.runScript(scriptToRun)
             }
 
-            icon.source: (root.timePuller.playerState === 1)
+            icon.source: showsPause
                             ? "/icons/pause.svg"
                             : "/icons/play_arrow.svg"
 
@@ -1365,9 +1398,9 @@ Item {
 
             hoverEnabled: true
             ToolTip.visible: hovered
-            ToolTip.text: (root.timePuller.playerState === 1)
-                            ? uiTr("Pause video")
-                            : uiTr("Play video")
+            ToolTip.text: controlsPin
+                            ? (showsPause ? uiTr("Pause preview") : uiTr("Play preview"))
+                            : (showsPause ? uiTr("Pause video") : uiTr("Play video"))
             ToolTip.delay: 300
         }
 
