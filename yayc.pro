@@ -10,6 +10,9 @@ macos {
     CONFIG += universal
     QMAKE_APPLE_DEVICE_ARCHS = arm64 x86_64
 }
+win32 {
+    RC_ICONS = assets/images/app.ico
+}
 #unix:!android: CONFIG += use_lld_linker # fix for QTBUG-80964
 
 #No debug output in release mode
