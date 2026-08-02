@@ -1,3 +1,9 @@
+## YAYC v1.9.1 (2026.08)
+
+### 🐞 Bug fixes
+
+- Fixed windows installer icon
+
 ## YAYC v1.9.0 (2026.07) -- Coalball
 
 ### ✨ New Features
