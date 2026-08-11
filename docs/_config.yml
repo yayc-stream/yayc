@@ -7,7 +7,11 @@ safe: false
 
 ### site serving configuration ###
 exclude: [CNAME, README.md, .gitignore]
-permalink: /:title ## disables post output
+
+### page sections live in _sections, one per language; output: false keeps them from rendering as standalone pages ###
+collections:
+  sections:
+    output: false
 timezone: null
 lsi: false
 markdown: kramdown

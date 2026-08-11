@@ -1,0 +1,59 @@
+en:
+  alts: ["Startup screen", "Settings panel", "Bookmarks context menu", "Drag and drop bookmarks"]
+  thumbs: ["Browse YouTube and bookmark videos", "Configure working directories", "Organize bookmarks into categories", "Drag and drop between categories"]
+  captions: ["Browse YouTube and bookmark videos with a right-click", "Configure your working directories on first launch", "Organize bookmarks into categories with the context menu", "Drag and drop to rearrange bookmarks between categories"]
+  legend: ["Back / Forward", "Bookmarks", "History", "Reload", "Home", "Address bar", "Add video", "Star video", "Copy URL", "Toggle Guide", "Categories", "Grid columns", "Picture-in-Picture", "Playback Speed", "Video Quality", "Play / Pause", "Volume", "Settings", "Context menu"]
+
+it:
+  alts: ["Schermata iniziale", "Pannello impostazioni", "Menu contestuale dei segnalibri", "Trascinamento dei segnalibri"]
+  thumbs: ["Naviga su YouTube e salva i video nei segnalibri", "Configura le directory di lavoro", "Organizza i segnalibri in categorie", "Trascina tra le categorie"]
+  captions: ["Naviga su YouTube e salva i video nei segnalibri con un clic destro", "Configura le directory di lavoro al primo avvio", "Organizza i segnalibri in categorie con il menu contestuale", "Trascina i segnalibri per riordinarli tra le categorie"]
+  legend: ["Indietro / Avanti", "Segnalibri", "Cronologia", "Ricarica", "Home", "Barra degli indirizzi", "Aggiungi video", "Video nei preferiti", "Copia URL", "Mostra/nascondi guida", "Categorie", "Colonne della griglia", "Picture-in-Picture", "Velocità di riproduzione", "Qualità video", "Riproduci / Pausa", "Volume", "Impostazioni", "Menu contestuale"]
+
+es:
+  alts: ["Pantalla de inicio", "Panel de ajustes", "Menú contextual de marcadores", "Arrastrar y soltar marcadores"]
+  thumbs: ["Navega por YouTube y guarda vídeos en marcadores", "Configura los directorios de trabajo", "Organiza los marcadores en categorías", "Arrastra y suelta entre categorías"]
+  captions: ["Navega por YouTube y guarda vídeos en marcadores con clic derecho", "Configura tus directorios de trabajo en el primer inicio", "Organiza los marcadores en categorías con el menú contextual", "Arrastra y suelta para reorganizar los marcadores entre categorías"]
+  legend: ["Atrás / Adelante", "Marcadores", "Historial", "Recargar", "Inicio", "Barra de direcciones", "Añadir vídeo", "Destacar vídeo", "Copiar URL", "Mostrar/ocultar guía", "Categorías", "Columnas de la cuadrícula", "Picture-in-Picture", "Velocidad de reproducción", "Calidad de vídeo", "Reproducir / Pausa", "Volumen", "Ajustes", "Menú contextual"]
+
+zh:
+  alts: ["启动界面", "设置面板", "书签右键菜单", "拖放书签"]
+  thumbs: ["浏览 YouTube 并收藏视频", "配置工作目录", "将书签整理为分类", "在分类间拖放"]
+  captions: ["浏览 YouTube，右键即可收藏视频", "首次启动时配置工作目录", "通过右键菜单将书签整理为分类", "拖放书签以在分类间重新排列"]
+  legend: ["后退 / 前进", "书签", "历史记录", "重新加载", "主页", "地址栏", "添加视频", "收藏视频", "复制链接", "显示/隐藏侧栏", "分类", "网格列数", "画中画", "播放速度", "视频画质", "播放 / 暂停", "音量", "设置", "右键菜单"]
+
+ja:
+  alts: ["起動画面", "設定パネル", "ブックマークのコンテキストメニュー", "ブックマークのドラッグ&ドロップ"]
+  thumbs: ["YouTubeを閲覧して動画をブックマーク", "作業ディレクトリを設定", "ブックマークをカテゴリに整理", "カテゴリ間でドラッグ&ドロップ"]
+  captions: ["YouTubeを閲覧し、右クリックで動画をブックマーク", "初回起動時に作業ディレクトリを設定", "コンテキストメニューでブックマークをカテゴリに整理", "ドラッグ&ドロップでブックマークをカテゴリ間で並べ替え"]
+  legend: ["戻る / 進む", "ブックマーク", "履歴", "再読み込み", "ホーム", "アドレスバー", "動画を追加", "お気に入り登録", "URLをコピー", "ガイド表示切替", "カテゴリ", "グリッド列数", "ピクチャーインピクチャー", "再生速度", "画質", "再生 / 一時停止", "音量", "設定", "コンテキストメニュー"]
+
+de:
+  alts: ["Startbildschirm", "Einstellungen", "Kontextmenü der Lesezeichen", "Lesezeichen per Drag & Drop"]
+  thumbs: ["YouTube durchsuchen und Videos als Lesezeichen speichern", "Arbeitsverzeichnisse konfigurieren", "Lesezeichen in Kategorien organisieren", "Per Drag & Drop zwischen Kategorien verschieben"]
+  captions: ["YouTube durchsuchen und Videos per Rechtsklick als Lesezeichen speichern", "Arbeitsverzeichnisse beim ersten Start konfigurieren", "Lesezeichen über das Kontextmenü in Kategorien organisieren", "Lesezeichen per Drag & Drop zwischen Kategorien neu anordnen"]
+  legend: ["Zurück / Vor", "Lesezeichen", "Verlauf", "Neu laden", "Startseite", "Adressleiste", "Video hinzufügen", "Video favorisieren", "URL kopieren", "Leiste ein-/ausblenden", "Kategorien", "Rasterspalten", "Bild-in-Bild", "Wiedergabegeschwindigkeit", "Videoqualität", "Wiedergabe / Pause", "Lautstärke", "Einstellungen", "Kontextmenü"]
+
+pt:
+  alts: ["Tela inicial", "Painel de configurações", "Menu de contexto dos favoritos", "Arrastar e soltar favoritos"]
+  thumbs: ["Navegue no YouTube e salve vídeos nos favoritos", "Configure os diretórios de trabalho", "Organize os favoritos em categorias", "Arraste e solte entre categorias"]
+  captions: ["Navegue no YouTube e salve vídeos nos favoritos com o botão direito", "Configure seus diretórios de trabalho na primeira inicialização", "Organize os favoritos em categorias com o menu de contexto", "Arraste e solte para reorganizar os favoritos entre categorias"]
+  legend: ["Voltar / Avançar", "Favoritos", "Histórico", "Recarregar", "Início", "Barra de endereços", "Adicionar vídeo", "Destacar vídeo", "Copiar URL", "Mostrar/ocultar guia", "Categorias", "Colunas da grade", "Picture-in-Picture", "Velocidade de reprodução", "Qualidade do vídeo", "Reproduzir / Pausar", "Volume", "Configurações", "Menu de contexto"]
+
+ru:
+  alts: ["Стартовый экран", "Панель настроек", "Контекстное меню закладок", "Перетаскивание закладок"]
+  thumbs: ["Просматривайте YouTube и добавляйте видео в закладки", "Настройте рабочие каталоги", "Организуйте закладки по категориям", "Перетаскивайте между категориями"]
+  captions: ["Просматривайте YouTube и добавляйте видео в закладки правым кликом", "Настройте рабочие каталоги при первом запуске", "Организуйте закладки по категориям через контекстное меню", "Перетаскивайте закладки, чтобы переупорядочить их между категориями"]
+  legend: ["Назад / Вперёд", "Закладки", "История", "Перезагрузить", "Домой", "Адресная строка", "Добавить видео", "В избранное", "Копировать URL", "Показать/скрыть панель", "Категории", "Столбцы сетки", "Картинка в картинке", "Скорость воспроизведения", "Качество видео", "Воспроизведение / Пауза", "Громкость", "Настройки", "Контекстное меню"]
+
+ar:
+  alts: ["شاشة البدء", "لوحة الإعدادات", "القائمة السياقية للإشارات المرجعية", "سحب وإفلات الإشارات المرجعية"]
+  thumbs: ["تصفّح يوتيوب وأضف الفيديوهات إلى الإشارات المرجعية", "اضبط مجلدات العمل", "نظّم الإشارات المرجعية في فئات", "اسحب وأفلت بين الفئات"]
+  captions: ["تصفّح يوتيوب وأضف الفيديوهات إلى الإشارات المرجعية بالنقر الأيمن", "اضبط مجلدات العمل عند التشغيل الأول", "نظّم الإشارات المرجعية في فئات عبر القائمة السياقية", "اسحب وأفلت لإعادة ترتيب الإشارات المرجعية بين الفئات"]
+  legend: ["رجوع / تقدّم", "الإشارات المرجعية", "السجل", "إعادة التحميل", "الصفحة الرئيسية", "شريط العنوان", "إضافة فيديو", "تمييز الفيديو بنجمة", "نسخ الرابط", "إظهار/إخفاء الدليل", "الفئات", "أعمدة الشبكة", "صورة داخل صورة", "سرعة التشغيل", "جودة الفيديو", "تشغيل / إيقاف مؤقت", "مستوى الصوت", "الإعدادات", "القائمة السياقية"]
+
+hi:
+  alts: ["स्टार्टअप स्क्रीन", "सेटिंग्स पैनल", "बुकमार्क कॉन्टेक्स्ट मेनू", "बुकमार्क ड्रैग और ड्रॉप"]
+  thumbs: ["YouTube ब्राउज़ करें और वीडियो बुकमार्क करें", "कार्य निर्देशिकाएँ सेट करें", "बुकमार्क श्रेणियों में व्यवस्थित करें", "श्रेणियों के बीच ड्रैग और ड्रॉप करें"]
+  captions: ["YouTube ब्राउज़ करें और राइट-क्लिक से वीडियो बुकमार्क करें", "पहली बार चलाने पर कार्य निर्देशिकाएँ सेट करें", "कॉन्टेक्स्ट मेनू से बुकमार्क श्रेणियों में व्यवस्थित करें", "बुकमार्क को श्रेणियों के बीच ड्रैग और ड्रॉप से पुनर्व्यवस्थित करें"]
+  legend: ["पीछे / आगे", "बुकमार्क", "इतिहास", "रीलोड", "होम", "एड्रेस बार", "वीडियो जोड़ें", "वीडियो स्टार करें", "URL कॉपी करें", "गाइड दिखाएँ/छिपाएँ", "श्रेणियाँ", "ग्रिड कॉलम", "पिक्चर-इन-पिक्चर", "प्लेबैक गति", "वीडियो गुणवत्ता", "चलाएँ / रोकें", "वॉल्यूम", "सेटिंग्स", "कॉन्टेक्स्ट मेनू"]

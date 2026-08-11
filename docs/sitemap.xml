@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://yayc.stream/</loc>
-  </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url><loc>https://yayc.stream/</loc></url>
+  <url><loc>https://yayc.stream/it/</loc></url>
+  <url><loc>https://yayc.stream/es/</loc></url>
+  <url><loc>https://yayc.stream/zh/</loc></url>
+  <url><loc>https://yayc.stream/ja/</loc></url>
+  <url><loc>https://yayc.stream/de/</loc></url>
+  <url><loc>https://yayc.stream/pt/</loc></url>
+  <url><loc>https://yayc.stream/ru/</loc></url>
+  <url><loc>https://yayc.stream/ar/</loc></url>
+  <url><loc>https://yayc.stream/hi/</loc></url>
 </urlset>

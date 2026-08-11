@@ -14,9 +14,10 @@ html { box-sizing: border-box; }
 .bg-{{c[0]}}     { background-color: {{ c[1] }} !important; }
 {% endfor %}
 
-/* ----- per-post colors! ----- */
-{% for node in site.posts %}
-  {% capture id %}{{ node.id | remove:'/' | downcase }}{% endcapture %}
+/* ----- per-post colors! (one rule set per section; sections are shared across languages) ----- */
+{% assign en_posts = site.sections | where: "lang", "en" %}
+{% for node in en_posts %}
+  {% capture id %}{% if node.section %}{{ node.section }}{% else %}{{ node.id | remove:'/' | downcase }}{% endif %}{% endcapture %}
   {% capture bg %}{% if site.colors[node.bg] %}{{ site.colors[node.bg] }}{% else %}{{ node.bg }}{% endif %}{% endcapture %}
   {% capture fg %}{% if site.colors[node.color] %}{{ site.colors[node.color] }}{% else %}{{ node.color }}{% endif %}{% endcapture %}
   nav .p-{{id}} { border-color: {{ bg }}; }
@@ -24,6 +25,29 @@ html { box-sizing: border-box; }
   #{{id}} a { color: {{ fg }}; }
   #{{id}} .sectiondivider { color: {{ bg }}; }
 {% endfor %}
+
+/* ----- language switcher bar ----- */
+.langbar {
+  position: fixed;
+  top: 70px;
+  right: 10px;
+  z-index: 101;
+  background: rgba(17,17,17,0.85);
+  border-radius: 6px;
+  padding: 4px 10px;
+  line-height: 26px;
+  text-align: center;
+  max-width: 95vw;
+}
+.langbar a, .langbar a:visited {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 13px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+.langbar a:hover { color: #fff; }
+.langbar a.active { color: #cc3333; font-weight: bold; }
 
 
 /* ----- code, syntax highlighting, etc ----- */

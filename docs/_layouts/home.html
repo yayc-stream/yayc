@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html dir="{% if page.rtl %}rtl{% else %}ltr{% endif %}" lang="{{ page.lang }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.html_title | default: site.title }}</title>
+	<meta name="keywords" content="{{ page.keywords | default: site.keywords }}">
+	<meta name="description" content="{{ page.description | default: site.description }}">
+  <link rel="canonical" href="{{ site.url }}{{ page.url }}">
+  {% for l in site.data.languages %}<link rel="alternate" hreflang="{{ l.code }}" href="{{ site.url }}{{ l.path }}">
+  {% endfor %}<link rel="alternate" hreflang="x-default" href="{{ site.url }}/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ site.url }}{{ page.url }}">
+  <meta property="og:title" content="{{ page.html_title | default: site.title }}">
+  <meta property="og:description" content="{{ page.description | default: site.description }}">
+  <meta property="og:image" content="{{ site.url }}/img/yayc-square.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ page.html_title | default: site.title }}">
+  <meta name="twitter:description" content="{{ page.description | default: site.description }}">
+  <meta name="twitter:image" content="{{ site.url }}/img/yayc-square.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "YAYC",
+    "alternateName": "Yet Another YouTube Client",
+    "description": "{{ page.description | default: site.description }}",
+    "url": "{{ site.url }}{{ page.url }}",
+    "inLanguage": "{{ page.lang }}",
+    "image": "{{ site.url }}/img/yayc-square.png",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Linux, Windows, macOS",
+    "downloadUrl": "https://github.com/yayc-stream/yayc/releases",
+    "softwareHelp": "{{ site.url }}{{ page.url }}#usage",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+  <link rel="stylesheet" href="/combo.css">
+  <link href='https://fonts.googleapis.com/css?family=Raleway:400,600,700' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  {% if site.favicon %}<link rel="shortcut icon" href="/{{ site.favicon }}" type="image/x-icon">{% endif %}
+	{% if site.touch_icon %}<link rel="apple-touch-icon" href="/{{ site.touch_icon }}">{% endif %}
+</head>
+<body>
+  <div id="main">
+
+    {% assign lang_posts = site.sections | where: "lang", page.lang %}
+
+    <div class="langbar" dir="ltr">
+      {% for l in site.data.languages %}<a href="{{ l.path }}"{% if l.code == page.lang %} class="active"{% endif %} hreflang="{{ l.code }}" lang="{{ l.code }}">{{ l.label }}</a>{% endfor %}
+    </div>
+
+    <nav><ul>
+      {% for node in lang_posts %}
+        {% capture id %}{{ node.section }}{% endcapture %}
+        <li class="p-{{id}}"><a href="#{{id}}">{{node.title}}</a></li>
+      {% endfor %}
+    </ul></nav>
+
+
+    {% for page_post in lang_posts %}
+      {% capture id %}{{ page_post.section }}{% endcapture %}
+      <div id="{{id}}" class="section p-{{id}}">
+        {% if page_post.icon %}
+        <div class="subtlecircle sectiondivider imaged">
+          <img src="{{page_post.icon}}" alt="section icon" />
+          <h5 class="icon-title">{{ page_post.title }}</h5>
+        </div>
+        {% elsif page_post.fa-icon %}
+        <div class="subtlecircle sectiondivider faicon">
+          <span class="fa-stack">
+            <i class="fa fa-circle fa-stack-2x"></i>
+            <i class="fa fa-{{ page_post.fa-icon }} fa-stack-1x"></i>
+          </span>
+          <h5 class="icon-title">{{ page_post.title }}</h5>
+        </div>
+        {% endif %}
+        <div class="container {{ page_post.style }}">
+          {{ page_post.content }}
+        </div>
+      </div>
+    {% endfor %}
+
+
+    <div id="footer" class="section text-white">
+      <div class="container">
+        {% capture foottext %} {% include footer.md %} {% endcapture %}
+        {{ foottext | markdownify }}
+      </div>
+    </div>
+  </div>
+
+{% include analytics.html %}
+</body>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/site.js"></script>
+</html>
