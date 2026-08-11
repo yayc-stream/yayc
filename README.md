@@ -5,10 +5,11 @@
 [![Releases](https://img.shields.io/github/release/yayc-stream/yayc.svg)](https://github.com/yayc-stream/yayc/releases)
 [![Github all releases](https://img.shields.io/github/downloads/yayc-stream/yayc/total.svg)](https://GitHub.com/yayc-stream/yayc/releases/)
 
-A YouTube client intially built with Qt5/QML, now Qt6/QML.
-It sports bookmarks support, progress tracking, and more.
-It is intended to help managing video queues and playlists, sparing the user from having
-to use many browser tabs or windows to keep track of multiple content.
+YAYC is a free desktop YouTube client for Linux, Windows and macOS, built with Qt6/QML and QtWebEngine (initially Qt5).
+It sports bookmarks, watch-progress tracking, video queue and playlist management, and more,
+sparing you from having to keep many browser tabs or windows open to track multiple videos and channels.
+
+Website: [https://yayc.stream](https://yayc.stream) — [Screenshots](https://yayc.stream/#usage) — [Downloads](https://github.com/yayc-stream/yayc/releases)
 
 ## Dependencies
 

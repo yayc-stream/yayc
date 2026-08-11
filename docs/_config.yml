@@ -14,9 +14,10 @@ markdown: kramdown
 
 
 ### content configuration ###
-title:       "YAYC: Yet Another YouTube Client"
-keywords:    "YouTube, desktop, Qt6, QtWebEngine, QML"
-description: "YAYC is a modern desktop YouTube Client"
+title:       "YAYC — Free Desktop YouTube Client for Linux, Windows & macOS"
+keywords:    "YouTube client, desktop YouTube app, YouTube player, Linux, Windows, macOS, Qt6, QtWebEngine, QML"
+description: "YAYC is a free desktop YouTube client for Linux, Windows and macOS. Bookmark videos, track watch progress, and manage video queues without juggling browser tabs."
+url:         "https://yayc.stream"
 source_link: "https://github.com/yayc-stream/yayc"
 favicon:     "img/favicon.ico"
 touch_icon:  "img/apple-touch-icon.png"

@@ -8,6 +8,32 @@
   <title>{{ site.title }}</title>
 	<meta name="keywords" content="{{ site.keywords }}">
 	<meta name="description" content="{{ site.description }}">
+  <link rel="canonical" href="{{ site.url }}/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ site.url }}/">
+  <meta property="og:title" content="{{ site.title }}">
+  <meta property="og:description" content="{{ site.description }}">
+  <meta property="og:image" content="{{ site.url }}/img/yayc-square.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ site.title }}">
+  <meta name="twitter:description" content="{{ site.description }}">
+  <meta name="twitter:image" content="{{ site.url }}/img/yayc-square.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "YAYC",
+    "alternateName": "Yet Another YouTube Client",
+    "description": "{{ site.description }}",
+    "url": "{{ site.url }}/",
+    "image": "{{ site.url }}/img/yayc-square.png",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Linux, Windows, macOS",
+    "downloadUrl": "https://github.com/yayc-stream/yayc/releases",
+    "softwareHelp": "{{ site.url }}/#usage",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
   <link rel="stylesheet" href="combo.css">
   <link href='https://fonts.googleapis.com/css?family=Raleway:400,600,700' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
