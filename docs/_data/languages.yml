@@ -10,6 +10,10 @@
   label: ES
   name: Español
   path: /es/
+- code: fr
+  label: FR
+  name: Français
+  path: /fr/
 - code: zh
   label: 中文
   name: 中文

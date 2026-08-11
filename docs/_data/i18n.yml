@@ -16,6 +16,12 @@ es:
   captions: ["Navega por YouTube y guarda vídeos en marcadores con clic derecho", "Configura tus directorios de trabajo en el primer inicio", "Organiza los marcadores en categorías con el menú contextual", "Arrastra y suelta para reorganizar los marcadores entre categorías"]
   legend: ["Atrás / Adelante", "Marcadores", "Historial", "Recargar", "Inicio", "Barra de direcciones", "Añadir vídeo", "Destacar vídeo", "Copiar URL", "Mostrar/ocultar guía", "Categorías", "Columnas de la cuadrícula", "Picture-in-Picture", "Velocidad de reproducción", "Calidad de vídeo", "Reproducir / Pausa", "Volumen", "Ajustes", "Menú contextual"]
 
+fr:
+  alts: ["Écran de démarrage", "Panneau des paramètres", "Menu contextuel des signets", "Glisser-déposer des signets"]
+  thumbs: ["Parcourez YouTube et ajoutez des vidéos aux signets", "Configurez les répertoires de travail", "Organisez les signets en catégories", "Glissez-déposez entre les catégories"]
+  captions: ["Parcourez YouTube et ajoutez des vidéos aux signets d'un clic droit", "Configurez vos répertoires de travail au premier lancement", "Organisez les signets en catégories avec le menu contextuel", "Glissez-déposez les signets pour les réorganiser entre les catégories"]
+  legend: ["Précédent / Suivant", "Signets", "Historique", "Recharger", "Accueil", "Barre d'adresse", "Ajouter la vidéo", "Vidéo en favori", "Copier l'URL", "Afficher/masquer le guide", "Catégories", "Colonnes de la grille", "Picture-in-Picture", "Vitesse de lecture", "Qualité vidéo", "Lecture / Pause", "Volume", "Paramètres", "Menu contextuel"]
+
 zh:
   alts: ["启动界面", "设置面板", "书签右键菜单", "拖放书签"]
   thumbs: ["浏览 YouTube 并收藏视频", "配置工作目录", "将书签整理为分类", "在分类间拖放"]
