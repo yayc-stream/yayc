@@ -40,6 +40,26 @@
   <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
   {% if site.favicon %}<link rel="shortcut icon" href="/{{ site.favicon }}" type="image/x-icon">{% endif %}
 	{% if site.touch_icon %}<link rel="apple-touch-icon" href="/{{ site.touch_icon }}">{% endif %}
+  {% if page.lang == 'en' %}
+  <script>
+  /* First visit on root: redirect to browser language if we have it.
+     An explicit langbar choice (stored as yayc-lang) always wins. */
+  (function () {
+    var supported = [{% for l in site.data.languages %}'{{ l.code }}'{% unless forloop.last %},{% endunless %}{% endfor %}];
+    try {
+      if (localStorage.getItem('yayc-lang')) return;
+      var prefs = navigator.languages || [navigator.language || ''];
+      for (var i = 0; i < prefs.length; i++) {
+        var c = String(prefs[i]).slice(0, 2).toLowerCase();
+        if (supported.indexOf(c) !== -1) {
+          if (c !== 'en') location.replace('/' + c + '/' + location.hash);
+          return;
+        }
+      }
+    } catch (e) {}
+  })();
+  </script>
+  {% endif %}
 </head>
 <body>
   <div id="main">
@@ -47,8 +67,19 @@
     {% assign lang_posts = site.sections | where: "lang", page.lang %}
 
     <div class="langbar" dir="ltr">
-      {% for l in site.data.languages %}<a href="{{ l.path }}"{% if l.code == page.lang %} class="active"{% endif %} hreflang="{{ l.code }}" lang="{{ l.code }}">{{ l.label }}</a>{% endfor %}
+      {% for l in site.data.languages %}<a href="{{ l.path }}"{% if l.code == page.lang %} class="active"{% endif %} hreflang="{{ l.code }}" lang="{{ l.code }}" data-lang="{{ l.code }}">{{ l.label }}</a>{% endfor %}
     </div>
+    <script>
+    /* Remember an explicit language choice so auto-detect never overrides it */
+    (function () {
+      var links = document.querySelectorAll('.langbar a');
+      for (var i = 0; i < links.length; i++) {
+        links[i].addEventListener('click', function () {
+          try { localStorage.setItem('yayc-lang', this.getAttribute('data-lang')); } catch (e) {}
+        });
+      }
+    })();
+    </script>
 
     <nav><ul>
       {% for node in lang_posts %}
