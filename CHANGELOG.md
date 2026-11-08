@@ -1,3 +1,16 @@
+## YAYC v2.0.0 (2026.11) -- Doujuan
+
+### ✨ New Features
+
+- Autoupdate
+- Use Qt 6.12.0 with updated QtWebEngine
+
+### 🐞 Bug fixes
+
+- Fixed login on youtube failing
+- Fixed pinning of miniatures
+- Fixed frame blanking when out of background
+
 ## YAYC v1.9.1 (2026.08)
 
 ### 🐞 Bug fixes
