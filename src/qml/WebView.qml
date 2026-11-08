@@ -187,7 +187,17 @@ Item {
 
     Connections {
         target: utilities
-        function onWebViewPressedWhileFrozen() { root.unpinPreview() }
+        // A click on the vertical scrollbar keeps the pin: scrolling is not "user does
+        // something else". clientWidth excludes the scrollbar, and is read at click time,
+        // so zoom and resize do not matter.
+        function onWebViewPressedWhileFrozen(x) {
+            webEngineView.runJavaScript(
+                (x / webEngineView.zoomFactor) + " >= document.documentElement.clientWidth",
+                function(onScrollbar) {
+                    if (!onScrollbar)
+                        root.unpinPreview()
+                })
+        }
     }
 
     // Reads the pin-lost counter and the preview play state from script_previewPin.

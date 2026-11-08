@@ -641,7 +641,7 @@ bool YaycUtilities::eventFilter(QObject *watched, QEvent *event)
         // not unpin by itself.
         auto *me = static_cast<QMouseEvent *>(event);
         if (m_freezeWebViewHover && me->button() == Qt::LeftButton)
-            emit webViewPressedWhileFrozen();
+            emit webViewPressedWhileFrozen(me->position().x());
         return QObject::eventFilter(watched, event); // never swallow the click
     }
 

@@ -142,8 +142,8 @@ signals:
     void keepForegroundIllusionChanged(bool enabled);
     void freezeWebViewHoverChanged(bool enabled);
     // Left click inside frozen view: QML drops the pin. Click still reaches the page
-    // (a press carries its own coordinates, so it lands right).
-    void webViewPressedWhileFrozen();
+    // (a press carries its own coordinates, so it lands right). x is in view coordinates.
+    void webViewPressedWhileFrozen(qreal x);
     void quitRequested();
 
 public slots:
