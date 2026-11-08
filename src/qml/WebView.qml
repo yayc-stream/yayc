@@ -60,7 +60,15 @@ Item {
     // so the preview keeps playing when the cursor goes to the toolbar or another window.
     // Uses the same setting as the hover-preview keep-alive: both mean "keep preview alive".
     property bool keepForegroundIllusion: false
-    onKeepForegroundIllusionChanged: if (!keepForegroundIllusion) unpinPreview()
+    onKeepForegroundIllusionChanged: {
+        applyKeepPreview()
+        if (!keepForegroundIllusion)
+            unpinPreview()
+    }
+    // Read by script_previewPin, to stop the preview end timer of YouTube.
+    function applyKeepPreview() {
+        runScript("window.__yayc_keepPreview = " + keepForegroundIllusion)
+    }
 
     property bool previewPinned: false
     property url pinnedLink: ""
@@ -609,6 +617,7 @@ Item {
                 if (root.autoSkipAd)
                     runScript("window.__yayc_autoSkipAdEnabled = true")
                 root.unpinPreview()
+                root.applyKeepPreview()
                 root.applyPlayerSettings()
             }
         }

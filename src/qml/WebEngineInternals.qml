@@ -180,6 +180,28 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
             for (var j = 0; j < rtypes.length; ++j)
                 document.addEventListener(rtypes[j], blockRightButton, true);
 
+            // YouTube ends some previews with a timer: Shorts after 5 s
+            // (videoPreviewDurationMs), others at endTimeSeconds. With no pin, YouTube starts
+            // the preview again. With a pin, hover is frozen, so the cover comes back.
+            // Remove both values from the open action. Without them, YouTube sets no timer.
+            //  - capture on document: runs before the ytd-app handler reads the options
+            //  - the end of the video itself is not affected
+            document.addEventListener('yt-action', function(e) {
+                if (!window.__yayc_keepPreview) return;
+                var d = e.detail;
+                if (!d || d.actionName !== 'yt-open-video-preview-action') return;
+                var o = d.args && d.args[0];
+                if (!o) return;
+                delete o.videoPreviewDurationMs;
+                var data = Array.isArray(o.videoPreviewData) ? o.videoPreviewData
+                                                             : [o.videoPreviewData];
+                for (var k = 0; k < data.length; ++k) {
+                    var ep = data[k] && data[k].inlinePlaybackEndpoint
+                            && data[k].inlinePlaybackEndpoint.watchEndpoint;
+                    if (ep) delete ep.endTimeSeconds;
+                }
+            }, true);
+
             // Backstop: whatever route YouTube took to pause it, resume - unless the
             // pause was wanted (__yayc_pinPaused).
             document.addEventListener('pause', function(e) {
