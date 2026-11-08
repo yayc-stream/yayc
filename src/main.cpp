@@ -278,8 +278,8 @@ int main(int argc, char *argv[])
         engine.rootContext()->setContextProperty("historyModel", historyModel);
 
         YaycUtilities *utilities = new YaycUtilities(&engine);
-        // Filter is a no-op unless utilities.keepForegroundIllusion is set
-        // (bound from QML settings), so install it unconditionally.
+        // Always installed: it keeps WebEngine frames across window hide. Hover
+        // handling acts only with utilities.keepForegroundIllusion.
         app.installEventFilter(utilities);
         KeyInterceptor *keyInterceptor = new KeyInterceptor(&engine);
         app.installEventFilter(keyInterceptor);

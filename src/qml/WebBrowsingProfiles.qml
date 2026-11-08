@@ -5,7 +5,6 @@ import yayc 1.0
 
 QtObject {
     id: root
-    property string httpUserAgent: "'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'"
     property string httpAcceptLanguage: "en-US"
     property string profilePath // if empty, the webengineview profile will turn itself "off the record"
     property string customScript: ""
@@ -62,6 +61,10 @@ QtObject {
     function recreateProfiles() {
         let inkognitoProfile_ = inkognitoPrototype.createObject(root)
         let userProfile_ = userProfilePrototype.createObject(root)
+        // Qt's default UA minus its QtWebEngine token: plain Chromium,
+        // with the real Chrome version (as in the Client Hints).
+        for (const p of [inkognitoProfile_, userProfile_])
+            p.httpUserAgent = p.httpUserAgent.replace(/ QtWebEngine\/\S+/, "")
         root.inkognitoProfile = inkognitoProfile_
         root.userProfile = userProfile_
 
@@ -76,7 +79,6 @@ QtObject {
 
     property Component inkognitoPrototype: WebEngineProfile {
         httpAcceptLanguage: root.httpAcceptLanguage
-        httpUserAgent: root.httpUserAgent
         httpCacheType: WebEngineProfile.MemoryHttpCache
         persistentCookiesPolicy: WebEngineProfile.NoPersistentCookies
         cachePath: ""
@@ -90,7 +92,6 @@ QtObject {
 
     property Component userProfilePrototype: WebEngineProfile {
         httpAcceptLanguage: root.httpAcceptLanguage
-        httpUserAgent: root.httpUserAgent
         httpCacheType: WebEngineProfile.MemoryHttpCache
         persistentCookiesPolicy: WebEngineProfile.ForcePersistentCookies
 

@@ -598,14 +598,35 @@ bool isWebEngineRenderItem(const QQuickItem *item)
     return QLatin1String(item->metaObject()->className())
             .contains(QLatin1String("RenderWidgetHostViewQtDelegateItem"));
 }
+
+// Hidden or unexposed window (minimize, other desktop, tray): QtWebEngine frees its
+// last frame on sceneGraphAboutToStop, and nothing redraws it on return - a still page
+// stays black until it repaints. Cut that link to keep the frame (sceneGraphInvalidated
+// still frees it). Redone each time: the item reconnects on every scene change.
+void keepWebEngineFrames(QQuickWindow *win)
+{
+    QList<QQuickItem *> stack{win->contentItem()};
+    while (!stack.isEmpty()) {
+        QQuickItem *item = stack.takeLast();
+        if (isWebEngineRenderItem(item))
+            QObject::disconnect(win, &QQuickWindow::sceneGraphAboutToStop, item, nullptr);
+        stack.append(item->childItems());
+    }
+}
 } // namespace
 
 bool YaycUtilities::eventFilter(QObject *watched, QEvent *event)
 {
+    const QEvent::Type type = event->type();
+    if (type == QEvent::Expose || type == QEvent::Hide) {
+        if (auto *win = qobject_cast<QQuickWindow *>(watched))
+            keepWebEngineFrames(win);
+        return QObject::eventFilter(watched, event);
+    }
+
     if (!m_keepForegroundIllusion && !m_freezeWebViewHover)
         return QObject::eventFilter(watched, event);
 
-    const QEvent::Type type = event->type();
     const bool isHover = (type == QEvent::HoverLeave || type == QEvent::HoverMove
                           || type == QEvent::HoverEnter);
     if (!isHover && type != QEvent::MouseButtonPress && type != QEvent::FocusOut)
