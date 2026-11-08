@@ -202,6 +202,10 @@ QModelIndex FileSystemModel::setRoot(QString newPath, FileSystemModel *oldModel)
         FileSystemModel *fsmodel = new FileSystemModel(m_contextPropertyName,
                                                        m_bookmarksModel,
                                                        engine);
+        // Carry over: QML re-pushes both in no set order, and the default max could cut
+        // the list first.
+        fsmodel->m_maxRecentDestinations = m_maxRecentDestinations;
+        fsmodel->m_recentDestinations = m_recentDestinations;
         // Do not delete this later here, make it delete by the nested call, after
         // the context property has been updated with the new model object
         return fsmodel->setRoot(newPath, this);
