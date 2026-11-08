@@ -42,11 +42,52 @@ In addition to the above,
 #include <QNetworkProxy>
 #include <QStyleHints>
 #include <QGuiApplication>
+#include <QClipboard>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QMouseEvent>
 #include <QHoverEvent>
 #include <QCursor>
+#include <QSocketNotifier>
+
+#ifdef Q_OS_UNIX
+#include <cerrno>
+#include <csignal>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+namespace {
+
+volatile sig_atomic_t s_quitWriteFd = -1;
+// Set in the handler itself: no re-arm even before the event loop sees it
+volatile sig_atomic_t s_quitSignalled = 0;
+// One self-pipe per process: the handler and the fd are process-wide.
+// The rest belongs to the owner, and its destructor resets it
+YaycUtilities *s_quitOwner = nullptr;
+QSocketNotifier *s_quitNotifier = nullptr;
+int s_quitFds[2]{-1, -1}; // [0] written by the signal handler, [1] read here
+bool s_quitRequested = false;
+bool s_quitArmed = false; // s_previousQuitAction holds what to restore
+struct sigaction s_previousQuitAction {};
+
+void onQuitSignal(int)
+{
+    // Async-signal-safe calls only. SA_RESETHAND already restored SIG_DFL,
+    // so a second SIGTERM kills if the clean quit hangs
+    const int savedErrno = errno;
+    s_quitSignalled = 1;
+    const char byte = 1;
+#ifdef MSG_NOSIGNAL
+    [[maybe_unused]] const ssize_t n = ::send(s_quitWriteFd, &byte, 1, MSG_NOSIGNAL);
+#else
+    [[maybe_unused]] const ssize_t n = ::write(s_quitWriteFd, &byte, 1); // SO_NOSIGPIPE set
+#endif
+    errno = savedErrno;
+}
+
+} // namespace
+#endif
 #include <QtWebEngineQuick/qquickwebengineprofile.h>
 
 // Static member definitions
@@ -64,6 +105,23 @@ YaycUtilities::YaycUtilities(QObject *parent)
 
 YaycUtilities::~YaycUtilities()
 {
+#ifdef Q_OS_UNIX
+    if (s_quitOwner == this) {
+        if (s_quitArmed)
+            ::sigaction(SIGTERM, &s_previousQuitAction, nullptr);
+        s_quitWriteFd = -1;
+        s_quitSignalled = 0;
+        s_quitOwner = nullptr;
+        s_quitArmed = false;
+        s_quitRequested = false;
+        delete s_quitNotifier; // before its fd closes
+        s_quitNotifier = nullptr;
+        // Write end stays open: a handler racing this on another thread must
+        // never hit a closed, reused fd. One fd, only when this object dies
+        ::close(s_quitFds[1]);
+        s_quitFds[0] = s_quitFds[1] = -1;
+    }
+#endif
 }
 
 QUrl YaycUtilities::urlWithPosition(const QString &url, const int position) const
@@ -289,16 +347,8 @@ QString YaycUtilities::getDisclaimer()
 
 void YaycUtilities::checkConnectivity()
 {
-    tcpSocket->connectToHost("github.com", 80);
-}
-
-void YaycUtilities::getLatestVersion()
-{
-    QNetworkRequest request(latestReleaseVersionURL);
-    request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
-                         QNetworkRequest::AlwaysNetwork);
-    QNetworkReply *reply = m_nam.get(std::move(request));
-    connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onReplyFinished);
+    // 443: a proxy may allow CONNECT only there (Squid's default)
+    tcpSocket->connectToHost("github.com", 443);
 }
 
 void YaycUtilities::getDonateEtag()
@@ -317,6 +367,11 @@ void YaycUtilities::getDonateURL()
                          QNetworkRequest::AlwaysNetwork);
     QNetworkReply *reply = m_nam.get(std::move(request));
     connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onDonateReplyFinished);
+}
+
+void YaycUtilities::copyText(const QString &text)
+{
+    QGuiApplication::clipboard()->setText(text);
 }
 
 void YaycUtilities::printSettingsPath()
@@ -346,6 +401,55 @@ void YaycUtilities::clearSettings(const QString &settingsUrl)
     if (!settingsUrl.isEmpty())
         settingsFileToDelete = QUrl(settingsUrl).toLocalFile();
     restartApp(YaycUtilities::EXIT_CODE_ERASE_SETTINGS);
+}
+
+void YaycUtilities::watchQuitSignals()
+{
+#ifdef Q_OS_UNIX
+    if (s_quitOwner && s_quitOwner != this)
+        return;
+    if (s_quitSignalled)
+        return; // keep the "second SIGTERM kills" fallback
+    // Self-pipe: the handler only writes a byte, the event loop does the rest
+    if (!s_quitNotifier) {
+        // Not inherited by tar, dpkg, or the restarted app
+#ifdef SOCK_CLOEXEC
+        if (::socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, s_quitFds) != 0)
+            return;
+#else
+        if (::socketpair(AF_UNIX, SOCK_STREAM, 0, s_quitFds) != 0)
+            return;
+        ::fcntl(s_quitFds[0], F_SETFD, FD_CLOEXEC);
+        ::fcntl(s_quitFds[1], F_SETFD, FD_CLOEXEC);
+#endif
+#if !defined(MSG_NOSIGNAL) && defined(SO_NOSIGPIPE)
+        const int on = 1;
+        ::setsockopt(s_quitFds[0], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+#endif
+        s_quitNotifier = new QSocketNotifier(s_quitFds[1], QSocketNotifier::Read, this);
+        connect(s_quitNotifier, &QSocketNotifier::activated, this, [this]() {
+            char byte;
+            [[maybe_unused]] const ssize_t n = ::read(s_quitFds[1], &byte, 1);
+            if (s_quitRequested)
+                return; // one quit per process
+            s_quitRequested = true;
+            emit quitRequested();
+        });
+        s_quitOwner = this;
+    }
+    s_quitWriteFd = s_quitFds[0];
+    struct sigaction sa {};
+    sa.sa_handler = onQuitSignal;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_RESETHAND;
+    // The first arm remembers what to restore (e.g. QtTest's own handler)
+    if (!s_quitArmed) {
+        if (::sigaction(SIGTERM, &sa, &s_previousQuitAction) == 0)
+            s_quitArmed = true;
+        return;
+    }
+    ::sigaction(SIGTERM, &sa, nullptr);
+#endif
 }
 
 bool YaycUtilities::executableExists(const QString &exe) const
@@ -555,16 +659,6 @@ void YaycUtilities::onSocketConnected()
 void YaycUtilities::onSocketError()
 {
     tcpSocket->abort();
-}
-
-void YaycUtilities::onReplyFinished()
-{
-    QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
-    if (reply) {
-        reply->deleteLater();
-        if (reply->error() == QNetworkReply::NoError)
-            emit latestVersion(QString(reply->readAll()).trimmed());
-    }
 }
 
 void YaycUtilities::onDonateEtagReplyFinished()

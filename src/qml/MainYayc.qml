@@ -157,6 +157,7 @@ Item {
 
     property string lastestRemoteVersion: appVersion
     property var lastVersionCheckDate
+    property bool autoUpdate: true
     property string donateUrl
     property string donateUrlETag
     property string customScript
@@ -249,6 +250,7 @@ Item {
         property alias lastUrl: root.url
         property alias lastestRemoteVersion: root.lastestRemoteVersion
         property alias lastVersionCheckDate: root.lastVersionCheckDate
+        property alias autoUpdate: root.autoUpdate
         property alias donateUrl: root.donateUrl
         property alias donateUrlETag: root.donateUrlETag
         property alias customScript: root.customScript
@@ -311,13 +313,14 @@ Item {
         interval: 500
         onTriggered: {
             WebBrowsingProfiles.recreateProfiles()
+            utilities.watchQuitSignals() // Chromium may have reset the handler
             // profile binding is handled by sourceComponent: profile: WebBrowsingProfiles.profile
         }
     }
 
     Component.onCompleted:  {
         utilities.networkFound.connect(onNetworkFound)
-        utilities.latestVersion.connect(onLatestVersionFound)
+        updateManager.latestVersionFound.connect(onLatestVersionFound)
         utilities.donateETag.connect(onDonateETag)
         utilities.donateUrl.connect(onDonateUrl)
         utilities.videoUrlResolved.connect(addVideoDialog.addVideo)
@@ -402,12 +405,13 @@ Item {
             var diff = (now - root.lastVersionCheckDate); // Difference in milliseconds.
             var diffSeconds = parseInt(diff/1000);
             var intervalSeconds = 3600 * 2 // don't check more often than once per 2h
-            if (diffSeconds < intervalSeconds) {
+            // A date ahead of the clock (clock set back) counts as old
+            if (diffSeconds >= 0 && diffSeconds < intervalSeconds) {
                 return;
             }
         }
         // Kick version checker
-        utilities.getLatestVersion()
+        updateManager.checkForUpdates()
         utilities.getDonateEtag()
     }
 
@@ -422,6 +426,18 @@ Item {
             // highlight settings
             root.firstRun = true
         }
+    }
+
+    // The toggle: download, then install when YAYC quits. Only once the
+    // settings are read: the default (true) would start a verify for a user
+    // who opted out. No restore at teardown: it would unstage after the exit
+    // plan was taken (Qt < 6.11)
+    Binding {
+        target: updateManager
+        property: "autoUpdate"
+        value: root.autoUpdate
+        when: root.settingsLoaded
+        restoreMode: Binding.RestoreNone
     }
 
 
@@ -981,6 +997,7 @@ Item {
 
                     ToolButton {
                         id: settingsButton
+                        objectName: "settingsButton"
                         text: uiTr("Settings")
                         icon.source: "/icons/settings.svg"
                         display: AbstractButton.IconOnly
@@ -1141,6 +1158,7 @@ Item {
 
     SettingsMenu {
         id: settingsPopup
+        objectName: "settingsMenu"
         parent: root
         host: root
         settingsObj: settings

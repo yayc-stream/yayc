@@ -89,14 +89,19 @@ public:
     Q_INVOKABLE QString getDisclaimer();
 
     Q_INVOKABLE void checkConnectivity();
-    Q_INVOKABLE void getLatestVersion();
     Q_INVOKABLE void getDonateEtag();
     Q_INVOKABLE void getDonateURL();
 
     Q_INVOKABLE void printSettingsPath();
+    Q_INVOKABLE static void copyText(const QString &text);
     Q_INVOKABLE void restartApp(int code);
     Q_INVOKABLE void restartApp();
     Q_INVOKABLE void clearSettings(const QString &settingsUrl);
+
+    // SIGTERM (pkill, logout) emits quitRequested(), so QML quits cleanly.
+    // A second SIGTERM kills at once. Unix only. Call again after Chromium
+    // starts: it may reset signal handlers.
+    Q_INVOKABLE void watchQuitSignals();
 
     Q_INVOKABLE bool executableExists(const QString &exe) const;
     Q_INVOKABLE static bool directoryExists(const QString &path);
@@ -131,7 +136,6 @@ signals:
     void languageChanged(const QString &lang);
     void youtubeUrlRequested(const QUrl &url);
     void networkFound();
-    void latestVersion(const QString &);
     void donateETag(const QString &);
     void donateUrl(const QString &);
     void videoUrlResolved(const QString &normalizedUrl);
@@ -140,11 +144,11 @@ signals:
     // Left click inside frozen view: QML drops the pin. Click still reaches the page
     // (a press carries its own coordinates, so it lands right).
     void webViewPressedWhileFrozen();
+    void quitRequested();
 
 public slots:
     void onSocketConnected();
     void onSocketError();
-    void onReplyFinished();
     void onDonateEtagReplyFinished();
     void onDonateReplyFinished();
     void onUrlResolveFinished();

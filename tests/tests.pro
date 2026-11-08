@@ -5,13 +5,16 @@ QT += webchannel qml
 QT += webenginecore webenginewidgets webenginequick webenginequickdelegatesqml
 QT += core5compat
 
-CONFIG += c++17 console
+CONFIG += c++20 console
 CONFIG -= app_bundle
 
 APPVERSION = "$$cat($$PWD/../APPVERSION)"
 DEFINES += "APPVERSION=\"$$APPVERSION\""
 
 INCLUDEPATH += ../src
+
+# The test-build hooks are tested too (TestControl)
+DEFINES += YAYC_TEST_BUILD
 
 SOURCES += tst_yayc.cpp \
            ../src/Platform.cpp \
@@ -21,7 +24,15 @@ SOURCES += tst_yayc.cpp \
            ../src/FileSystemModel.cpp \
            ../src/ThumbnailFetcher.cpp \
            ../src/RequestInterceptor.cpp \
-           ../src/YaycUtilities.cpp
+           ../src/YaycUtilities.cpp \
+           ../src/UpdateManager.cpp \
+           ../src/UpdateFetcher.cpp \
+           ../src/UpdateConfig.cpp \
+           ../src/UpdateInstall.cpp \
+           ../src/UpdateWindows.cpp \
+           ../src/UpdateLinux.cpp \
+           ../src/SingleInstance.cpp \
+           ../src/TestControl.cpp
 
 HEADERS += ../src/Platform.h \
            ../src/VideoMetadata.h \
@@ -32,4 +43,13 @@ HEADERS += ../src/Platform.h \
            ../src/FileSystemModel.h \
            ../src/ThumbnailFetcher.h \
            ../src/RequestInterceptor.h \
-           ../src/YaycUtilities.h
+           ../src/YaycUtilities.h \
+           ../src/UpdateManager.h \
+           ../src/UpdateFetcher.h \
+           ../src/UpdateConfig.h \
+           ../src/UpdateInstall.h \
+           ../src/UpdateWindows.h \
+           ../src/UpdateLinux.h \
+           ../src/SingleInstance.h \
+           ../src/TestControl.h \
+           TestHttpServer.h

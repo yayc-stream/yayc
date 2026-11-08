@@ -54,6 +54,33 @@ Popup {
 
     onAboutToShow: stack.replace(null, topPage)
 
+    // The update on offer, for the banner and the Advanced row
+    QtObject {
+        id: offer
+        readonly property string latest: smenu.latestRemoteVersionStr
+        readonly property bool newRelease: utilities.compareSemver(smenu.appVersionStr, latest) < 0
+        // That release has no package for this install
+        readonly property bool unavailable: updateManager.unavailableVersion === latest
+        // Another YAYC of this install downloads and installs
+        readonly property bool elsewhere: updateManager.updatesElsewhere
+        readonly property bool downloadable: newRelease && updateManager.updateSupported && !unavailable
+                                             && !elsewhere
+        readonly property int ustate: updateManager.state
+        readonly property bool hasReady: ustate === UpdateManager.ReadyToInstall
+                                         || ustate === UpdateManager.NotVerified
+                                         || ustate === UpdateManager.ManualInstall
+                                         || (ustate === UpdateManager.ExitPending
+                                             && updateManager.autoStaged)
+        // A ready package older than the release: the newer one can come too
+        readonly property bool newerThanReady: downloadable && hasReady
+                                               && utilities.compareSemver(updateManager.readyVersion, latest) < 0
+                                               && !updateManager.retryDownloads
+        // Nothing ready or running
+        readonly property bool fromIdle: downloadable
+                                         && (ustate === UpdateManager.Idle || ustate === UpdateManager.Failed)
+                                         && updateManager.readyVersion !== latest
+    }
+
     // -------- Reusable inline components --------
 
     component MenuRow: Rectangle {
@@ -218,26 +245,197 @@ Popup {
                 width: parent.width
                 spacing: 0
 
-                // New release banner
+                // New release / autoupdate banner
                 Rectangle {
+                    id: updateBanner
+                    objectName: "updateBanner"
+                    property int ustate: updateManager.state
+                    property bool ready: ustate === UpdateManager.ReadyToInstall
+                    property bool manual: ustate === UpdateManager.ManualInstall
+                    property bool notVerified: ustate === UpdateManager.NotVerified
+                    property bool twoLines: offer.hasReady
+                    // A check in the background (e.g. while ready) shows nothing
+                    property bool checkOnly: updateManager.checking
+                                             && (ustate === UpdateManager.Idle
+                                                 || ustate === UpdateManager.Failed)
+                    property bool busy: checkOnly
+                                        || ustate === UpdateManager.Downloading
+                                        || ustate === UpdateManager.Verifying
+                                        || ustate === UpdateManager.Applying
+                    // In Failed, Retry already downloads it again
+                    property bool canDownload: offer.newerThanReady
+                                               || (offer.fromIdle && !updateManager.canRetry)
+                    property bool copied: false
+
+                    function copyToClipboard(text) {
+                        utilities.copyText(text)
+                        updateBanner.copied = true
+                        copiedTimer.restart()
+                    }
+
                     Layout.fillWidth: true
                     Layout.margins: 8
-                    height: utilities.compareSemver(smenu.appVersionStr,
-                                                    smenu.latestRemoteVersionStr) < 0 ? 36 : 0
+                    height: !(offer.newRelease || busy || ustate !== UpdateManager.Idle) ? 0
+                          : (twoLines ? 48 : 36) + (busy ? 8 : 0)
                     visible: height > 0
                     color: YaycProperties.surfaceOverlayColor
+                    border.width: twoLines ? 1 : 0
+                    border.color: "crimson"
                     radius: 4
-                    Label {
-                        anchors.centerIn: parent
-                        text: uiTr("New release available") + ": v" + smenu.latestRemoteVersionStr
-                        color: "crimson"
-                        font.bold: true
-                        font.pixelSize: YaycProperties.fsP1
-                    }
+
+                    // Under the action buttons: they take their own clicks
                     MouseArea {
+                        id: bannerMa
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Qt.openUrlExternally(smenu.releasesUrl + "/releases")
+                        onClicked: {
+                            var us = updateManager.state
+                            if (updateBanner.manual)
+                                updateBanner.copyToClipboard(updateManager.manualInstallCommand)
+                            else if (us === UpdateManager.RestartPending || us === UpdateManager.ExitPending) {
+                                // false: other YAYC windows would keep it from installing
+                                if (updateManager.prepareRestart())
+                                    win.restart()
+                            }
+                            else if (us === UpdateManager.ReadyToInstall)
+                                updateManager.applyUpdate()
+                            else if (us === UpdateManager.Idle || us === UpdateManager.Failed)
+                                Qt.openUrlExternally(smenu.releasesUrl + "/releases")
+                        }
+                    }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 4
+                        spacing: 4
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Label {
+                                Layout.fillWidth: true
+                                horizontalAlignment: Text.AlignHCenter
+                                elide: Label.ElideRight
+                                text: {
+                                    var us = updateBanner.ustate
+                                    if (us === UpdateManager.Downloading)
+                                        return uiTr("Downloading update") + " v" + updateManager.downloadVersion + ": "
+                                                + Math.round(updateManager.downloadProgress * 100) + "%"
+                                    if (us === UpdateManager.Verifying)
+                                        return uiTr("Verifying update") + "..."
+                                    if (us === UpdateManager.Applying)
+                                        return uiTr("Installing update") + "..."
+                                    if (us === UpdateManager.ReadyToInstall)
+                                        return updateManager.updateMethod === UpdateConfig.ManualDeb
+                                                ? uiTr("Update ready. Click to check it and show the install command")
+                                                : uiTr("Apply update")
+                                    if (us === UpdateManager.ManualInstall)
+                                        return uiTr("This command installs the update and closes YAYC:")
+                                    if (us === UpdateManager.NotVerified)
+                                        return uiTr("Could not verify update")
+                                    if (us === UpdateManager.RestartPending)
+                                        return uiTr("Update installed. Click to restart")
+                                    if (us === UpdateManager.ExitPending)
+                                        return uiTr("Update installs when YAYC quits. Click to restart now")
+                                    if (updateBanner.checkOnly)
+                                        return uiTr("Checking for updates") + "..."
+                                    if (us === UpdateManager.Failed)
+                                        return uiTr("Update failed")
+                                    return uiTr("New release available") + ": v" + smenu.latestRemoteVersionStr
+                                            + (offer.unavailable
+                                               ? " (" + uiTr("no package for this installation") + ")"
+                                               : offer.elsewhere
+                                                 ? " (" + uiTr("another YAYC window installs it") + ")"
+                                                 : "")
+                                }
+                                color: "crimson"
+                                font.bold: true
+                                font.pixelSize: YaycProperties.fsP1
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                visible: updateBanner.twoLines
+                                horizontalAlignment: Text.AlignHCenter
+                                elide: Label.ElideMiddle
+                                text: updateBanner.manual ? updateManager.manualInstallCommand
+                                                          : "v" + updateManager.readyVersion
+                                color: YaycProperties.textColor
+                                font.pixelSize: YaycProperties.fsP2
+                            }
+                            ProgressBar {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 4
+                                visible: updateBanner.busy
+                                // Only a download knows how far it is
+                                indeterminate: updateBanner.ustate !== UpdateManager.Downloading
+                                from: 0
+                                to: 1
+                                value: updateManager.downloadProgress
+                            }
+                        }
+                        // Also a password prompt still open, or a stage waiting for the quit
+                        Button {
+                            readonly property bool staged: updateBanner.ustate === UpdateManager.ExitPending
+                            visible: updateManager.canCancel || staged
+                            flat: true
+                            objectName: "bannerCancel"
+                            text: uiTr("Cancel")
+                            font.pixelSize: YaycProperties.fsP2
+                            onClicked: staged ? updateManager.withdrawStage() : updateManager.cancelDownload()
+                        }
+                        Button {
+                            visible: updateBanner.notVerified
+                            flat: true
+                            objectName: "bannerRetryCheck"
+                            text: uiTr("Retry check")
+                            font.pixelSize: YaycProperties.fsP2
+                            onClicked: updateManager.retry()
+                        }
+                        Button {
+                            visible: updateManager.canInstallUnverified
+                            flat: true
+                            objectName: "bannerInstallAnyway"
+                            text: uiTr("Install anyway")
+                            font.pixelSize: YaycProperties.fsP2
+                            onClicked: updateManager.applyUnverified()
+                        }
+                        Button {
+                            visible: updateManager.canRetry
+                            flat: true
+                            objectName: "bannerRetry"
+                            text: uiTr("Retry")
+                            font.pixelSize: YaycProperties.fsP2
+                            onClicked: updateManager.retry()
+                        }
+                        Button {
+                            visible: updateBanner.canDownload
+                            flat: true
+                            objectName: "bannerDownload"
+                            text: uiTr("Download")
+                            font.pixelSize: YaycProperties.fsP2
+                            onClicked: updateManager.startUpdate(smenu.latestRemoteVersionStr)
+                        }
+                    }
+                    Timer {
+                        id: copiedTimer
+                        interval: 1500
+                        onTriggered: updateBanner.copied = false
+                    }
+                    ToolTip {
+                        id: bannerTip
+                        text: updateBanner.copied ? uiTr("Command copied")
+                            : updateBanner.manual ? updateManager.manualInstallCommand
+                            : updateBanner.notVerified ? updateManager.lastError
+                            : (updateBanner.ready || updateBanner.ustate === UpdateManager.ExitPending)
+                              && updateManager.lastError !== ""
+                              ? uiTr("Last attempt failed") + ": " + updateManager.lastError
+                            : updateBanner.ustate === UpdateManager.Failed
+                              ? uiTr("Update failed") + ": " + updateManager.lastError
+                            : ""
+                        visible: bannerMa.containsMouse && text !== ""
+                        delay: 400
+                        font.pixelSize: YaycProperties.fsP1
                     }
                 }
 
@@ -363,6 +561,7 @@ Popup {
                 MenuDivider {}
 
                 MenuRow {
+                    objectName: "advancedRow"
                     label: uiTr("Advanced")
                     iconSource: "/icons/settings.svg"
                     chevron: true
@@ -398,6 +597,7 @@ Popup {
                 MenuDivider {}
 
                 MenuRow {
+                    objectName: "quitRow"
                     label: uiTr("Quit")
                     iconSource: "/icons/exit_to_app.svg"
                     shortcutText: "Ctrl+Q"
@@ -466,6 +666,112 @@ Popup {
                         onToggled: if (smenu.host) smenu.host.keepForegroundIllusion = checked
                     }
                     onActivated: if (smenu.host) smenu.host.keepForegroundIllusion = !smenu.host.keepForegroundIllusion
+                }
+                MenuRow {
+                    objectName: "autoUpdateRow"
+                    label: uiTr("Automatic updates")
+                    iconSource: "/icons/download_for_offline.svg"
+                    rowTooltip: !updateManager.updateSupported
+                        ? uiTr("Not available for this installation") + ": " + updateManager.unsupportedReason
+                        : updateManager.updateMethod === UpdateConfig.ManualDeb
+                          ? uiTr("Download new releases automatically; you install them with one terminal command")
+                        : !updateManager.canStage
+                          ? uiTr("Download new releases automatically; you install them with one click")
+                          : uiTr("Download and install new releases automatically, when YAYC quits")
+                    rowEnabled: updateManager.updateSupported
+                    rightItem: Switch {
+                        objectName: "autoUpdateSwitch"
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: smenu.host ? smenu.host.autoUpdate : true
+                        onToggled: if (smenu.host) smenu.host.autoUpdate = checked
+                    }
+                    onActivated: if (smenu.host) smenu.host.autoUpdate = !smenu.host.autoUpdate
+                }
+                // Next step of the update, one button: check → download → apply
+                MenuRow {
+                    id: updateActionRow
+                    objectName: "updateActionRow"
+                    property int ustate: updateManager.state
+                    property bool busy: updateManager.checking
+                                        || ustate === UpdateManager.Downloading
+                                        || ustate === UpdateManager.Verifying
+                                        || ustate === UpdateManager.Applying
+                    property string message: ""
+                    // A ready package older than the release: the newer one first
+                    // (the banner still offers to apply the older one)
+                    property string action: busy ? "busy"
+                        : (ustate === UpdateManager.RestartPending || ustate === UpdateManager.ExitPending) ? "restart"
+                        : offer.newerThanReady ? "download"
+                        : ustate === UpdateManager.ReadyToInstall ? "apply"
+                        : ustate === UpdateManager.NotVerified ? "verify"
+                        : ustate === UpdateManager.ManualInstall ? "copy"
+                        : offer.fromIdle ? "download"
+                        : "check"
+
+                    label: {
+                        // Short feedback after a check or a copy, then the next step again
+                        if (message !== "" && action !== "busy")
+                            return message
+                        if (action === "busy")
+                            return updateManager.checking ? uiTr("Checking for updates") + "..."
+                                 : ustate === UpdateManager.Downloading ? uiTr("Downloading update") + "..."
+                                 : ustate === UpdateManager.Verifying ? uiTr("Verifying update") + "..."
+                                 : uiTr("Installing update") + "..."
+                        if (action === "restart")
+                            return uiTr("Restart to update")
+                        if (action === "apply")
+                            return uiTr("Apply update") + " v" + updateManager.readyVersion
+                        if (action === "verify")
+                            return uiTr("Retry check")
+                        if (action === "copy")
+                            return uiTr("Copy install command")
+                        if (action === "download")
+                            return uiTr("Download update") + " v" + smenu.latestRemoteVersionStr
+                        return uiTr("Check for updates")
+                    }
+                    iconSource: "/icons/refresh.svg"
+                    // Unsupported installs only reach "check", which works everywhere
+                    rowEnabled: action !== "busy"
+                    rowTooltip: action === "busy"
+                        ? uiTr("An update is being checked, downloaded or installed")
+                        : ""
+                    onActivated: {
+                        message = ""
+                        if (action === "restart") {
+                            if (updateManager.prepareRestart())
+                                win.restart()
+                            else
+                                message = updateManager.lastError
+                        }
+                        else if (action === "apply")
+                            updateManager.applyUpdate()
+                        else if (action === "verify")
+                            updateManager.retry()
+                        else if (action === "copy") {
+                            utilities.copyText(updateManager.manualInstallCommand)
+                            message = uiTr("Command copied")
+                            messageTimer.restart()
+                        } else if (action === "download")
+                            updateManager.startUpdate(smenu.latestRemoteVersionStr)
+                        else if (action === "check")
+                            updateManager.checkForUpdates()
+                    }
+                    Connections {
+                        target: updateManager
+                        function onUpToDate() {
+                            updateActionRow.message = uiTr("YAYC is up to date")
+                            messageTimer.restart()
+                        }
+                        function onCheckFailed(reason) {
+                            updateActionRow.message = uiTr("Update check failed") + ": " + reason
+                            messageTimer.restart()
+                        }
+                    }
+                    Timer {
+                        id: messageTimer
+                        interval: 3000
+                        onTriggered: updateActionRow.message = ""
+                    }
                 }
                 MenuDivider {}
                 MenuRow {

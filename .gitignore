@@ -29,7 +29,6 @@ Makefile*
 *build-*
 /bin
 /features
-/misc
 
 # QtCreator
 

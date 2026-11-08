@@ -25,8 +25,9 @@ const QString standardVideoPattern{"https://youtube.com/watch?v="};
 const QString youtubeHomePattern{"https://youtube.com"};
 const QString youtubeChannelPattern{"https://youtube.com/@"};
 const QString repositoryURL{"https://github.com/yayc-stream/yayc"};
-const QString latestReleaseVersionURL{"https://raw.githubusercontent.com/yayc-stream/yayc/master/APPVERSION"};
-const QString donateURL{"https://raw.githubusercontent.com/yayc-stream/yayc/master/DONATE"};
+const QString latestReleaseVersionURL{"https://yayc.stream/APPVERSION"};
+const QString updateFeedURL{"https://yayc.stream/update/latest.json"};
+const QString donateURL{"https://yayc.stream/DONATE"};
 const QImage emptyImage(1, 1, QImage::Format_RGB32);
 const QRegularExpression allowedDirsPattern("^[^\\.].*");
 

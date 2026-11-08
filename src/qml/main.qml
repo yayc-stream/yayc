@@ -31,6 +31,7 @@ import yayc 1.0
 
 ApplicationWindow {
     id: win
+    objectName: "mainWindow"
     height: Screen.height;
     width: Screen.width
     visible: true
@@ -49,16 +50,26 @@ ApplicationWindow {
     }
     onInterfaceLoaded: win.isInterfaceLoaded = true
 
-    function quit() {
+    // Saves the session (last URL, position); the window may close then
+    function saveBeforeExit() {
         if (mainYaycLoader.isLoaded() && mainYaycLoader.item)
             mainYaycLoader.item.prepareQuit()
-
         win.quitting = true
+    }
+
+    function quit() {
+        saveBeforeExit()
         Qt.quit()
     }
 
     function quitApp() {
         win.quit()
+    }
+
+    // main.cpp then relaunches
+    function restart() {
+        saveBeforeExit()
+        utilities.restartApp()
     }
 
     Dialog {
@@ -98,6 +109,16 @@ ApplicationWindow {
         }
     }
 
+    // A second start with this configuration (main.cpp, SingleInstance)
+    function bringToFront() {
+        if (win.visibility === Window.Minimized)
+            win.showNormal()
+        else
+            win.show()
+        win.raise()
+        win.requestActivate()
+    }
+
     function minimizeToTray() {
         if (mainYaycLoader.isLoaded())
             mainYaycLoader.item.minimizeToTray()
@@ -116,6 +137,16 @@ ApplicationWindow {
                 quitConfirmDialog.open()
             }
         }
+    }
+
+    // SIGTERM (pkill, logout): same clean path as Ctrl+Q
+    Connections {
+        target: utilities
+        function onQuitRequested() { win.quit() }
+    }
+    Connections {
+        target: updateManager
+        function onRestartRequested() { win.restart() }
     }
 
     Shortcut {

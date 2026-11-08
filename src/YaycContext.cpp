@@ -39,8 +39,12 @@ void YaycContext::retranslate(const QString &lang)
             qDebug() << "[i18n] failed to open" << file.fileName();
         } else {
             const QJsonObject obj = QJsonDocument::fromJson(file.readAll()).object();
-            for (auto it = obj.begin(); it != obj.end(); ++it)
-                m_strings[it.key()] = it.value().toString();
+            // Untranslated keys are added with "": tr() then falls back to the key
+            for (auto it = obj.begin(); it != obj.end(); ++it) {
+                const QString value = it.value().toString();
+                if (!value.isEmpty())
+                    m_strings[it.key()] = value;
+            }
             qDebug() << "[i18n] loaded" << m_strings.size() << "strings";
         }
     }

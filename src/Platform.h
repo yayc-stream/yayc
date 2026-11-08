@@ -37,6 +37,7 @@ extern const QString youtubeHomePattern;
 extern const QString youtubeChannelPattern;
 extern const QString repositoryURL;
 extern const QString latestReleaseVersionURL;
+extern const QString updateFeedURL;
 extern const QString donateURL;
 extern const QImage emptyImage;
 extern const QRegularExpression allowedDirsPattern;

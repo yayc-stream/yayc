@@ -34,7 +34,14 @@ SOURCES += \
         src/RequestInterceptor.cpp \
         src/YaycUtilities.cpp \
         src/qqmlsettings.cpp \
-        src/YaycContext.cpp
+        src/YaycContext.cpp \
+        src/UpdateManager.cpp \
+        src/UpdateFetcher.cpp \
+        src/UpdateConfig.cpp \
+        src/UpdateInstall.cpp \
+        src/UpdateWindows.cpp \
+        src/UpdateLinux.cpp \
+        src/SingleInstance.cpp
 
 HEADERS += \
         src/Platform.h \
@@ -49,7 +56,33 @@ HEADERS += \
         src/YaycUtilities.h \
         src/KeyInterceptor.h \
         src/qqmlsettings.h \
-        src/YaycContext.h
+        src/YaycContext.h \
+        src/UpdateManager.h \
+        src/UpdateFetcher.h \
+        src/UpdateConfig.h \
+        src/UpdateInstall.h \
+        src/UpdateWindows.h \
+        src/UpdateLinux.h \
+        src/SingleInstance.h
+
+# Update test bench only (DEFINES+=YAYC_TEST_BUILD), never in release packaging:
+# local release server, external control socket
+contains(DEFINES, YAYC_TEST_BUILD) {
+    SOURCES += src/TestControl.cpp
+    HEADERS += src/TestControl.h
+}
+
+# Release builds only: the files the package ships. An update carries
+# every other file of the install dir (user data) into the new version
+!isEmpty(YAYC_MANIFEST) {
+    MANIFEST_NAME = $$basename(YAYC_MANIFEST)
+    !equals(MANIFEST_NAME, yayc-manifest.txt): \
+        error("YAYC_MANIFEST must name a file called yayc-manifest.txt")
+    manifest.files = $$YAYC_MANIFEST
+    manifest.base = $$dirname(YAYC_MANIFEST)
+    manifest.prefix = /
+    RESOURCES += manifest
+}
 
 qml.files = $$files($$PWD/src/qml/*.qml)
 qml.base = $$PWD/src/qml
