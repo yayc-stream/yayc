@@ -66,8 +66,8 @@ images.prefix = /
 
 RESOURCES += images
 
-doc.files =  $$files($$PWD/docs/img/*.png)
-doc.base = $$PWD/docs/img/
+doc.files =  $$files($$PWD/assets/doc/*.png)
+doc.base = $$PWD/assets/doc/
 doc.prefix = /doc
 
 RESOURCES += doc
@@ -105,7 +105,6 @@ RESOURCES += i18n
 
 OTHER_FILES += LICENSE APPVERSION DONATE\
                $$files($$PWD/*.md, false)\
-               $$files($$PWD/docs/*, true)\
                $$files($$PWD/tests/*, true)
 
 APPVERSION = "$$cat($$PWD/APPVERSION)"

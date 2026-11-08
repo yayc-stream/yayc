@@ -41,6 +41,3 @@ Makefile*
 
 # QtCtreator CMake
 CMakeLists.txt.user*
-
-# Jekyll build output
-docs/_site/
