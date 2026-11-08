@@ -27,6 +27,8 @@ In addition to the above,
 #include <QDateTime>
 #include <QPointF>
 
+#include "SiteQuirks.h"
+
 class QQuickItem;
 
 class YaycUtilities : public QObject {
@@ -69,6 +71,8 @@ public:
     Q_INVOKABLE QUrl urlWithPosition(const QString &url, const int position) const;
     Q_INVOKABLE void yDebug(const QString &s);
     // Q_INVOKABLE void addRequestInterceptor(QObject *webEngineView);
+    // Profile does not take ownership: the interceptor lives here.
+    Q_INVOKABLE void installSiteQuirks(QObject *profile);
 
     Q_INVOKABLE static bool isYoutubeVideoUrl(QUrl url);
     Q_INVOKABLE static bool isYoutubeStandardUrl(QUrl url);
@@ -162,6 +166,7 @@ private:
     mutable QStringList m_availableLanguages;
     bool m_keepForegroundIllusion{false};
     bool m_freezeWebViewHover{false};
+    SiteQuirksInterceptor m_siteQuirks;
 };
 
 #endif // YAYCUTILITIES_H

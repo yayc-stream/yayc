@@ -24,6 +24,7 @@ SOURCES += tst_yayc.cpp \
            ../src/FileSystemModel.cpp \
            ../src/ThumbnailFetcher.cpp \
            ../src/RequestInterceptor.cpp \
+           ../src/SiteQuirks.cpp \
            ../src/YaycUtilities.cpp \
            ../src/UpdateManager.cpp \
            ../src/UpdateFetcher.cpp \
@@ -43,6 +44,7 @@ HEADERS += ../src/Platform.h \
            ../src/FileSystemModel.h \
            ../src/ThumbnailFetcher.h \
            ../src/RequestInterceptor.h \
+           ../src/SiteQuirks.h \
            ../src/YaycUtilities.h \
            ../src/UpdateManager.h \
            ../src/UpdateFetcher.h \

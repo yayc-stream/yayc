@@ -166,6 +166,12 @@ void YaycUtilities::yDebug(const QString &s)
 //     engine->rootContext()->setContextProperty("requestInterceptor", interceptor); // for the file dialog
 // }
 
+void YaycUtilities::installSiteQuirks(QObject *profile)
+{
+    if (auto *p = qobject_cast<QQuickWebEngineProfile *>(profile))
+        p->setUrlRequestInterceptor(&m_siteQuirks);
+}
+
 bool YaycUtilities::isYoutubeVideoUrl(QUrl url)
 {
     url = removeWww(url);

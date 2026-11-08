@@ -313,6 +313,8 @@ Item {
         interval: 500
         onTriggered: {
             WebBrowsingProfiles.recreateProfiles()
+            utilities.installSiteQuirks(WebBrowsingProfiles.userProfile)
+            utilities.installSiteQuirks(WebBrowsingProfiles.inkognitoProfile)
             utilities.watchQuitSignals() // Chromium may have reset the handler
             // profile binding is handled by sourceComponent: profile: WebBrowsingProfiles.profile
         }
