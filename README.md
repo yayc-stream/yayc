@@ -11,6 +11,23 @@ sparing you from having to keep many browser tabs or windows open to track multi
 
 Website: [https://yayc.stream](https://yayc.stream) — [Screenshots](https://yayc.stream/#usage) — [Downloads](https://github.com/yayc-stream/yayc/releases)
 
+## Releases
+
+We currently provide binary releases for all 3 main desktop platforms. If there are issues with them, please open an issue here on github.
+
+## Usage
+
+```
+# yayc
+```
+
+Notes: 
+- If no bookmarks directory is specified, bookmarks won't be saved.
+- If no history directory is specified, history won't be saved.
+- If no Google profile directory is specified, YAYC will operate in Inkognito mode, and logging into your Google account won't be remembered at next app restart.
+
+For screenshots and illustrations, visit [https://yayc.stream/#usage](https://yayc.stream/#usage).
+
 ## Dependencies
 
 - `QtCore`
@@ -57,23 +74,6 @@ cd /tmp/yayc_build
 qmake6 <path/to/yayc.pro> CONFIG+=release
 make
 ```
-
-## Releases
-
-We currently provide binary releases for all 3 main desktop platforms. If there are issues with them, please open an issue here on github.
-
-## Usage
-
-```
-# yayc
-```
-
-Notes: 
-- If no bookmarks directory is specified, bookmarks won't be saved.
-- If no history directory is specified, history won't be saved.
-- If no Google profile directory is specified, YAYC will operate in Inkognito mode, and logging into your Google account won't be remembered at next app restart.
-
-For screenshots and illustrations, visit [https://yayc.stream/#usage](https://yayc.stream/#usage).
 
 ## AI Training Prohibition
 
