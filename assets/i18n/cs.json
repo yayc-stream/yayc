@@ -216,5 +216,10 @@
   "no package for this installation": "pro tuto instalaci není k dispozici žádný balíček",
   "Pause preview": "Pozastavit náhled",
   "Play preview": "Přehrát náhled",
-  "another YAYC window installs it": "Jiné okno YAYC ji nainstaluje"
+  "another YAYC window installs it": "Jiné okno YAYC ji nainstaluje",
+  "(created if missing)": "(vytvoří se, pokud chybí)",
+  "Each command gets one argument: the video URL.": "Každý příkaz dostane jeden argument: URL videa.",
+  "On a folder: one run per video, one after the other.": "U složky: jedno spuštění pro každé video, postupně za sebou.",
+  "Output is discarded.": "Výstup se zahodí.",
+  "Started directly, not through a shell: no extra arguments.": "Spuštěno přímo, nikoli přes shell: žádné další argumenty."
 }

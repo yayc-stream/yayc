@@ -216,5 +216,10 @@
   "no package for this installation": "энэ суулгалтад багц байхгүй",
   "Pause preview": "Урьдчилан харахыг түр зогсоох",
   "Play preview": "Урьдчилан харахыг тоглуулах",
-  "another YAYC window installs it": "YAYC-ийн өөр цонх үүнийг суулгана"
+  "another YAYC window installs it": "YAYC-ийн өөр цонх үүнийг суулгана",
+  "(created if missing)": "(байхгүй бол үүсгэнэ)",
+  "Each command gets one argument: the video URL.": "Команд бүр нэг аргумент авна: видеоны URL.",
+  "On a folder: one run per video, one after the other.": "Хавтас дээр: видео бүрт нэг удаа, дараалан ажиллана.",
+  "Output is discarded.": "Гаралтыг хаяна.",
+  "Started directly, not through a shell: no extra arguments.": "Шууд эхлүүлнэ, shell-ээр дамжуулахгүй: нэмэлт аргумент байхгүй."
 }

@@ -216,5 +216,10 @@
   "no package for this installation": "δεν υπάρχει πακέτο για αυτή την εγκατάσταση",
   "Pause preview": "Παύση προεπισκόπησης",
   "Play preview": "Αναπαραγωγή προεπισκόπησης",
-  "another YAYC window installs it": "Το εγκαθιστά ένα άλλο παράθυρο του YAYC"
+  "another YAYC window installs it": "Το εγκαθιστά ένα άλλο παράθυρο του YAYC",
+  "(created if missing)": "(δημιουργείται αν λείπει)",
+  "Each command gets one argument: the video URL.": "Κάθε εντολή λαμβάνει ένα όρισμα: το URL του βίντεο.",
+  "On a folder: one run per video, one after the other.": "Σε φάκελο: μία εκτέλεση ανά βίντεο, το ένα μετά το άλλο.",
+  "Output is discarded.": "Η έξοδος απορρίπτεται.",
+  "Started directly, not through a shell: no extra arguments.": "Εκκινείται απευθείας, όχι μέσω κελύφους: χωρίς επιπλέον ορίσματα."
 }

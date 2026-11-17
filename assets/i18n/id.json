@@ -216,5 +216,10 @@
   "no package for this installation": "tidak ada paket untuk instalasi ini",
   "Pause preview": "Jeda pratinjau",
   "Play preview": "Putar pratinjau",
-  "another YAYC window installs it": "Jendela YAYC lain memasangnya"
+  "another YAYC window installs it": "Jendela YAYC lain memasangnya",
+  "(created if missing)": "(dibuat jika belum ada)",
+  "Each command gets one argument: the video URL.": "Setiap perintah menerima satu argumen: URL video.",
+  "On a folder: one run per video, one after the other.": "Pada folder: satu kali jalan per video, satu per satu.",
+  "Output is discarded.": "Output dibuang.",
+  "Started directly, not through a shell: no extra arguments.": "Dijalankan langsung, tidak melalui shell: tanpa argumen tambahan."
 }

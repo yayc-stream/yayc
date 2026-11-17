@@ -216,5 +216,10 @@
   "no package for this installation": "walang package para sa installation na ito",
   "Pause preview": "I-pause ang preview",
   "Play preview": "I-play ang preview",
-  "another YAYC window installs it": "Ini-install ito ng ibang YAYC window"
+  "another YAYC window installs it": "Ini-install ito ng ibang YAYC window",
+  "(created if missing)": "(ginagawa kung wala pa)",
+  "Each command gets one argument: the video URL.": "Bawat command ay tumatanggap ng isang argument: ang video URL.",
+  "On a folder: one run per video, one after the other.": "Sa isang folder: isang takbo bawat video, isa-isa.",
+  "Output is discarded.": "Itinatapon ang output.",
+  "Started directly, not through a shell: no extra arguments.": "Direktang sinimulan, hindi sa pamamagitan ng shell: walang karagdagang argument."
 }

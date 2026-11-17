@@ -216,5 +216,10 @@
   "no package for this installation": "此安装方式没有可用的安装包",
   "Pause preview": "暂停预览",
   "Play preview": "播放预览",
-  "another YAYC window installs it": "另一个 YAYC 窗口会安装它"
+  "another YAYC window installs it": "另一个 YAYC 窗口会安装它",
+  "(created if missing)": "（如不存在则创建）",
+  "Each command gets one argument: the video URL.": "每条命令接收一个参数：视频 URL。",
+  "On a folder: one run per video, one after the other.": "对文件夹操作时：每个视频运行一次，依次执行。",
+  "Output is discarded.": "输出将被丢弃。",
+  "Started directly, not through a shell: no extra arguments.": "直接启动，不经过 shell：不附加额外参数。"
 }

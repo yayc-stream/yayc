@@ -206,9 +206,15 @@ Item {
     // Recent destinations live in the model, which is recreated on every setRoot(): the binding
     // pushes the persisted list into whichever model is current, the Connections below stores
     // back what the model adds.
-    Binding { target: fileSystemModel; property: "recentDestinationPaths"; value: root.recentDestinationPaths }
+    // Both wait for the settings load: QML completes objects in reverse order, so without the
+    // gate the list reaches the model before the max, and the default max cuts it.
+    Binding {
+        target: fileSystemModel; property: "recentDestinationPaths"; value: root.recentDestinationPaths
+        when: root.settingsInitialized
+    }
     Connections {
         target: fileSystemModel
+        enabled: root.settingsInitialized
         function onRecentDestinationsChanged() {
             root.recentDestinationPaths = fileSystemModel.recentDestinationPaths
         }

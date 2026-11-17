@@ -216,5 +216,10 @@
   "no package for this installation": "এই ইনস্টলেশনের জন্য কোনো প্যাকেজ নেই",
   "Pause preview": "পূর্বরূপ থামান",
   "Play preview": "পূর্বরূপ চালান",
-  "another YAYC window installs it": "অন্য একটি YAYC উইন্ডো এটি ইনস্টল করে"
+  "another YAYC window installs it": "অন্য একটি YAYC উইন্ডো এটি ইনস্টল করে",
+  "(created if missing)": "(তৈরি করা হবে যদি না থাকে)",
+  "Each command gets one argument: the video URL.": "প্রতিটি কমান্ড একটিমাত্র আর্গুমেন্ট পায়: ভিডিওর URL।",
+  "On a folder: one run per video, one after the other.": "ফোল্ডারের ক্ষেত্রে: প্রতিটি ভিডিওর জন্য একবার করে চলবে, একটির পর একটি।",
+  "Output is discarded.": "আউটপুট বাতিল করা হবে।",
+  "Started directly, not through a shell: no extra arguments.": "সরাসরি শুরু হয়, শেলের মাধ্যমে নয়: কোনো অতিরিক্ত আর্গুমেন্ট নেই।"
 }

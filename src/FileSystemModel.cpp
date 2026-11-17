@@ -1186,14 +1186,17 @@ void FileSystemModel::pushRecentDestination(const QString &path, const QString &
 QVariantList FileSystemModel::recentDestinations() const {
     QVariantList result;
     for (const auto &dc : m_recentDestinations) {
+        if (result.size() >= m_maxRecentDestinations)
+            break;
         if (QDir(dc.path).exists())
             result.append(QVariantMap{{"path", dc.path}, {"name", dc.name}});
     }
     return result;
 }
 
-// Raw paths, unfiltered: a destination on a currently missing/unmounted path is kept in the
-// settings and comes back on its own, since recentDestinations() filters at read time.
+// Raw paths, unfiltered and unclamped: missing paths come back once mounted, and the max
+// may arrive after the list at startup (QML completes objects in reverse order).
+// Only pushRecentDestination() trims.
 QStringList FileSystemModel::recentDestinationPaths() const {
     QStringList result;
     for (const auto &dc : m_recentDestinations)
@@ -1204,7 +1207,7 @@ QStringList FileSystemModel::recentDestinationPaths() const {
 void FileSystemModel::setRecentDestinationPaths(const QStringList &paths) {
     QList<DestinationCategory> restored;
     for (const auto &p : paths) {
-        if (p.isEmpty() || restored.size() >= m_maxRecentDestinations)
+        if (p.isEmpty())
             continue;
         const QDir d(p);
         const DestinationCategory dc{d.path(), d.dirName()};
@@ -1227,10 +1230,7 @@ void FileSystemModel::setMaxRecentDestinations(int max) {
     if (m_maxRecentDestinations == max)
         return;
     m_maxRecentDestinations = max;
-    if (m_recentDestinations.size() > max) {
-        m_recentDestinations.resize(max);
-        emit recentDestinationsChanged();
-    }
+    emit recentDestinationsChanged();
     emit maxRecentDestinationsChanged();
 }
 

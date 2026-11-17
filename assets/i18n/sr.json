@@ -216,5 +216,10 @@
   "no package for this installation": "нема пакета за ову инсталацију",
   "Pause preview": "Паузирај преглед",
   "Play preview": "Пусти преглед",
-  "another YAYC window installs it": "Други YAYC прозор га инсталира"
+  "another YAYC window installs it": "Други YAYC прозор га инсталира",
+  "(created if missing)": "(креира се ако не постоји)",
+  "Each command gets one argument: the video URL.": "Свака команда добија један аргумент: URL видеа.",
+  "On a folder: one run per video, one after the other.": "За фолдер: једно покретање по видеу, једно за другим.",
+  "Output is discarded.": "Излаз се одбацује.",
+  "Started directly, not through a shell: no extra arguments.": "Покреће се директно, не преко шела: без додатних аргумената."
 }

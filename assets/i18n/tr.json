@@ -216,5 +216,10 @@
   "no package for this installation": "bu kurulum için paket yok",
   "Pause preview": "Önizlemeyi duraklat",
   "Play preview": "Önizlemeyi oynat",
-  "another YAYC window installs it": "YAYC'nin başka bir penceresi bunu yükler"
+  "another YAYC window installs it": "YAYC'nin başka bir penceresi bunu yükler",
+  "(created if missing)": "(yoksa oluşturulur)",
+  "Each command gets one argument: the video URL.": "Her komuta tek bir argüman verilir: video URL'si.",
+  "On a folder: one run per video, one after the other.": "Bir klasörde: her video için bir çalıştırma, sırayla.",
+  "Output is discarded.": "Çıktı atılır.",
+  "Started directly, not through a shell: no extra arguments.": "Doğrudan başlatılır, kabuk üzerinden değil: ek argüman yok."
 }

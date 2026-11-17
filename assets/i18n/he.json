@@ -216,5 +216,10 @@
   "no package for this installation": "אין חבילה עבור התקנה זו",
   "Pause preview": "השהה תצוגה מקדימה",
   "Play preview": "הפעל תצוגה מקדימה",
-  "another YAYC window installs it": "חלון YAYC אחר מתקין את זה"
+  "another YAYC window installs it": "חלון YAYC אחר מתקין את זה",
+  "(created if missing)": "(נוצר אם חסר)",
+  "Each command gets one argument: the video URL.": "כל פקודה מקבלת ארגומנט אחד: כתובת ה-URL של הסרטון.",
+  "On a folder: one run per video, one after the other.": "בתיקייה: הרצה אחת לכל סרטון, בזה אחר זה.",
+  "Output is discarded.": "הפלט מושלך.",
+  "Started directly, not through a shell: no extra arguments.": "מופעל ישירות, לא דרך shell: ללא ארגומנטים נוספים."
 }

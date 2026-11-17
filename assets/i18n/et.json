@@ -216,5 +216,10 @@
   "no package for this installation": "selle paigalduse jaoks pole paketti",
   "Pause preview": "Peata eelvaade",
   "Play preview": "Esita eelvaade",
-  "another YAYC window installs it": "Teine YAYC aken paigaldab selle"
+  "another YAYC window installs it": "Teine YAYC aken paigaldab selle",
+  "(created if missing)": "(luuakse, kui puudub)",
+  "Each command gets one argument: the video URL.": "Igale käsule antakse üks argument: video URL.",
+  "On a folder: one run per video, one after the other.": "Kausta puhul: üks käivitus videa kohta, üksteise järel.",
+  "Output is discarded.": "Väljund jäetakse kõrvale.",
+  "Started directly, not through a shell: no extra arguments.": "Käivitatakse otse, mitte shelli kaudu: lisaargumente ei ole."
 }

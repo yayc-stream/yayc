@@ -22,10 +22,53 @@ Dialog {
     header: Item {
         width: extDlg.width
         height: YaycProperties.fsH3 * 1.5
-        Label {
+        Row {
+            id: titleRow
             anchors.centerIn: parent
-            text: "<b>" + uiTr("External commands") + "</b>"
-            font.pixelSize: YaycProperties.fsH3
+            spacing: 6
+            Label {
+                id: titleLabel
+                text: "<b>" + uiTr("External commands") + "</b>"
+                font.pixelSize: YaycProperties.fsH3
+            }
+            Item {
+                anchors.verticalCenter: titleLabel.verticalCenter
+                width: YaycProperties.fsH3
+                height: width
+                Image {
+                    id: infoImg
+                    source: "/icons/info.svg"
+                    visible: false
+                    anchors.fill: parent
+                }
+                ColorOverlay {
+                    source: infoImg
+                    anchors.fill: infoImg
+                    color: YaycProperties.iconColor
+                }
+            }
+        }
+        // Without it, a click on the title goes through to the WebEngineView below.
+        MouseArea {
+            id: titleArea
+            anchors.fill: titleRow
+            hoverEnabled: true
+            acceptedButtons: Qt.AllButtons
+        }
+        ToolTip {
+            parent: titleRow
+            visible: titleArea.containsMouse
+            delay: 300
+            padding: 12
+            font.pixelSize: YaycProperties.fsH4
+            text: uiTr("Each command gets one argument: the video URL.")
+                + "\n" + uiTr("Started directly, not through a shell: no extra arguments.")
+                + "\n" + uiTr("Working dir") + ": "
+                + (extDlg.host && extDlg.host.extWorkingDirExists
+                   ? extDlg.host.extWorkingDirPath : uiTr("Working dir"))
+                + "/VIDEO_ID " + uiTr("(created if missing)")
+                + "\n" + uiTr("On a folder: one run per video, one after the other.")
+                + "\n" + uiTr("Output is discarded.")
         }
     }
     footer: DialogButtonBox {

@@ -216,5 +216,10 @@
   "no package for this installation": "لا توجد حزمة لهذا التثبيت",
   "Pause preview": "إيقاف المعاينة مؤقتًا",
   "Play preview": "تشغيل المعاينة",
-  "another YAYC window installs it": "نافذة YAYC أخرى تقوم بتثبيته"
+  "another YAYC window installs it": "نافذة YAYC أخرى تقوم بتثبيته",
+  "(created if missing)": "(يتم إنشاؤه إذا كان مفقودًا)",
+  "Each command gets one argument: the video URL.": "يتلقى كل أمر وسيطًا واحدًا فقط: عنوان URL للفيديو.",
+  "On a folder: one run per video, one after the other.": "عند التشغيل على مجلد: تشغيل واحد لكل فيديو، واحدًا تلو الآخر.",
+  "Output is discarded.": "يتم تجاهل المخرجات.",
+  "Started directly, not through a shell: no extra arguments.": "يبدأ التشغيل مباشرةً، وليس عبر الصدفة (shell): بدون وسائط إضافية."
 }

@@ -216,5 +216,10 @@
   "no package for this installation": "šiam diegimui nėra paketo",
   "Pause preview": "Sustabdyti peržiūrą",
   "Play preview": "Paleisti peržiūrą",
-  "another YAYC window installs it": "kitas YAYC langas jį įdiegia"
+  "another YAYC window installs it": "kitas YAYC langas jį įdiegia",
+  "(created if missing)": "(sukuriama, jei nėra)",
+  "Each command gets one argument: the video URL.": "Kiekviena komanda gauna vieną argumentą: vaizdo įrašo URL.",
+  "On a folder: one run per video, one after the other.": "Aplanke: vienas paleidimas kiekvienam vaizdo įrašui, vienas po kito.",
+  "Output is discarded.": "Išvestis atmetama.",
+  "Started directly, not through a shell: no extra arguments.": "Paleidžiama tiesiogiai, ne per apvalkalą: jokių papildomų argumentų."
 }

@@ -216,5 +216,10 @@
   "no package for this installation": "không có gói cho bản cài đặt này",
   "Pause preview": "Tạm dừng xem trước",
   "Play preview": "Phát xem trước",
-  "another YAYC window installs it": "một cửa sổ YAYC khác sẽ cài đặt nó"
+  "another YAYC window installs it": "một cửa sổ YAYC khác sẽ cài đặt nó",
+  "(created if missing)": "(sẽ được tạo nếu chưa có)",
+  "Each command gets one argument: the video URL.": "Mỗi lệnh nhận một đối số: URL của video.",
+  "On a folder: one run per video, one after the other.": "Khi chọn thư mục: chạy một lần cho mỗi video, lần lượt từng video một.",
+  "Output is discarded.": "Kết quả đầu ra sẽ bị bỏ qua.",
+  "Started directly, not through a shell: no extra arguments.": "Được khởi chạy trực tiếp, không qua shell: không có đối số bổ sung."
 }

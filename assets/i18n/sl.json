@@ -216,5 +216,10 @@
   "no package for this installation": "za to namestitev ni paketa",
   "Pause preview": "Ustavi predogled",
   "Play preview": "Predvajaj predogled",
-  "another YAYC window installs it": "drugo okno YAYC jo namesti"
+  "another YAYC window installs it": "drugo okno YAYC jo namesti",
+  "(created if missing)": "(ustvarjeno, če manjka)",
+  "Each command gets one argument: the video URL.": "Vsak ukaz prejme en argument: URL videa.",
+  "On a folder: one run per video, one after the other.": "Pri mapi: en zagon na video, eden za drugim.",
+  "Output is discarded.": "Izhod se zavrže.",
+  "Started directly, not through a shell: no extra arguments.": "Zagnano neposredno, ne prek lupine: brez dodatnih argumentov."
 }

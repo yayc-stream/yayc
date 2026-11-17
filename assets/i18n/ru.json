@@ -216,5 +216,10 @@
   "no package for this installation": "нет пакета для этой установки",
   "Pause preview": "Приостановить предпросмотр",
   "Play preview": "Воспроизвести предпросмотр",
-  "another YAYC window installs it": "Другое окно YAYC устанавливает его"
+  "another YAYC window installs it": "Другое окно YAYC устанавливает его",
+  "(created if missing)": "(создаётся, если отсутствует)",
+  "Each command gets one argument: the video URL.": "Каждой команде передаётся один аргумент: URL видео.",
+  "On a folder: one run per video, one after the other.": "При указании папки: один запуск на каждое видео, последовательно друг за другом.",
+  "Output is discarded.": "Вывод отбрасывается.",
+  "Started directly, not through a shell: no extra arguments.": "Запускается напрямую, а не через оболочку: никаких дополнительных аргументов."
 }

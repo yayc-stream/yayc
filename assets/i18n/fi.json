@@ -216,5 +216,10 @@
   "no package for this installation": "tälle asennukselle ei ole pakettia",
   "Pause preview": "Keskeytä esikatselu",
   "Play preview": "Toista esikatselu",
-  "another YAYC window installs it": "toinen YAYC-ikkuna asentaa sen"
+  "another YAYC window installs it": "toinen YAYC-ikkuna asentaa sen",
+  "(created if missing)": "(luodaan, jos puuttuu)",
+  "Each command gets one argument: the video URL.": "Jokainen komento saa yhden argumentin: videon URL-osoitteen.",
+  "On a folder: one run per video, one after the other.": "Kansiota käytettäessä suoritus tehdään kerran per video, peräkkäin.",
+  "Output is discarded.": "Tulostus hylätään.",
+  "Started directly, not through a shell: no extra arguments.": "Käynnistetään suoraan, ei shellin kautta: ei ylimääräisiä argumentteja."
 }

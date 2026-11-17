@@ -216,5 +216,10 @@
   "no package for this installation": "nincs csomag ehhez a telepítéshez",
   "Pause preview": "Előnézet szüneteltetése",
   "Play preview": "Előnézet lejátszása",
-  "another YAYC window installs it": "egy másik YAYC-ablak telepíti"
+  "another YAYC window installs it": "egy másik YAYC-ablak telepíti",
+  "(created if missing)": "(létrehozva, ha nincs)",
+  "Each command gets one argument: the video URL.": "Minden parancs egy argumentumot kap: a videó URL-jét.",
+  "On a folder: one run per video, one after the other.": "Mappa esetén: videónként egy futtatás, egymás után.",
+  "Output is discarded.": "A kimenet elvetésre kerül.",
+  "Started directly, not through a shell: no extra arguments.": "Közvetlenül indítva, nem shellen keresztül: nincs további argumentum."
 }

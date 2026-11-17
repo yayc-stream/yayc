@@ -216,5 +216,10 @@
   "no package for this installation": "இந்த நிறுவலுக்கு தொகுப்பு இல்லை",
   "Pause preview": "முன்னோட்டத்தை இடைநிறுத்து",
   "Play preview": "முன்னோட்டத்தை இயக்கு",
-  "another YAYC window installs it": "மற்றொரு YAYC சாளரம் அதை நிறுவுகிறது"
+  "another YAYC window installs it": "மற்றொரு YAYC சாளரம் அதை நிறுவுகிறது",
+  "(created if missing)": "(உருவாக்கப்படும் என்றால்)",
+  "Each command gets one argument: the video URL.": "ஒவ்வொரு கட்டளைக்கும் ஒரு வாதம் மட்டுமே: வீடியோ URL.",
+  "On a folder: one run per video, one after the other.": "கோப்புறையில்: ஒவ்வொரு வீடியோவுக்கும் ஒரு முறை, ஒன்றன் பின் ஒன்றாக.",
+  "Output is discarded.": "வெளியீடு நிராகரிக்கப்படும்.",
+  "Started directly, not through a shell: no extra arguments.": "ஷெல் வழியாக அல்லாமல் நேரடியாகத் தொடங்கப்படும்: கூடுதல் வாதங்கள் இல்லை."
 }

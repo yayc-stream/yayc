@@ -216,5 +216,10 @@
   "no package for this installation": "このインストールには対応するパッケージがありません",
   "Pause preview": "プレビューを一時停止",
   "Play preview": "プレビューを再生",
-  "another YAYC window installs it": "別の YAYC ウィンドウがインストールします"
+  "another YAYC window installs it": "別の YAYC ウィンドウがインストールします",
+  "(created if missing)": "（存在しない場合は作成）",
+  "Each command gets one argument: the video URL.": "各コマンドには動画URLという1つの引数が渡されます。",
+  "On a folder: one run per video, one after the other.": "フォルダーの場合: 動画ごとに1回ずつ、順番に実行します。",
+  "Output is discarded.": "出力は破棄されます。",
+  "Started directly, not through a shell: no extra arguments.": "シェルを介さず直接起動されます。追加の引数はありません。"
 }

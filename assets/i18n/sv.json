@@ -216,5 +216,10 @@
   "no package for this installation": "inget paket för denna installation",
   "Pause preview": "Pausa förhandsvisning",
   "Play preview": "Spela upp förhandsvisning",
-  "another YAYC window installs it": "ett annat YAYC-fönster installerar den"
+  "another YAYC window installs it": "ett annat YAYC-fönster installerar den",
+  "(created if missing)": "(wird erstellt, falls nicht vorhanden)",
+  "Each command gets one argument: the video URL.": "Jeder Befehl erhält ein Argument: die Video-URL.",
+  "On a folder: one run per video, one after the other.": "Bei einem Ordner: ein Durchlauf pro Video, nacheinander.",
+  "Output is discarded.": "Die Ausgabe wird verworfen.",
+  "Started directly, not through a shell: no extra arguments.": "Wird direkt gestartet, nicht über eine Shell: keine zusätzlichen Argumente."
 }

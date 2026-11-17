@@ -216,5 +216,10 @@
   "no package for this installation": "ingen pakke til denne installation",
   "Pause preview": "Pausér forhåndsvisning",
   "Play preview": "Afspil forhåndsvisning",
-  "another YAYC window installs it": "et andet YAYC-vindue installerer den"
+  "another YAYC window installs it": "et andet YAYC-vindue installerer den",
+  "(created if missing)": "(oprettes hvis den mangler)",
+  "Each command gets one argument: the video URL.": "Hver kommando får ét argument: video-URL'en.",
+  "On a folder: one run per video, one after the other.": "Ved en mappe: én kørsel pr. video, den ene efter den anden.",
+  "Output is discarded.": "Output kasseres.",
+  "Started directly, not through a shell: no extra arguments.": "Startes direkte, ikke via en shell: ingen ekstra argumenter."
 }

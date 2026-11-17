@@ -216,5 +216,10 @@
   "no package for this installation": "šai instalācijai nav pakotnes",
   "Pause preview": "Apturēt priekšskatījumu",
   "Play preview": "Atskaņot priekšskatījumu",
-  "another YAYC window installs it": "cits YAYC logs to instalē"
+  "another YAYC window installs it": "cits YAYC logs to instalē",
+  "(created if missing)": "(izveidots, ja trūkst)",
+  "Each command gets one argument: the video URL.": "Katrai komandai tiek nodots viens arguments: video URL.",
+  "On a folder: one run per video, one after the other.": "Mapes gadījumā: viena palaišana katram video, viens pēc otra.",
+  "Output is discarded.": "Izvade tiek atmesta.",
+  "Started directly, not through a shell: no extra arguments.": "Tiek palaists tieši, nevis caur čaulu: nav papildu argumentu."
 }

@@ -216,5 +216,10 @@
   "no package for this installation": "nuk ka paketë për këtë instalim",
   "Pause preview": "Ndalo shikimin paraprak",
   "Play preview": "Luaj shikimin paraprak",
-  "another YAYC window installs it": "një dritare tjetër e YAYC e instalon atë"
+  "another YAYC window installs it": "një dritare tjetër e YAYC e instalon atë",
+  "(created if missing)": "(krijohet nëse mungon)",
+  "Each command gets one argument: the video URL.": "Çdo komandë merr një argument: URL-në e videos.",
+  "On a folder: one run per video, one after the other.": "Në një dosje: një ekzekutim për çdo video, njëri pas tjetrit.",
+  "Output is discarded.": "Dalja hidhet.",
+  "Started directly, not through a shell: no extra arguments.": "Nisur drejtpërdrejt, jo përmes një shell-i: pa argumente shtesë."
 }
