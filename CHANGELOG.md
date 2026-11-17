@@ -1,3 +1,11 @@
+## YAYC v2.1.0 (2026.11) -- Maxwell
+
+### 🐞 Bug fixes
+
+- Improved situation with videos stopping due to incorrect tokens
+- Added tooltip explaining external commands
+- Fixed last destinations getting clamped at restart
+
 ## YAYC v2.0.0 (2026.11) -- Doujuan
 
 ### ✨ New Features
