@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Her komuta tek bir argüman verilir: video URL'si.",
   "On a folder: one run per video, one after the other.": "Bir klasörde: her video için bir çalıştırma, sırayla.",
   "Output is discarded.": "Çıktı atılır.",
-  "Started directly, not through a shell: no extra arguments.": "Doğrudan başlatılır, kabuk üzerinden değil: ek argüman yok."
+  "Started directly, not through a shell: no extra arguments.": "Doğrudan başlatılır, kabuk üzerinden değil: ek argüman yok.",
+  "Dislike": "Beğenmiyorum",
+  "Disliked": "Beğenmediniz",
+  "Like": "Beğen",
+  "Liked": "Beğendiniz",
+  "Open your YouTube activity on Google": "Google'da YouTube etkinliğinizi açın",
+  "Rating failed": "Puanlama başarısız oldu",
+  "Rating removed": "Puanlama kaldırıldı",
+  "Remove rating": "Puanlamayı kaldır",
+  "Accounts": "Hesaplar",
+  "Activity": "Etkinlik",
+  "YouTube": "YouTube",
+  "Feedback": "Geri bildirim"
 }

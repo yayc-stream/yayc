@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Свака команда добија један аргумент: URL видеа.",
   "On a folder: one run per video, one after the other.": "За фолдер: једно покретање по видеу, једно за другим.",
   "Output is discarded.": "Излаз се одбацује.",
-  "Started directly, not through a shell: no extra arguments.": "Покреће се директно, не преко шела: без додатних аргумената."
+  "Started directly, not through a shell: no extra arguments.": "Покреће се директно, не преко шела: без додатних аргумената.",
+  "Dislike": "Не свиђа ми се",
+  "Disliked": "Не свиђа ми се",
+  "Like": "Свиђа ми се",
+  "Liked": "Свиђа ми се",
+  "Open your YouTube activity on Google": "Отворите своју активност на YouTube-у на Google-у",
+  "Rating failed": "Оцењивање није успело",
+  "Rating removed": "Оцена је уклоњена",
+  "Remove rating": "Уклони оцену",
+  "Accounts": "Налози",
+  "Activity": "Активност",
+  "YouTube": "YouTube",
+  "Feedback": "Повратне информације"
 }

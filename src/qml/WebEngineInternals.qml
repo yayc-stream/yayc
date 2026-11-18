@@ -561,6 +561,83 @@ var ytplayer = activeShort.querySelector('ytd-player[id=\"player\"]').getPlayer(
         return res;
     }
 
+    // YouTube's own login flag. null off YouTube, so the caller keeps its last value.
+    property string script_youtubeLoggedIn: "
+        (function() {
+            var h = location.hostname;
+            if (h !== 'youtube.com' && !h.endsWith('.youtube.com'))
+                return null;
+            var v = (window.ytcfg && window.ytcfg.get) ? window.ytcfg.get('LOGGED_IN') : null;
+            return (typeof v === 'boolean') ? v : null;
+        })();
+    "
+
+    // The like button's web API. Each action sets a state; none toggles.
+    // Same-origin fetch: youtube.com pages only. runJavaScript does not await,
+    // so the result goes to window.__yayc_youtubeRateResult.
+    function getYoutubeRateVideoScript(videoId, action, seq) {
+        return "
+        (function() {
+            var seq = " + seq + ";
+            var videoId = '" + videoId + "';
+            var action = '" + action + "';
+            function done(ok, status) {
+                window.__yayc_youtubeRateResult = { seq: seq, ok: ok, status: status };
+            }
+            function cookie(name) {
+                var parts = document.cookie.split('; ');
+                for (var i = 0; i < parts.length; i++)
+                    if (parts[i].indexOf(name + '=') === 0)
+                        return parts[i].substring(name.length + 1);
+                return '';
+            }
+            async function sidHash(scheme, sid, ts) {
+                var data = new TextEncoder().encode(ts + ' ' + sid + ' ' + location.origin);
+                var buf = await crypto.subtle.digest('SHA-1', data);
+                var hex = Array.from(new Uint8Array(buf),
+                                     function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+                return scheme + ' ' + ts + '_' + hex;
+            }
+            async function run() {
+                var cfg = window.ytcfg;
+                var sapisid = cookie('SAPISID') || cookie('__Secure-3PAPISID');
+                if (!cfg || !cfg.get || !sapisid) {
+                    done(false, 'no login');
+                    return;
+                }
+                var ts = Math.floor(Date.now() / 1000);
+                var auth = [await sidHash('SAPISIDHASH', sapisid, ts)];
+                var p1 = cookie('__Secure-1PAPISID');
+                var p3 = cookie('__Secure-3PAPISID');
+                if (p1) auth.push(await sidHash('SAPISID1PHASH', p1, ts));
+                if (p3) auth.push(await sidHash('SAPISID3PHASH', p3, ts));
+                var headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': auth.join(' '),
+                    'X-Origin': location.origin,
+                    'X-Goog-AuthUser': String(cfg.get('SESSION_INDEX') || 0),
+                    'X-Youtube-Client-Name': String(cfg.get('INNERTUBE_CONTEXT_CLIENT_NAME') || 1),
+                    'X-Youtube-Client-Version': String(cfg.get('INNERTUBE_CLIENT_VERSION') || '')
+                };
+                var visitor = cfg.get('VISITOR_DATA');
+                if (visitor) headers['X-Goog-Visitor-Id'] = visitor;
+                // Brand accounts
+                var pageId = cfg.get('DELEGATED_SESSION_ID');
+                if (pageId) headers['X-Goog-PageId'] = pageId;
+                var res = await fetch('/youtubei/v1/like/' + action + '?prettyPrint=false', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: headers,
+                    body: JSON.stringify({ context: cfg.get('INNERTUBE_CONTEXT'),
+                                           target: { videoId: videoId } })
+                });
+                done(res.ok, res.status);
+            }
+            run().catch(function(e) { done(false, String((e && e.message) || e)); });
+        })();
+        "
+    }
+
     function formatQualityLabel(quality, pad) {
         var labels = {
             "highres": "4320p",

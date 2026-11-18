@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Jokainen komento saa yhden argumentin: videon URL-osoitteen.",
   "On a folder: one run per video, one after the other.": "Kansiota käytettäessä suoritus tehdään kerran per video, peräkkäin.",
   "Output is discarded.": "Tulostus hylätään.",
-  "Started directly, not through a shell: no extra arguments.": "Käynnistetään suoraan, ei shellin kautta: ei ylimääräisiä argumentteja."
+  "Started directly, not through a shell: no extra arguments.": "Käynnistetään suoraan, ei shellin kautta: ei ylimääräisiä argumentteja.",
+  "Dislike": "En pidä",
+  "Disliked": "Ei pidetty",
+  "Like": "Tykkää",
+  "Liked": "Tykätty",
+  "Open your YouTube activity on Google": "Avaa YouTube-toimintasi Googlessa",
+  "Rating failed": "Arvostelun tallentaminen epäonnistui",
+  "Rating removed": "Arvostelu poistettu",
+  "Remove rating": "Poista arvostelu",
+  "Accounts": "Tilit",
+  "Activity": "Toiminta",
+  "YouTube": "YouTube",
+  "Feedback": "Palaute"
 }

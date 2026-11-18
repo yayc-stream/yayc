@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "每条命令接收一个参数：视频 URL。",
   "On a folder: one run per video, one after the other.": "对文件夹操作时：每个视频运行一次，依次执行。",
   "Output is discarded.": "输出将被丢弃。",
-  "Started directly, not through a shell: no extra arguments.": "直接启动，不经过 shell：不附加额外参数。"
+  "Started directly, not through a shell: no extra arguments.": "直接启动，不经过 shell：不附加额外参数。",
+  "Dislike": "不喜欢",
+  "Disliked": "已不喜欢",
+  "Like": "喜欢",
+  "Liked": "已喜欢",
+  "Open your YouTube activity on Google": "在 Google 上打开您的 YouTube 活动",
+  "Rating failed": "评分失败",
+  "Rating removed": "已移除评分",
+  "Remove rating": "移除评分",
+  "Accounts": "账户",
+  "Activity": "活动",
+  "YouTube": "YouTube",
+  "Feedback": "反馈"
 }

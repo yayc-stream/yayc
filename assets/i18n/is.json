@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Chaque commande reçoit un seul argument : l'URL de la vidéo.",
   "On a folder: one run per video, one after the other.": "Sur un dossier : une exécution par vidéo, les unes après les autres.",
   "Output is discarded.": "La sortie est ignorée.",
-  "Started directly, not through a shell: no extra arguments.": "Lancé directement, pas via un shell : aucun argument supplémentaire."
+  "Started directly, not through a shell: no extra arguments.": "Lancé directement, pas via un shell : aucun argument supplémentaire.",
+  "Dislike": "Líkar ekki",
+  "Disliked": "Líkar ekki við",
+  "Like": "Líkar",
+  "Liked": "Líkar við",
+  "Open your YouTube activity on Google": "Opna YouTube virknina þína á Google",
+  "Rating failed": "Mat mistókst",
+  "Rating removed": "Mati fjarlægt",
+  "Remove rating": "Fjarlægja mat",
+  "Accounts": "Reikningar",
+  "Activity": "Virkni",
+  "YouTube": "YouTube",
+  "Feedback": "Endurgjöf"
 }

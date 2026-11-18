@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "প্রতিটি কমান্ড একটিমাত্র আর্গুমেন্ট পায়: ভিডিওর URL।",
   "On a folder: one run per video, one after the other.": "ফোল্ডারের ক্ষেত্রে: প্রতিটি ভিডিওর জন্য একবার করে চলবে, একটির পর একটি।",
   "Output is discarded.": "আউটপুট বাতিল করা হবে।",
-  "Started directly, not through a shell: no extra arguments.": "সরাসরি শুরু হয়, শেলের মাধ্যমে নয়: কোনো অতিরিক্ত আর্গুমেন্ট নেই।"
+  "Started directly, not through a shell: no extra arguments.": "সরাসরি শুরু হয়, শেলের মাধ্যমে নয়: কোনো অতিরিক্ত আর্গুমেন্ট নেই।",
+  "Dislike": "অপছন্দ",
+  "Disliked": "অপছন্দ করা হয়েছে",
+  "Like": "পছন্দ",
+  "Liked": "পছন্দ করা হয়েছে",
+  "Open your YouTube activity on Google": "Google-এ আপনার YouTube কার্যকলাপ খুলুন",
+  "Rating failed": "রেটিং ব্যর্থ হয়েছে",
+  "Rating removed": "রেটিং সরানো হয়েছে",
+  "Remove rating": "রেটিং সরান",
+  "Accounts": "অ্যাকাউন্টসমূহ",
+  "Activity": "কার্যকলাপ",
+  "YouTube": "ইউটিউব",
+  "Feedback": "মতামত"
 }

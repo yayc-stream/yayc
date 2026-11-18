@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Každý příkaz dostane jeden argument: URL videa.",
   "On a folder: one run per video, one after the other.": "U složky: jedno spuštění pro každé video, postupně za sebou.",
   "Output is discarded.": "Výstup se zahodí.",
-  "Started directly, not through a shell: no extra arguments.": "Spuštěno přímo, nikoli přes shell: žádné další argumenty."
+  "Started directly, not through a shell: no extra arguments.": "Spuštěno přímo, nikoli přes shell: žádné další argumenty.",
+  "Dislike": "Nelíbí se mi",
+  "Disliked": "Nelíbí se mi",
+  "Like": "Líbí se mi",
+  "Liked": "Líbí se mi",
+  "Open your YouTube activity on Google": "Otevřít vaši aktivitu na YouTube na Googlu",
+  "Rating failed": "Hodnocení se nepodařilo uložit",
+  "Rating removed": "Hodnocení bylo odstraněno",
+  "Remove rating": "Odebrat hodnocení",
+  "Accounts": "Účty",
+  "Activity": "Aktivita",
+  "YouTube": "YouTube",
+  "Feedback": "Zpětná vazba"
 }

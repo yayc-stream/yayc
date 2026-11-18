@@ -30,6 +30,7 @@ Popup {
     signal openBookmarksEdit()
     signal openHistoryEdit()
     signal openProfileEdit()
+    signal openYoutubeActivity()
     signal openExtWorkDirEdit()
     signal openExtCommandsPopup()
     signal openAboutDialog()
@@ -464,6 +465,13 @@ Popup {
                     onActivated: smenu.openProfileEdit()
                 }
                 MenuRow {
+                    label: uiTr("Accounts")
+                    iconSource: "/icons/tv_signin.svg"
+                    chevron: true
+                    visible: !!smenu.host && smenu.host.youtubeLoggedIn
+                    onActivated: stack.push(accountsPage)
+                }
+                MenuRow {
                     label: uiTr("Ext working dir")
                     iconSource: "/icons/exit_to_app.svg"
                     chevron: true
@@ -603,6 +611,54 @@ Popup {
                     shortcutText: "Ctrl+Q"
                     rowTooltip: uiTr("Exit YAYC")
                     onActivated: smenu.quitRequested()
+                }
+            }
+        }
+    }
+
+    // -------- Accounts pages --------
+
+    Component {
+        id: accountsPage
+        Item {
+            implicitHeight: accCol.implicitHeight + 8
+            ColumnLayout {
+                id: accCol
+                width: parent.width
+                spacing: 0
+                HeaderRow {
+                    title: uiTr("Accounts")
+                    onBack: stack.pop()
+                }
+                MenuRow {
+                    label: uiTr("YouTube")
+                    iconSource: "qrc:/images/youtube-128.png"
+                    chevron: true
+                    visible: !!smenu.host && smenu.host.youtubeLoggedIn
+                    onActivated: stack.push(youtubeAccountPage)
+                }
+            }
+        }
+    }
+
+    Component {
+        id: youtubeAccountPage
+        Item {
+            implicitHeight: ytCol.implicitHeight + 8
+            ColumnLayout {
+                id: ytCol
+                width: parent.width
+                spacing: 0
+                HeaderRow {
+                    title: uiTr("YouTube")
+                    onBack: stack.pop()
+                }
+                MenuRow {
+                    label: uiTr("Activity")
+                    iconSource: "/icons/history.svg"
+                    chevron: true
+                    rowTooltip: uiTr("Open your YouTube activity on Google")
+                    onActivated: { smenu.openYoutubeActivity(); smenu.close() }
                 }
             }
         }

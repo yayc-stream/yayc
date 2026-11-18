@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Çdo komandë merr një argument: URL-në e videos.",
   "On a folder: one run per video, one after the other.": "Në një dosje: një ekzekutim për çdo video, njëri pas tjetrit.",
   "Output is discarded.": "Dalja hidhet.",
-  "Started directly, not through a shell: no extra arguments.": "Nisur drejtpërdrejt, jo përmes një shell-i: pa argumente shtesë."
+  "Started directly, not through a shell: no extra arguments.": "Nisur drejtpërdrejt, jo përmes një shell-i: pa argumente shtesë.",
+  "Dislike": "Mospëlqej",
+  "Disliked": "I pëlqyer",
+  "Like": "Pëlqej",
+  "Liked": "I pëlqyer",
+  "Open your YouTube activity on Google": "Hap aktivitetin tënd në YouTube në Google",
+  "Rating failed": "Vlerësimi dështoi",
+  "Rating removed": "Vlerësimi u hoq",
+  "Remove rating": "Hiq vlerësimin",
+  "Accounts": "Llogari",
+  "Activity": "Aktiviteti",
+  "YouTube": "YouTube",
+  "Feedback": "Reagime"
 }

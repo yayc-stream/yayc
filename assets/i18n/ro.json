@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Fiecare comandă primește un singur argument: adresa URL a videoclipului.",
   "On a folder: one run per video, one after the other.": "Pentru un dosar: o rulare per videoclip, unul după altul.",
   "Output is discarded.": "Rezultatul este eliminat.",
-  "Started directly, not through a shell: no extra arguments.": "Pornit direct, nu prin shell: fără argumente suplimentare."
+  "Started directly, not through a shell: no extra arguments.": "Pornit direct, nu prin shell: fără argumente suplimentare.",
+  "Dislike": "Nu îmi place",
+  "Disliked": "Nu îmi place",
+  "Like": "Îmi place",
+  "Liked": "Îmi place",
+  "Open your YouTube activity on Google": "Deschide activitatea ta pe YouTube din Google",
+  "Rating failed": "Evaluarea a eșuat",
+  "Rating removed": "Evaluarea a fost eliminată",
+  "Remove rating": "Elimină evaluarea",
+  "Accounts": "Conturi",
+  "Activity": "Activitate",
+  "YouTube": "YouTube",
+  "Feedback": "Feedback"
 }

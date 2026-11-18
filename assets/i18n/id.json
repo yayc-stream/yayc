@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Setiap perintah menerima satu argumen: URL video.",
   "On a folder: one run per video, one after the other.": "Pada folder: satu kali jalan per video, satu per satu.",
   "Output is discarded.": "Output dibuang.",
-  "Started directly, not through a shell: no extra arguments.": "Dijalankan langsung, tidak melalui shell: tanpa argumen tambahan."
+  "Started directly, not through a shell: no extra arguments.": "Dijalankan langsung, tidak melalui shell: tanpa argumen tambahan.",
+  "Dislike": "Tidak Suka",
+  "Disliked": "Tidak Disukai",
+  "Like": "Suka",
+  "Liked": "Disukai",
+  "Open your YouTube activity on Google": "Buka aktivitas YouTube Anda di Google",
+  "Rating failed": "Gagal memberi peringkat",
+  "Rating removed": "Peringkat dihapus",
+  "Remove rating": "Hapus peringkat",
+  "Accounts": "Akun",
+  "Activity": "Aktivitas",
+  "YouTube": "YouTube",
+  "Feedback": "Masukan"
 }

@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "يتلقى كل أمر وسيطًا واحدًا فقط: عنوان URL للفيديو.",
   "On a folder: one run per video, one after the other.": "عند التشغيل على مجلد: تشغيل واحد لكل فيديو، واحدًا تلو الآخر.",
   "Output is discarded.": "يتم تجاهل المخرجات.",
-  "Started directly, not through a shell: no extra arguments.": "يبدأ التشغيل مباشرةً، وليس عبر الصدفة (shell): بدون وسائط إضافية."
+  "Started directly, not through a shell: no extra arguments.": "يبدأ التشغيل مباشرةً، وليس عبر الصدفة (shell): بدون وسائط إضافية.",
+  "Dislike": "عدم الإعجاب",
+  "Disliked": "غير معجب",
+  "Like": "إعجاب",
+  "Liked": "معجب",
+  "Open your YouTube activity on Google": "افتح نشاطك على YouTube في Google",
+  "Rating failed": "فشل التقييم",
+  "Rating removed": "تمت إزالة التقييم",
+  "Remove rating": "إزالة التقييم",
+  "Accounts": "الحسابات",
+  "Activity": "النشاط",
+  "YouTube": "يوتيوب",
+  "Feedback": "ملاحظات"
 }

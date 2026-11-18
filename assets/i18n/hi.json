@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "प्रत्येक कमांड को एक तर्क मिलता है: वीडियो URL।",
   "On a folder: one run per video, one after the other.": "फ़ोल्डर पर: प्रत्येक वीडियो के लिए एक बार चलता है, एक के बाद एक।",
   "Output is discarded.": "आउटपुट हटा दिया जाता है।",
-  "Started directly, not through a shell: no extra arguments.": "सीधे शुरू किया गया, शेल के माध्यम से नहीं: कोई अतिरिक्त तर्क नहीं।"
+  "Started directly, not through a shell: no extra arguments.": "सीधे शुरू किया गया, शेल के माध्यम से नहीं: कोई अतिरिक्त तर्क नहीं।",
+  "Dislike": "नापसंद",
+  "Disliked": "नापसंद किया गया",
+  "Like": "पसंद",
+  "Liked": "पसंद किया गया",
+  "Open your YouTube activity on Google": "Google पर अपनी YouTube गतिविधि खोलें",
+  "Rating failed": "रेटिंग विफल रही",
+  "Rating removed": "रेटिंग हटा दी गई",
+  "Remove rating": "रेटिंग हटाएँ",
+  "Accounts": "खाते",
+  "Activity": "गतिविधि",
+  "YouTube": "YouTube",
+  "Feedback": "प्रतिक्रिया"
 }

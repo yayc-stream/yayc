@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Команд бүр нэг аргумент авна: видеоны URL.",
   "On a folder: one run per video, one after the other.": "Хавтас дээр: видео бүрт нэг удаа, дараалан ажиллана.",
   "Output is discarded.": "Гаралтыг хаяна.",
-  "Started directly, not through a shell: no extra arguments.": "Шууд эхлүүлнэ, shell-ээр дамжуулахгүй: нэмэлт аргумент байхгүй."
+  "Started directly, not through a shell: no extra arguments.": "Шууд эхлүүлнэ, shell-ээр дамжуулахгүй: нэмэлт аргумент байхгүй.",
+  "Dislike": "Дислайк",
+  "Disliked": "Дислайк хийсэн",
+  "Like": "Лайк",
+  "Liked": "Лайк хийсэн",
+  "Open your YouTube activity on Google": "Google дээрх YouTube-ийн үйл ажиллагаагаа нээх",
+  "Rating failed": "Үнэлгээ амжилтгүй боллоо",
+  "Rating removed": "Үнэлгээ устгагдлаа",
+  "Remove rating": "Үнэлгээг устгах",
+  "Accounts": "Бүртгэл",
+  "Activity": "Үйл ажиллагаа",
+  "YouTube": "YouTube",
+  "Feedback": "Санал хүсэлт"
 }

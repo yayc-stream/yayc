@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Kiekviena komanda gauna vieną argumentą: vaizdo įrašo URL.",
   "On a folder: one run per video, one after the other.": "Aplanke: vienas paleidimas kiekvienam vaizdo įrašui, vienas po kito.",
   "Output is discarded.": "Išvestis atmetama.",
-  "Started directly, not through a shell: no extra arguments.": "Paleidžiama tiesiogiai, ne per apvalkalą: jokių papildomų argumentų."
+  "Started directly, not through a shell: no extra arguments.": "Paleidžiama tiesiogiai, ne per apvalkalą: jokių papildomų argumentų.",
+  "Dislike": "Nepatinka",
+  "Disliked": "Nepatinka",
+  "Like": "Patinka",
+  "Liked": "Patinka",
+  "Open your YouTube activity on Google": "Atidarykite savo YouTube veiklą Google",
+  "Rating failed": "Įvertinimo pateikti nepavyko",
+  "Rating removed": "Įvertinimas pašalintas",
+  "Remove rating": "Pašalinti įvertinimą",
+  "Accounts": "Paskyros",
+  "Activity": "Veikla",
+  "YouTube": "YouTube",
+  "Feedback": "Atsiliepimai"
 }

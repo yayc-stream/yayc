@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Bawat command ay tumatanggap ng isang argument: ang video URL.",
   "On a folder: one run per video, one after the other.": "Sa isang folder: isang takbo bawat video, isa-isa.",
   "Output is discarded.": "Itinatapon ang output.",
-  "Started directly, not through a shell: no extra arguments.": "Direktang sinimulan, hindi sa pamamagitan ng shell: walang karagdagang argument."
+  "Started directly, not through a shell: no extra arguments.": "Direktang sinimulan, hindi sa pamamagitan ng shell: walang karagdagang argument.",
+  "Dislike": "Ayaw",
+  "Disliked": "Hindi Nagustuhan",
+  "Like": "Gusto",
+  "Liked": "Nagustuhan",
+  "Open your YouTube activity on Google": "Buksan ang iyong aktibidad sa YouTube sa Google",
+  "Rating failed": "Hindi naitala ang rating",
+  "Rating removed": "Tinanggal ang rating",
+  "Remove rating": "Alisin ang rating",
+  "Accounts": "Mga Account",
+  "Activity": "Aktibidad",
+  "YouTube": "YouTube",
+  "Feedback": "Puna"
 }

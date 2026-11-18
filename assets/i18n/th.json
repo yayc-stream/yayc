@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "แต่ละคำสั่งจะได้รับอาร์กิวเมนต์เพียงหนึ่งตัว: URL ของวิดีโอ",
   "On a folder: one run per video, one after the other.": "เมื่อใช้กับโฟลเดอร์: รันหนึ่งครั้งต่อหนึ่งวิดีโอ ทำทีละรายการตามลำดับ",
   "Output is discarded.": "ผลลัพธ์จะถูกทิ้ง",
-  "Started directly, not through a shell: no extra arguments.": "เริ่มทำงานโดยตรง ไม่ผ่าน shell: ไม่มีอาร์กิวเมนต์เพิ่มเติม"
+  "Started directly, not through a shell: no extra arguments.": "เริ่มทำงานโดยตรง ไม่ผ่าน shell: ไม่มีอาร์กิวเมนต์เพิ่มเติม",
+  "Dislike": "ไม่ชอบ",
+  "Disliked": "ไม่ชอบแล้ว",
+  "Like": "ชอบ",
+  "Liked": "ชอบแล้ว",
+  "Open your YouTube activity on Google": "เปิดกิจกรรม YouTube ของคุณบน Google",
+  "Rating failed": "การให้คะแนนล้มเหลว",
+  "Rating removed": "ลบการให้คะแนนแล้ว",
+  "Remove rating": "ลบการให้คะแนน",
+  "Accounts": "บัญชี",
+  "Activity": "กิจกรรม",
+  "YouTube": "YouTube",
+  "Feedback": "ข้อเสนอแนะ"
 }

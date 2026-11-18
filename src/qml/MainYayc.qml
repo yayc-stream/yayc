@@ -35,6 +35,9 @@ Item {
     property url url: "https://youtube.com"
     property bool filesystemModelReady: false
     property bool windowHidden: win.hidden
+    // Persisted: a start on a non-YouTube page cannot read it.
+    // Each YouTube page load corrects it.
+    property bool youtubeLoggedIn: false
 
     function prepareQuit() {
         if (webEngineView) {
@@ -269,6 +272,7 @@ Item {
         property alias blankWhenHidden: root.blankWhenHidden
         property alias autoSkipAd: root.autoSkipAd
         property alias keepForegroundIllusion: root.keepForegroundIllusion
+        property alias youtubeLoggedIn: root.youtubeLoggedIn
         property alias showCategoryBar: root.showCategoryBar
         property alias homeGridColumns: root.homeGridColumns
         property alias maxRecentDestinations: root.maxRecentDestinations
@@ -664,6 +668,7 @@ Item {
                         autoSkipAd: root.autoSkipAd
                         playbackRate: root.playbackRate
                         keepForegroundIllusion: root.keepForegroundIllusion
+                        youtubeLoggedIn: root.youtubeLoggedIn
                     }
 
                     // Keep videoPlaying in sync for Loader active condition
@@ -672,6 +677,9 @@ Item {
                         ignoreUnknownSignals: true
                         function onIsYoutubeVideoChanged() {
                             webViewWrapper.videoPlaying = webEngineViewLoader.item.isYoutubeVideo
+                        }
+                        function onYoutubeLoggedInChanged() {
+                            root.youtubeLoggedIn = webEngineViewLoader.item.youtubeLoggedIn
                         }
                     }
                 } // Loader
@@ -1181,6 +1189,8 @@ Item {
         onOpenBookmarksEdit: bookmarksEditDialog.open()
         onOpenHistoryEdit: historyEditDialog.open()
         onOpenProfileEdit: profileEditDialog.open()
+        // In the web view: same profile, so same Google account as YouTube
+        onOpenYoutubeActivity: root.url = "https://myactivity.google.com/myactivity?otzr=1"
         onOpenExtWorkDirEdit: extWorkDirEditDialog.open()
         onOpenExtCommandsPopup: extCommandsDialog.open()
         onOpenAboutDialog: aboutContainer.visible = true

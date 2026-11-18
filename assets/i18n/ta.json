@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "ஒவ்வொரு கட்டளைக்கும் ஒரு வாதம் மட்டுமே: வீடியோ URL.",
   "On a folder: one run per video, one after the other.": "கோப்புறையில்: ஒவ்வொரு வீடியோவுக்கும் ஒரு முறை, ஒன்றன் பின் ஒன்றாக.",
   "Output is discarded.": "வெளியீடு நிராகரிக்கப்படும்.",
-  "Started directly, not through a shell: no extra arguments.": "ஷெல் வழியாக அல்லாமல் நேரடியாகத் தொடங்கப்படும்: கூடுதல் வாதங்கள் இல்லை."
+  "Started directly, not through a shell: no extra arguments.": "ஷெல் வழியாக அல்லாமல் நேரடியாகத் தொடங்கப்படும்: கூடுதல் வாதங்கள் இல்லை.",
+  "Dislike": "விரும்பவில்லை",
+  "Disliked": "விரும்பவில்லை என குறிக்கப்பட்டது",
+  "Like": "விரும்பு",
+  "Liked": "விரும்பப்பட்டது",
+  "Open your YouTube activity on Google": "Google-இல் உங்கள் YouTube செயல்பாட்டைத் திறக்கவும்",
+  "Rating failed": "மதிப்பீடு தோல்வியடைந்தது",
+  "Rating removed": "மதிப்பீடு நீக்கப்பட்டது",
+  "Remove rating": "மதிப்பீட்டை நீக்கு",
+  "Accounts": "கணக்குகள்",
+  "Activity": "செயல்பாடு",
+  "YouTube": "YouTube",
+  "Feedback": "கருத்து"
 }

@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Igale käsule antakse üks argument: video URL.",
   "On a folder: one run per video, one after the other.": "Kausta puhul: üks käivitus videa kohta, üksteise järel.",
   "Output is discarded.": "Väljund jäetakse kõrvale.",
-  "Started directly, not through a shell: no extra arguments.": "Käivitatakse otse, mitte shelli kaudu: lisaargumente ei ole."
+  "Started directly, not through a shell: no extra arguments.": "Käivitatakse otse, mitte shelli kaudu: lisaargumente ei ole.",
+  "Dislike": "Ei meeldi",
+  "Disliked": "Ei meeldinud",
+  "Like": "Meeldib",
+  "Liked": "Meeldinud",
+  "Open your YouTube activity on Google": "Ava oma YouTube'i tegevus Google'is",
+  "Rating failed": "Hindamine ebaõnnestus",
+  "Rating removed": "Hinnang eemaldatud",
+  "Remove rating": "Eemalda hinnang",
+  "Accounts": "Kontod",
+  "Activity": "Tegevus",
+  "YouTube": "YouTube",
+  "Feedback": "Tagasiside"
 }

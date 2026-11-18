@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "כל פקודה מקבלת ארגומנט אחד: כתובת ה-URL של הסרטון.",
   "On a folder: one run per video, one after the other.": "בתיקייה: הרצה אחת לכל סרטון, בזה אחר זה.",
   "Output is discarded.": "הפלט מושלך.",
-  "Started directly, not through a shell: no extra arguments.": "מופעל ישירות, לא דרך shell: ללא ארגומנטים נוספים."
+  "Started directly, not through a shell: no extra arguments.": "מופעל ישירות, לא דרך shell: ללא ארגומנטים נוספים.",
+  "Dislike": "לא אהבתי",
+  "Disliked": "לא אהבתי",
+  "Like": "אהבתי",
+  "Liked": "אהבתי",
+  "Open your YouTube activity on Google": "פתח את פעילות YouTube שלך ב-Google",
+  "Rating failed": "הדירוג נכשל",
+  "Rating removed": "הדירוג הוסר",
+  "Remove rating": "הסר דירוג",
+  "Accounts": "חשבונות",
+  "Activity": "פעילות",
+  "YouTube": "YouTube",
+  "Feedback": "משוב"
 }

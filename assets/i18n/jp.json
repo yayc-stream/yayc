@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "各コマンドには動画URLという1つの引数が渡されます。",
   "On a folder: one run per video, one after the other.": "フォルダーの場合: 動画ごとに1回ずつ、順番に実行します。",
   "Output is discarded.": "出力は破棄されます。",
-  "Started directly, not through a shell: no extra arguments.": "シェルを介さず直接起動されます。追加の引数はありません。"
+  "Started directly, not through a shell: no extra arguments.": "シェルを介さず直接起動されます。追加の引数はありません。",
+  "Dislike": "低評価",
+  "Disliked": "低評価済み",
+  "Like": "高評価",
+  "Liked": "高評価済み",
+  "Open your YouTube activity on Google": "Googleで YouTube のアクティビティを開く",
+  "Rating failed": "評価に失敗しました",
+  "Rating removed": "評価を削除しました",
+  "Remove rating": "評価を削除",
+  "Accounts": "アカウント",
+  "Activity": "アクティビティ",
+  "YouTube": "YouTube",
+  "Feedback": "フィードバック"
 }

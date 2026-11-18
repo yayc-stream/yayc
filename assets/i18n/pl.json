@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Każde polecenie otrzymuje jeden argument: adres URL wideo.",
   "On a folder: one run per video, one after the other.": "W przypadku folderu: jedno uruchomienie na wideo, jedno po drugim.",
   "Output is discarded.": "Dane wyjściowe są odrzucane.",
-  "Started directly, not through a shell: no extra arguments.": "Uruchamiane bezpośrednio, a nie przez powłokę: bez dodatkowych argumentów."
+  "Started directly, not through a shell: no extra arguments.": "Uruchamiane bezpośrednio, a nie przez powłokę: bez dodatkowych argumentów.",
+  "Dislike": "Nie podoba mi się",
+  "Disliked": "Nie podoba mi się",
+  "Like": "Polub",
+  "Liked": "Polubiono",
+  "Open your YouTube activity on Google": "Otwórz swoją aktywność w YouTube w Google",
+  "Rating failed": "Nie udało się ocenić",
+  "Rating removed": "Usunięto ocenę",
+  "Remove rating": "Usuń ocenę",
+  "Accounts": "Konta",
+  "Activity": "Aktywność",
+  "YouTube": "YouTube",
+  "Feedback": "Opinia"
 }

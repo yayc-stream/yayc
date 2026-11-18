@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Katrai komandai tiek nodots viens arguments: video URL.",
   "On a folder: one run per video, one after the other.": "Mapes gadījumā: viena palaišana katram video, viens pēc otra.",
   "Output is discarded.": "Izvade tiek atmesta.",
-  "Started directly, not through a shell: no extra arguments.": "Tiek palaists tieši, nevis caur čaulu: nav papildu argumentu."
+  "Started directly, not through a shell: no extra arguments.": "Tiek palaists tieši, nevis caur čaulu: nav papildu argumentu.",
+  "Dislike": "Nepatīk",
+  "Disliked": "Nepatika",
+  "Like": "Patīk",
+  "Liked": "Patika",
+  "Open your YouTube activity on Google": "Atvērt savu YouTube aktivitāti pakalpojumā Google",
+  "Rating failed": "Vērtējuma saglabāšana neizdevās",
+  "Rating removed": "Vērtējums noņemts",
+  "Remove rating": "Noņemt vērtējumu",
+  "Accounts": "Konti",
+  "Activity": "Aktivitāte",
+  "YouTube": "YouTube",
+  "Feedback": "Atsauksmes"
 }

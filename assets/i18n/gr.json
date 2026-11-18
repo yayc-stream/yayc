@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Κάθε εντολή λαμβάνει ένα όρισμα: το URL του βίντεο.",
   "On a folder: one run per video, one after the other.": "Σε φάκελο: μία εκτέλεση ανά βίντεο, το ένα μετά το άλλο.",
   "Output is discarded.": "Η έξοδος απορρίπτεται.",
-  "Started directly, not through a shell: no extra arguments.": "Εκκινείται απευθείας, όχι μέσω κελύφους: χωρίς επιπλέον ορίσματα."
+  "Started directly, not through a shell: no extra arguments.": "Εκκινείται απευθείας, όχι μέσω κελύφους: χωρίς επιπλέον ορίσματα.",
+  "Dislike": "Αντιπάθεια",
+  "Disliked": "Αντιπαθητικό",
+  "Like": "Μου αρέσει",
+  "Liked": "Μου άρεσε",
+  "Open your YouTube activity on Google": "Άνοιγμα της δραστηριότητάς σας στο YouTube στο Google",
+  "Rating failed": "Αποτυχία αξιολόγησης",
+  "Rating removed": "Η αξιολόγηση αφαιρέθηκε",
+  "Remove rating": "Κατάργηση αξιολόγησης",
+  "Accounts": "Λογαριασμοί",
+  "Activity": "Δραστηριότητα",
+  "YouTube": "YouTube",
+  "Feedback": "Σχόλια"
 }

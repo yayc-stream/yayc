@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Elke opdracht krijgt één argument: de video-URL.",
   "On a folder: one run per video, one after the other.": "Bij een map: één uitvoering per video, na elkaar.",
   "Output is discarded.": "De uitvoer wordt weggegooid.",
-  "Started directly, not through a shell: no extra arguments.": "Wordt rechtstreeks gestart, niet via een shell: geen extra argumenten."
+  "Started directly, not through a shell: no extra arguments.": "Wordt rechtstreeks gestart, niet via een shell: geen extra argumenten.",
+  "Dislike": "Niet leuk",
+  "Disliked": "Niet leuk gevonden",
+  "Like": "Leuk",
+  "Liked": "Leuk gevonden",
+  "Open your YouTube activity on Google": "Open je YouTube-activiteit op Google",
+  "Rating failed": "Beoordeling mislukt",
+  "Rating removed": "Beoordeling verwijderd",
+  "Remove rating": "Beoordeling verwijderen",
+  "Accounts": "Accounts",
+  "Activity": "Activiteit",
+  "YouTube": "YouTube",
+  "Feedback": "Feedback"
 }

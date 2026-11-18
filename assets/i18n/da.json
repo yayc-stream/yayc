@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Hver kommando får ét argument: video-URL'en.",
   "On a folder: one run per video, one after the other.": "Ved en mappe: én kørsel pr. video, den ene efter den anden.",
   "Output is discarded.": "Output kasseres.",
-  "Started directly, not through a shell: no extra arguments.": "Startes direkte, ikke via en shell: ingen ekstra argumenter."
+  "Started directly, not through a shell: no extra arguments.": "Startes direkte, ikke via en shell: ingen ekstra argumenter.",
+  "Dislike": "Mislikes",
+  "Disliked": "Mislikt",
+  "Like": "Synes om",
+  "Liked": "Synes om",
+  "Open your YouTube activity on Google": "Åbn din YouTube-aktivitet på Google",
+  "Rating failed": "Bedømmelse mislykkedes",
+  "Rating removed": "Bedømmelse fjernet",
+  "Remove rating": "Fjern bedømmelse",
+  "Accounts": "Konti",
+  "Activity": "Aktivitet",
+  "YouTube": "YouTube",
+  "Feedback": "Feedback"
 }

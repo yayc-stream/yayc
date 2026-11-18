@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Mỗi lệnh nhận một đối số: URL của video.",
   "On a folder: one run per video, one after the other.": "Khi chọn thư mục: chạy một lần cho mỗi video, lần lượt từng video một.",
   "Output is discarded.": "Kết quả đầu ra sẽ bị bỏ qua.",
-  "Started directly, not through a shell: no extra arguments.": "Được khởi chạy trực tiếp, không qua shell: không có đối số bổ sung."
+  "Started directly, not through a shell: no extra arguments.": "Được khởi chạy trực tiếp, không qua shell: không có đối số bổ sung.",
+  "Dislike": "Không thích",
+  "Disliked": "Đã không thích",
+  "Like": "Thích",
+  "Liked": "Đã thích",
+  "Open your YouTube activity on Google": "Mở hoạt động YouTube của bạn trên Google",
+  "Rating failed": "Đánh giá không thành công",
+  "Rating removed": "Đã xóa đánh giá",
+  "Remove rating": "Xóa đánh giá",
+  "Accounts": "Tài khoản",
+  "Activity": "Hoạt động",
+  "YouTube": "YouTube",
+  "Feedback": "Phản hồi"
 }

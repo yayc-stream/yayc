@@ -89,6 +89,52 @@ Item {
     // with the page by pinLostPoll.
     property bool pinPaused: false
 
+    // --- YouTube login and rating ---------------------------------------------
+    // Read at each page load: sign-in and sign-out are full loads.
+    property bool youtubeLoggedIn: false
+    property int youtubeRateSeq: 0
+    property string youtubeRateAction: ""
+
+    // The id comes from a page link, so it is checked before it goes into the script.
+    function youtubeRateVideo(key, action) {
+        var id = key.replace(/^YTB[vs]_/, "")
+        if (!/^[A-Za-z0-9_-]{6,}$/.test(id))
+            return
+        root.youtubeRateSeq += 1
+        root.youtubeRateAction = action
+        runScript(WebEngineInternals.getYoutubeRateVideoScript(id, action, root.youtubeRateSeq))
+        youtubeRatePoll.attempts = 0
+        youtubeRatePoll.restart()
+    }
+
+    // runJavaScript cannot wait for the fetch, so its result is polled.
+    Timer {
+        id: youtubeRatePoll
+        property int attempts: 0
+        interval: 250
+        repeat: true
+        onTriggered: {
+            if (++attempts > 40) {
+                stop()
+                rateOverlay.show(uiTr("Rating failed"))
+                return
+            }
+            webEngineView.runJavaScript("window.__yayc_youtubeRateResult || null", function(res) {
+                if (!youtubeRatePoll.running || !res || res.seq !== root.youtubeRateSeq)
+                    return
+                youtubeRatePoll.stop()
+                if (!res.ok)
+                    rateOverlay.show(uiTr("Rating failed") + " (" + res.status + ")")
+                else if (root.youtubeRateAction === "like")
+                    rateOverlay.show(uiTr("Liked"))
+                else if (root.youtubeRateAction === "dislike")
+                    rateOverlay.show(uiTr("Disliked"))
+                else
+                    rateOverlay.show(uiTr("Rating removed"))
+            })
+        }
+    }
+
     onPreviewPinnedChanged: {
         runScript("window.__yayc_pinned = " + previewPinned)
         // Every pin starts playing, and a stale flag would gate the pause backstop of
@@ -549,6 +595,8 @@ Item {
         property bool isYoutubeChannel: utilities.isYoutubeChannelPage(url)
         property bool isYoutubeHome: utilities.isYoutubeHomepage(url)
         property bool isYoutubeVideo: utilities.isYoutubeVideoUrl(url)
+        // Rating fetches same-origin: YouTube pages only.
+        property bool isYoutubePage: /^https:\/\/([a-z0-9-]+\.)?youtube\.com(\/|$)/.test(url.toString())
         property int keyHasWorkingDir: isWorkingDirPresent(webEngineView.key,
                                                             root.extWorkingDirPath,
                                                             root.workingDirTrigger)
@@ -629,6 +677,11 @@ Item {
                 root.unpinPreview()
                 root.applyKeepPreview()
                 root.applyPlayerSettings()
+                runJavaScript(WebEngineInternals.script_youtubeLoggedIn, function(v) {
+                    // null: not a YouTube page, keep the last value
+                    if (typeof v === "boolean")
+                        root.youtubeLoggedIn = v
+                })
             }
         }
 
@@ -713,6 +766,30 @@ Item {
             }
         }
 
+        // Greyed when unusable, like "Launch in": a submenu row cannot be hidden.
+        component CtxYoutubeRateMenu: Menu {
+            id: youtubeRateMenu
+            required property string ctxKey
+            title: uiTr("Feedback")
+            icon.source: "/icons/thumb_up.svg"
+            enabled: root.youtubeLoggedIn && webEngineView.isYoutubePage
+            MenuItem {
+                text: uiTr("Like")
+                icon.source: "/icons/thumb_up.svg"
+                onTriggered: root.youtubeRateVideo(youtubeRateMenu.ctxKey, "like")
+            }
+            MenuItem {
+                text: uiTr("Dislike")
+                icon.source: "/icons/thumb_down.svg"
+                onTriggered: root.youtubeRateVideo(youtubeRateMenu.ctxKey, "dislike")
+            }
+            MenuItem {
+                text: uiTr("Remove rating")
+                icon.source: "/icons/cancel.svg"
+                onTriggered: root.youtubeRateVideo(youtubeRateMenu.ctxKey, "removelike")
+            }
+        }
+
         // Right click that hit no video link: image, plain text, empty page area. Kept
         // separate because a submenu row cannot be hidden - Menu.visible/height are the
         // popup's own - so "Add to..." and "Launch in" would show up dead here.
@@ -766,6 +843,9 @@ Item {
                 text: uiTr("Added") + " (" + fileSystemModel.categoryName(webEngineView._ctxMenuAdded.requestedKey) + ")"
                 icon.source: "/icons/add.svg"
                 enabled: false
+            }
+            CtxYoutubeRateMenu {
+                ctxKey: webEngineView._ctxMenuAdded.requestedKey
             }
             CtxClipboardActions {}
             CtxExtAppsMenu {
@@ -848,6 +928,9 @@ Item {
                     }
                 }
             }
+            CtxYoutubeRateMenu {
+                ctxKey: webEngineView._ctxMenuNotAdded.requestedKey
+            }
             CtxClipboardActions {}
             CtxExtAppsMenu {
                 ctxKey: webEngineView._ctxMenuNotAdded.requestedKey
@@ -910,41 +993,57 @@ Item {
         z: webEngineView.z + 1
     }
 
-    Rectangle {
-        id: zoomOverlay
+    // Centered message that fades out
+    component FlashOverlay: Rectangle {
+        id: flash
+        property alias text: flashLabel.text
+        property alias fontSize: flashLabel.font.pixelSize
         anchors.centerIn: parent
-        width: zoomLabel.width + 48
-        height: zoomLabel.height + 32
+        width: flashLabel.width + 48
+        height: flashLabel.height + 32
         radius: 12
         color: "#80000000"
         opacity: 0
         visible: opacity > 0
 
-        property real lastZoom: 1.0
-        property bool lastIsVideo: webEngineView.isYoutubeVideo
-        property bool initialized: false
+        // No msg: keeps the text binding
+        function show(msg) {
+            if (msg !== undefined)
+                text = msg
+            fadeOut.stop()
+            opacity = 1
+            hideTimer.restart()
+        }
 
         Label {
-            id: zoomLabel
+            id: flashLabel
             anchors.centerIn: parent
-            text: Math.round(webEngineView.zoomFactor * 100) + "%"
-            font.pixelSize: 48
             color: "white"
         }
 
         Timer {
-            id: zoomOverlayTimer
+            id: hideTimer
             interval: 1500
-            onTriggered: zoomFadeOut.start()
+            onTriggered: fadeOut.start()
         }
 
         NumberAnimation {
-            id: zoomFadeOut
-            target: zoomOverlay
+            id: fadeOut
+            target: flash
             property: "opacity"
             to: 0
             duration: 300
         }
+    }
+
+    FlashOverlay {
+        id: zoomOverlay
+        text: Math.round(webEngineView.zoomFactor * 100) + "%"
+        fontSize: 48
+
+        property real lastZoom: 1.0
+        property bool lastIsVideo: webEngineView.isYoutubeVideo
+        property bool initialized: false
 
         Connections {
             target: webEngineView
@@ -961,11 +1060,15 @@ Item {
                     zoomOverlay.lastIsVideo = webEngineView.isYoutubeVideo
                     return
                 }
-                zoomFadeOut.stop()
-                zoomOverlay.opacity = 1
-                zoomOverlayTimer.restart()
+                zoomOverlay.show()
             }
         }
+    }
+
+    // Rating result: nothing else on screen shows it.
+    FlashOverlay {
+        id: rateOverlay
+        fontSize: 32
     }
 
     property RowLayout webViewTools: RowLayout {

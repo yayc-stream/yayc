@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Всяка команда получава един аргумент: URL адреса на видеото.",
   "On a folder: one run per video, one after the other.": "При папка: по едно изпълнение за всяко видео, едно след друго.",
   "Output is discarded.": "Изходът се изхвърля.",
-  "Started directly, not through a shell: no extra arguments.": "Стартира се директно, не през шел: без допълнителни аргументи."
+  "Started directly, not through a shell: no extra arguments.": "Стартира се директно, не през шел: без допълнителни аргументи.",
+  "Dislike": "Не харесва",
+  "Disliked": "Не харесано",
+  "Like": "Харесва",
+  "Liked": "Харесано",
+  "Open your YouTube activity on Google": "Отворете активността си в YouTube в Google",
+  "Rating failed": "Оценяването не бе успешно",
+  "Rating removed": "Оценката е премахната",
+  "Remove rating": "Премахване на оценката",
+  "Accounts": "Акаунти",
+  "Activity": "Активност",
+  "YouTube": "YouTube",
+  "Feedback": "Обратна връзка"
 }

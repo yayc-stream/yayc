@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "Minden parancs egy argumentumot kap: a videó URL-jét.",
   "On a folder: one run per video, one after the other.": "Mappa esetén: videónként egy futtatás, egymás után.",
   "Output is discarded.": "A kimenet elvetésre kerül.",
-  "Started directly, not through a shell: no extra arguments.": "Közvetlenül indítva, nem shellen keresztül: nincs további argumentum."
+  "Started directly, not through a shell: no extra arguments.": "Közvetlenül indítva, nem shellen keresztül: nincs további argumentum.",
+  "Dislike": "Nem tetszik",
+  "Disliked": "Nem tetszett",
+  "Like": "Tetszik",
+  "Liked": "Tetszett",
+  "Open your YouTube activity on Google": "YouTube-tevékenységed megnyitása a Google-on",
+  "Rating failed": "Az értékelés sikertelen",
+  "Rating removed": "Az értékelés eltávolítva",
+  "Remove rating": "Értékelés eltávolítása",
+  "Accounts": "Fiókok",
+  "Activity": "Tevékenység",
+  "YouTube": "YouTube",
+  "Feedback": "Visszajelzés"
 }

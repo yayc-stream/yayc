@@ -221,5 +221,17 @@
   "Each command gets one argument: the video URL.": "각 명령은 하나의 인수, 즉 동영상 URL을 받습니다.",
   "On a folder: one run per video, one after the other.": "폴더인 경우: 동영상마다 한 번씩 순서대로 실행합니다.",
   "Output is discarded.": "출력은 버려집니다.",
-  "Started directly, not through a shell: no extra arguments.": "셸을 거치지 않고 직접 시작되며, 추가 인수는 없습니다."
+  "Started directly, not through a shell: no extra arguments.": "셸을 거치지 않고 직접 시작되며, 추가 인수는 없습니다.",
+  "Dislike": "싫어요",
+  "Disliked": "싫어요 표시됨",
+  "Like": "좋아요",
+  "Liked": "좋아요 표시됨",
+  "Open your YouTube activity on Google": "Google에서 YouTube 활동 열기",
+  "Rating failed": "평가 실패",
+  "Rating removed": "평가 취소됨",
+  "Remove rating": "평가 취소",
+  "Accounts": "계정",
+  "Activity": "활동",
+  "YouTube": "YouTube",
+  "Feedback": "피드백"
 }
