@@ -15,7 +15,7 @@ Dialog {
     property Item host       // MainYayc root
 
     modal: true
-    width: 700
+    width: 910
     x: (parent ? (parent.width - width) * 0.5 : 0)
     y: (parent ? (parent.height - height) * 0.5 : 0)
 
@@ -126,13 +126,15 @@ Dialog {
 
         // Commands list
         ScrollView {
+            id: cmdScroll
             Layout.fillWidth: true
             Layout.preferredHeight: 280
             clip: true
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
-                width: parent.width
+                // parent.width is the Flickable content width, sized by this layout itself.
+                width: cmdScroll.availableWidth
                 spacing: 8
 
                 Repeater {
@@ -159,11 +161,13 @@ Dialog {
                         }
                         TextField {
                             id: extCmdName
-                            Layout.preferredWidth: 100
+                            // Both fields: show the text start, not its end.
+                            Layout.preferredWidth: 200
                             selectByMouse: true
                             font.pixelSize: YaycProperties.fsP1
                             color: YaycProperties.textColor
                             text: modelData.name
+                            Component.onCompleted: cursorPosition = 0
                             placeholderText: uiTr("Name")
                             onEditingFinished: {
                                 if (!extDlg.host) return
@@ -181,6 +185,7 @@ Dialog {
                                    ? "#4caf50"
                                    : YaycProperties.textColor
                             text: modelData.command
+                            Component.onCompleted: cursorPosition = 0
                             placeholderText: uiTr("Command path")
                             onEditingFinished: {
                                 if (!extDlg.host) return
