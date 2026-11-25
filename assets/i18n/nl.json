@@ -233,5 +233,8 @@
   "Accounts": "Accounts",
   "Activity": "Activiteit",
   "YouTube": "YouTube",
-  "Feedback": "Feedback"
+  "Feedback": "Feedback",
+  "Run": "Uitvoeren",
+  "Run this command with a video URL": "Voer deze opdracht uit met een video-URL",
+  "Video URL": "Video-URL"
 }

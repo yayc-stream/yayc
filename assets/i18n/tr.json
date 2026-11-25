@@ -233,5 +233,8 @@
   "Accounts": "Hesaplar",
   "Activity": "Etkinlik",
   "YouTube": "YouTube",
-  "Feedback": "Geri bildirim"
+  "Feedback": "Geri bildirim",
+  "Run": "Çalıştır",
+  "Run this command with a video URL": "Bu komutu bir video URL'si ile çalıştır",
+  "Video URL": "Video URL'si"
 }

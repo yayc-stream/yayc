@@ -233,5 +233,8 @@
   "Accounts": "Konten",
   "Activity": "Aktivität",
   "YouTube": "YouTube",
-  "Feedback": "Rückmeldung"
+  "Feedback": "Rückmeldung",
+  "Run": "Ausführen",
+  "Run this command with a video URL": "Diesen Befehl mit einer Video-URL ausführen",
+  "Video URL": "Video-URL"
 }

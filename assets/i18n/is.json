@@ -233,5 +233,8 @@
   "Accounts": "Reikningar",
   "Activity": "Virkni",
   "YouTube": "YouTube",
-  "Feedback": "Endurgjöf"
+  "Feedback": "Endurgjöf",
+  "Run": "Keyra",
+  "Run this command with a video URL": "Keyra þessa skipun með vefslóð myndbands",
+  "Video URL": "Vefslóð myndbands"
 }

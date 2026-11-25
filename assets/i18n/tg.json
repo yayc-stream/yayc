@@ -233,5 +233,8 @@
   "Accounts": "Mga Account",
   "Activity": "Aktibidad",
   "YouTube": "YouTube",
-  "Feedback": "Puna"
+  "Feedback": "Puna",
+  "Run": "Patakbuhin",
+  "Run this command with a video URL": "Patakbuhin ang command na ito gamit ang video URL",
+  "Video URL": "Video URL"
 }

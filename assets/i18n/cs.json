@@ -233,5 +233,8 @@
   "Accounts": "Účty",
   "Activity": "Aktivita",
   "YouTube": "YouTube",
-  "Feedback": "Zpětná vazba"
+  "Feedback": "Zpětná vazba",
+  "Run": "Spustit",
+  "Run this command with a video URL": "Spustit tento příkaz s URL adresou videa",
+  "Video URL": "URL adresa videa"
 }

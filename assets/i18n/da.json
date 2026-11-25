@@ -233,5 +233,8 @@
   "Accounts": "Konti",
   "Activity": "Aktivitet",
   "YouTube": "YouTube",
-  "Feedback": "Feedback"
+  "Feedback": "Feedback",
+  "Run": "Kør",
+  "Run this command with a video URL": "Kør denne kommando med en video-URL",
+  "Video URL": "Video-URL"
 }

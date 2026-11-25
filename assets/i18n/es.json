@@ -233,5 +233,8 @@
   "Accounts": "Cuentas",
   "Activity": "Actividad",
   "YouTube": "YouTube",
-  "Feedback": "Comentarios"
+  "Feedback": "Comentarios",
+  "Run": "Ejecutar",
+  "Run this command with a video URL": "Ejecute este comando con una URL de vídeo",
+  "Video URL": "URL del vídeo"
 }

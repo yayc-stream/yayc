@@ -233,5 +233,8 @@
   "Accounts": "Računi",
   "Activity": "Aktivnost",
   "YouTube": "YouTube",
-  "Feedback": "Povratne informacije"
+  "Feedback": "Povratne informacije",
+  "Run": "Pokreni",
+  "Run this command with a video URL": "Pokreni ovu naredbu s URL-om videozapisa",
+  "Video URL": "URL videozapisa"
 }

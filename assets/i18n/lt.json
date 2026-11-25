@@ -233,5 +233,8 @@
   "Accounts": "Paskyros",
   "Activity": "Veikla",
   "YouTube": "YouTube",
-  "Feedback": "Atsiliepimai"
+  "Feedback": "Atsiliepimai",
+  "Run": "Vykdyti",
+  "Run this command with a video URL": "Vykdyti šią komandą su vaizdo įrašo URL",
+  "Video URL": "Vaizdo įrašo URL"
 }

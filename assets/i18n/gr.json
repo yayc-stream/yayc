@@ -233,5 +233,8 @@
   "Accounts": "Λογαριασμοί",
   "Activity": "Δραστηριότητα",
   "YouTube": "YouTube",
-  "Feedback": "Σχόλια"
+  "Feedback": "Σχόλια",
+  "Run": "Εκτέλεση",
+  "Run this command with a video URL": "Εκτέλεση αυτής της εντολής με διεύθυνση URL βίντεο",
+  "Video URL": "Διεύθυνση URL βίντεο"
 }

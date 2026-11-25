@@ -233,5 +233,8 @@
   "Accounts": "Fiókok",
   "Activity": "Tevékenység",
   "YouTube": "YouTube",
-  "Feedback": "Visszajelzés"
+  "Feedback": "Visszajelzés",
+  "Run": "Futtatás",
+  "Run this command with a video URL": "Futtasd ezt a parancsot videó URL-lel",
+  "Video URL": "Videó URL"
 }

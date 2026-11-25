@@ -233,5 +233,8 @@
   "Accounts": "Llogari",
   "Activity": "Aktiviteti",
   "YouTube": "YouTube",
-  "Feedback": "Reagime"
+  "Feedback": "Reagime",
+  "Run": "Ekzekuto",
+  "Run this command with a video URL": "Ekzekuto këtë komandë me një URL videoje",
+  "Video URL": "URL e videos"
 }

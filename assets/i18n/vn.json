@@ -233,5 +233,8 @@
   "Accounts": "Tài khoản",
   "Activity": "Hoạt động",
   "YouTube": "YouTube",
-  "Feedback": "Phản hồi"
+  "Feedback": "Phản hồi",
+  "Run": "Chạy",
+  "Run this command with a video URL": "Chạy lệnh này với URL video",
+  "Video URL": "URL video"
 }

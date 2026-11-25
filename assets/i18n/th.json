@@ -233,5 +233,8 @@
   "Accounts": "บัญชี",
   "Activity": "กิจกรรม",
   "YouTube": "YouTube",
-  "Feedback": "ข้อเสนอแนะ"
+  "Feedback": "ข้อเสนอแนะ",
+  "Run": "รัน",
+  "Run this command with a video URL": "รันคำสั่งนี้ด้วย URL ของวิดีโอ",
+  "Video URL": "URL ของวิดีโอ"
 }

@@ -233,5 +233,8 @@
   "Accounts": "Аккаунты",
   "Activity": "Активность",
   "YouTube": "YouTube",
-  "Feedback": "Обратная связь"
+  "Feedback": "Обратная связь",
+  "Run": "Запустить",
+  "Run this command with a video URL": "Запустить эту команду с URL видео",
+  "Video URL": "URL видео"
 }

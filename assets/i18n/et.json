@@ -233,5 +233,8 @@
   "Accounts": "Kontod",
   "Activity": "Tegevus",
   "YouTube": "YouTube",
-  "Feedback": "Tagasiside"
+  "Feedback": "Tagasiside",
+  "Run": "Käivita",
+  "Run this command with a video URL": "Käivita see käsk video URL-iga",
+  "Video URL": "Video URL"
 }

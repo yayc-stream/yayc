@@ -233,5 +233,8 @@
   "Accounts": "账户",
   "Activity": "活动",
   "YouTube": "YouTube",
-  "Feedback": "反馈"
+  "Feedback": "反馈",
+  "Run": "运行",
+  "Run this command with a video URL": "使用视频 URL 运行此命令",
+  "Video URL": "视频 URL"
 }

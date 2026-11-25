@@ -233,5 +233,8 @@
   "Accounts": "חשבונות",
   "Activity": "פעילות",
   "YouTube": "YouTube",
-  "Feedback": "משוב"
+  "Feedback": "משוב",
+  "Run": "הפעל",
+  "Run this command with a video URL": "הפעל פקודה זו עם כתובת URL של סרטון",
+  "Video URL": "כתובת URL של סרטון"
 }

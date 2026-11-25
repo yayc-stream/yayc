@@ -233,5 +233,8 @@
   "Accounts": "الحسابات",
   "Activity": "النشاط",
   "YouTube": "يوتيوب",
-  "Feedback": "ملاحظات"
+  "Feedback": "ملاحظات",
+  "Run": "تشغيل",
+  "Run this command with a video URL": "شغّل هذا الأمر باستخدام رابط الفيديو",
+  "Video URL": "رابط الفيديو"
 }

@@ -233,5 +233,8 @@
   "Accounts": "アカウント",
   "Activity": "アクティビティ",
   "YouTube": "YouTube",
-  "Feedback": "フィードバック"
+  "Feedback": "フィードバック",
+  "Run": "実行",
+  "Run this command with a video URL": "動画URLを指定してこのコマンドを実行",
+  "Video URL": "動画URL"
 }

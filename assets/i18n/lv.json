@@ -233,5 +233,8 @@
   "Accounts": "Konti",
   "Activity": "Aktivitāte",
   "YouTube": "YouTube",
-  "Feedback": "Atsauksmes"
+  "Feedback": "Atsauksmes",
+  "Run": "Palaist",
+  "Run this command with a video URL": "Palaist šo komandu ar video URL",
+  "Video URL": "Video URL"
 }

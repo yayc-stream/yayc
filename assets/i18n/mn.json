@@ -233,5 +233,8 @@
   "Accounts": "Бүртгэл",
   "Activity": "Үйл ажиллагаа",
   "YouTube": "YouTube",
-  "Feedback": "Санал хүсэлт"
+  "Feedback": "Санал хүсэлт",
+  "Run": "Ажиллуулах",
+  "Run this command with a video URL": "Энэ командыг видео холбоосоор ажиллуулах",
+  "Video URL": "Видеоны холбоос"
 }

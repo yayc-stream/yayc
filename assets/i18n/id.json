@@ -233,5 +233,8 @@
   "Accounts": "Akun",
   "Activity": "Aktivitas",
   "YouTube": "YouTube",
-  "Feedback": "Masukan"
+  "Feedback": "Masukan",
+  "Run": "Jalankan",
+  "Run this command with a video URL": "Jalankan perintah ini dengan URL video",
+  "Video URL": "URL Video"
 }

@@ -233,5 +233,8 @@
   "Accounts": "অ্যাকাউন্টসমূহ",
   "Activity": "কার্যকলাপ",
   "YouTube": "ইউটিউব",
-  "Feedback": "মতামত"
+  "Feedback": "মতামত",
+  "Run": "চালান",
+  "Run this command with a video URL": "একটি ভিডিও URL দিয়ে এই কমান্ডটি চালান",
+  "Video URL": "ভিডিও URL"
 }

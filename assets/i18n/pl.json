@@ -233,5 +233,8 @@
   "Accounts": "Konta",
   "Activity": "Aktywność",
   "YouTube": "YouTube",
-  "Feedback": "Opinia"
+  "Feedback": "Opinia",
+  "Run": "Uruchom",
+  "Run this command with a video URL": "Uruchom to polecenie z adresem URL wideo",
+  "Video URL": "Adres URL wideo"
 }

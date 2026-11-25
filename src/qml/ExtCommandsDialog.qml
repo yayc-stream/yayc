@@ -144,20 +144,24 @@ Dialog {
                         Layout.fillWidth: true
                         spacing: 10
 
-                        Item {
-                            Layout.preferredWidth: 28
-                            Layout.preferredHeight: 28
-                            Image {
-                                id: cmdImg
-                                source: "/icons/extension.svg"
-                                visible: false
-                                anchors.fill: parent
+                        Button {
+                            flat: true
+                            display: Button.IconOnly
+                            icon.source: "/icons/extension.svg"
+                            icon.width: 28
+                            icon.height: 28
+                            icon.color: YaycProperties.iconColor
+                            enabled: extDlg.host && extDlg.host.extWorkingDirExists
+                                     && modelData.command !== ""
+                            onClicked: {
+                                runDlg.cmdName = modelData.name
+                                runDlg.cmdPath = modelData.command
+                                runDlg.open()
                             }
-                            ColorOverlay {
-                                source: cmdImg
-                                anchors.fill: cmdImg
-                                color: YaycProperties.iconColor
-                            }
+                            hoverEnabled: true
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 300
+                            ToolTip.text: uiTr("Run this command with a video URL")
                         }
                         TextField {
                             id: extCmdName
@@ -227,6 +231,59 @@ Dialog {
                     icon.source: "/icons/add.svg"
                     onClicked: if (extDlg.host) extDlg.host.pushEmptyCommand()
                 }
+            }
+        }
+    }
+
+    // Manual run: same queue and working dir (root/VIDEO_ID) as "Launch in".
+    Dialog {
+        id: runDlg
+        property string cmdName
+        property string cmdPath
+        // isYoutubeVideoUrl first: getVideoID warns on non-video URLs.
+        readonly property string videoId: utilities.isYoutubeVideoUrl(argField.text.trim())
+                                          ? utilities.getVideoID(argField.text.trim()) : ""
+
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        modal: true
+        width: 600
+        title: uiTr("Run") + " " + cmdName
+        onOpened: { argField.text = ""; argField.forceActiveFocus() }
+
+        function run() {
+            if (videoId === "" || !extDlg.host) return
+            fileSystemModel.enqueueExternalApp(
+                        videoId,
+                        utilities.normalizeVideoUrl(argField.text.trim()),
+                        cmdPath,
+                        extDlg.host.extWorkingDirPath)
+            close()
+        }
+
+        TextField {
+            id: argField
+            anchors.left: parent.left
+            anchors.right: parent.right
+            selectByMouse: true
+            font.pixelSize: YaycProperties.fsP1
+            color: YaycProperties.textColor
+            placeholderText: uiTr("Video URL")
+            onAccepted: runDlg.run()
+        }
+
+        // Fixed layout: Cancel left of Run on every platform.
+        footer: DialogButtonBox {
+            buttonLayout: DialogButtonBox.GnomeLayout
+            Button {
+                text: uiTr("Run")
+                enabled: runDlg.videoId !== ""
+                DialogButtonBox.buttonRole: DialogButtonBox.AcceptRole
+                onClicked: runDlg.run()
+            }
+            Button {
+                text: uiTr("Cancel")
+                DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
             }
         }
     }

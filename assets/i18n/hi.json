@@ -233,5 +233,8 @@
   "Accounts": "खाते",
   "Activity": "गतिविधि",
   "YouTube": "YouTube",
-  "Feedback": "प्रतिक्रिया"
+  "Feedback": "प्रतिक्रिया",
+  "Run": "चलाएं",
+  "Run this command with a video URL": "वीडियो URL के साथ यह कमांड चलाएं",
+  "Video URL": "वीडियो URL"
 }
