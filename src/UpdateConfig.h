@@ -18,6 +18,7 @@ In addition to the above,
 #ifndef UPDATECONFIG_H
 #define UPDATECONFIG_H
 
+#include <QByteArray>
 #include <QObject>
 #include <QSet>
 #include <QString>
@@ -84,6 +85,10 @@ public:
     qint64 freshVerifyMs{10 * 60 * 1000};
 
     static UpdateConfig detect();
+
+    // "yayc/<version> (<InstallType>; <arch>; <os> <os version>)" for requests to
+    // yayc.stream: its logs count users by version, install type and OS
+    static QByteArray userAgent();
 
     // Release asset of \a version, e.g. "yayc-1.9.0-x86_64.AppImage". Empty:
     // this install type has none

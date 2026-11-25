@@ -16,6 +16,7 @@ In addition to the above,
 */
 
 #include "UpdateFetcher.h"
+#include "UpdateConfig.h"
 #include "UpdateManager.h"
 
 #include <QCryptographicHash>
@@ -125,6 +126,7 @@ QNetworkRequest UpdateFetcher::freshRequest(const QUrl &url)
     QNetworkRequest request{url};
     request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
                          QNetworkRequest::AlwaysNetwork);
+    request.setHeader(QNetworkRequest::UserAgentHeader, UpdateConfig::userAgent());
     return request;
 }
 

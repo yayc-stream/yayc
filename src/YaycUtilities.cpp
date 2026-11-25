@@ -17,6 +17,7 @@ In addition to the above,
 
 #include "YaycUtilities.h"
 #include "Platform.h"
+#include "UpdateConfig.h"
 #include "ThumbnailFetcher.h"
 #include "RequestInterceptor.h"
 
@@ -362,6 +363,7 @@ void YaycUtilities::getDonateEtag()
     QNetworkRequest request(donateURL);
     request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
                          QNetworkRequest::AlwaysNetwork);
+    request.setHeader(QNetworkRequest::UserAgentHeader, UpdateConfig::userAgent());
     QNetworkReply *reply = m_nam.head(std::move(request));
     connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onDonateEtagReplyFinished);
 }
@@ -371,6 +373,7 @@ void YaycUtilities::getDonateURL()
     QNetworkRequest request(donateURL);
     request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
                          QNetworkRequest::AlwaysNetwork);
+    request.setHeader(QNetworkRequest::UserAgentHeader, UpdateConfig::userAgent());
     QNetworkReply *reply = m_nam.get(std::move(request));
     connect(reply, &QNetworkReply::finished, this, &YaycUtilities::onDonateReplyFinished);
 }

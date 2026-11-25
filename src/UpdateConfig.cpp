@@ -23,6 +23,7 @@ In addition to the above,
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFileInfo>
+#include <QMetaEnum>
 #include <QStandardPaths>
 #include <QSysInfo>
 #include <QTemporaryFile>
@@ -84,6 +85,24 @@ UpdateConfig UpdateConfig::detect()
                                  c.appImagePath.isEmpty() ? c.installRoot : c.appImagePath);
     computeUpdateMethod(c);
     return c;
+}
+
+QByteArray UpdateConfig::userAgent()
+{
+    // Once per process: the deb check reads dpkg's file list
+    static const QByteArray ua = [] {
+        UpdateConfig c;
+        c.arch = QSysInfo::buildCpuArchitecture();
+        c.exePath = QCoreApplication::applicationFilePath();
+        c.installRoot = QCoreApplication::applicationDirPath();
+        c.appImagePath = runningAppImage();
+        const char *type = QMetaEnum::fromType<InstallType>().valueToKey(detectInstallType(c));
+        return QStringLiteral("yayc/%1 (%2; %3; %4 %5)")
+                .arg(QString::fromUtf8(appVersion()), QLatin1String(type), c.arch,
+                     QSysInfo::productType(), QSysInfo::productVersion())
+                .toUtf8();
+    }();
+    return ua;
 }
 
 UpdateConfig::InstallType UpdateConfig::detectInstallType([[maybe_unused]] const UpdateConfig &c)
