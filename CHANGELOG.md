@@ -1,3 +1,17 @@
+## YAYC v2.2.0 (2026.11) -- Cedric
+
+### ✨ New Features
+
+- Like, dislike or remove the rating of a video from the context menu
+- Link to your YouTube activity on Google in settings (Accounts > YouTube)
+- External commands can be run manually on a video URL
+- Volume control moved to a dropdown with a vertical slider and scale marks
+
+### 🐞 Bug fixes
+
+- Fixed external commands dialog layout
+- Fixed appimage builds 
+
 ## YAYC v2.1.0 (2026.11) -- Maxwell
 
 ### 🐞 Bug fixes
