@@ -1526,48 +1526,34 @@ Item {
             ToolTip.delay: 300
         }
 
-        MouseArea {
-            height: sliderVolume.height
-            width: sliderVolume.implicitWidth
-            hoverEnabled: true
-            property bool hovered: false
-            onEntered: hovered = true
-            onExited: hovered = false
-            Slider {
-                id: sliderVolume
-                implicitWidth: 130
-                anchors.centerIn: parent
+        ToolButton {
+            id: buttonVolume
+            visible: true
+            checkable: true
 
-                value: 0
-                from: 0
-                stepSize: 1
-                to: 100
-                snapMode: Slider.SnapAlways
-                property real userValue: -1
-
-                function setVolume() {
-                    // Applies to every player kind, not just the watch player.
-                    root.applyPlayerSettings()
-                }
-
-                onUserValueChanged: {
-                    setVolume()
-                }
-
-                onValueChanged: {
-                    setVolume()
-                }
-
-                onMoved: {
-                    userValue = value
-                }
-
-                ToolTip {
-                    parent: sliderVolume.handle
-                    visible: sliderVolume.pressed || sliderVolume.parent.hovered
-                    text: sliderVolume.value.toFixed(0)
+            onCheckedChanged: {
+                if (checked) {
+                    ToolTip.toolTip.close()
+                    volumeMenu.open()
+                } else {
+                    volumeMenu.close()
                 }
             }
+
+            icon.source: (sliderVolume.value === 0)
+                         ? "/icons/volume_off.svg"
+                         : (sliderVolume.value < 50)
+                           ? "/icons/volume_down.svg"
+                           : "/icons/volume_up.svg"
+
+            display: AbstractButton.TextUnderIcon
+            text: sliderVolume.value.toFixed(0)
+            spacing: -6
+
+            hoverEnabled: true
+            ToolTip.visible: hovered
+            ToolTip.text: uiTr("Set volume")
+            ToolTip.delay: 300
         }
     }
     // Toolbar Menus
@@ -1717,5 +1703,84 @@ Item {
             }
         }
         onClosed: buttonQuality.checked = false
+    }
+    Menu {
+        id: volumeMenu
+        y: 0
+        width: volumeRow.implicitWidth + leftPadding + rightPadding + 16
+        visible: false
+        onAboutToShow: x = buttonVolume.mapToItem(root, buttonVolume.width * .5 - width * .5, 0).x
+        ColumnLayout {
+            width: parent.width
+            spacing: 4
+            Label {
+                Layout.alignment: Qt.AlignHCenter
+                text: sliderVolume.value.toFixed(0)
+                font.bold: true
+            }
+            RowLayout {
+                id: volumeRow
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 0
+                Slider {
+                    id: sliderVolume
+                    orientation: Qt.Vertical
+                    Layout.preferredHeight: 260
+
+                    value: 0
+                    from: 0
+                    stepSize: 1
+                    to: 100
+                    snapMode: Slider.SnapAlways
+                    property real userValue: -1
+
+                    function setVolume() {
+                        // Applies to every player kind, not just the watch player.
+                        root.applyPlayerSettings()
+                    }
+
+                    onUserValueChanged: {
+                        setVolume()
+                    }
+
+                    onValueChanged: {
+                        setVolume()
+                    }
+
+                    onMoved: {
+                        userValue = value
+                    }
+                }
+                // Scale marks. Same formula as the style's handle y, so each mark
+                // lines up with the handle centre at that value.
+                Item {
+                    Layout.preferredHeight: sliderVolume.height
+                    Layout.preferredWidth: 28
+                    Repeater {
+                        model: [0, 25, 50, 75, 100]
+                        Row {
+                            required property int modelData
+                            readonly property real handleSize: sliderVolume.handle ? sliderVolume.handle.height : 0
+                            y: sliderVolume.topPadding
+                               + (sliderVolume.to - modelData) / (sliderVolume.to - sliderVolume.from)
+                                 * (sliderVolume.availableHeight - handleSize)
+                               + (handleSize - height) / 2
+                            spacing: 2
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 6
+                                height: 1
+                                color: palette.mid
+                            }
+                            Label {
+                                text: modelData
+                                font.pixelSize: YaycProperties.fsP2
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        onClosed: buttonVolume.checked = false
     }
 } // root item

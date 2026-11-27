@@ -236,5 +236,6 @@
   "Feedback": "Обратна връзка",
   "Run": "Изпълни",
   "Run this command with a video URL": "Изпълни тази команда с URL адрес на видео",
-  "Video URL": "URL адрес на видео"
+  "Video URL": "URL адрес на видео",
+  "Set volume": "Задаване на силата на звука"
 }

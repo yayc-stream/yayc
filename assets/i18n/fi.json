@@ -236,5 +236,6 @@
   "Feedback": "Palaute",
   "Run": "Suorita",
   "Run this command with a video URL": "Suorita tämä komento videon URL-osoitteella",
-  "Video URL": "Videon URL-osoite"
+  "Video URL": "Videon URL-osoite",
+  "Set volume": "Aseta äänenvoimakkuus"
 }
